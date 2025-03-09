@@ -25,8 +25,8 @@ import { db } from '@/lib/db/prisma';
 
 // Your RP (Relying Party) ID should be the domain name of your app
 // For local development, this works with domains like localhost or 127.0.0.1
-export const rpID = process.env.NEXT_PUBLIC_APP_URL 
-  ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname 
+export const rpID = process.env.NEXT_PUBLIC_APP_URL
+  ? new URL(process.env.NEXT_PUBLIC_APP_URL).hostname
   : 'localhost';
 
 // RP name is what the user will see during authentication
@@ -36,7 +36,7 @@ export const rpName = 'MoodMash';
 export async function generateWebAuthnRegistrationOptions(
   userId: string,
   username: string,
-  userDisplayName: string,
+  userDisplayName: string
 ): Promise<PublicKeyCredentialCreationOptionsJSON> {
   // Get existing authenticators for user to exclude them
   const existingCredentials = await db.credential.findMany({
@@ -70,7 +70,7 @@ export async function generateWebAuthnRegistrationOptions(
 // Verify WebAuthn registration
 export async function verifyWebAuthnRegistration(
   credential: RegistrationResponseJSON,
-  expectedChallenge: string,
+  expectedChallenge: string
 ): Promise<VerifiedRegistrationResponse> {
   const options: VerifyRegistrationResponseOpts = {
     response: credential,
@@ -84,17 +84,17 @@ export async function verifyWebAuthnRegistration(
 
 // Generate WebAuthn authentication options
 export async function generateWebAuthnAuthenticationOptions(
-  userId?: string,
+  userId?: string
 ): Promise<PublicKeyCredentialRequestOptionsJSON> {
   let allowCredentials;
-  
+
   if (userId) {
     // For passwordless sign-in with a specific user account
     const userCredentials = await db.credential.findMany({
       where: { userId },
       select: { externalId: true },
     });
-    
+
     allowCredentials = userCredentials.map((cred: { externalId: string }) => ({
       id: Buffer.from(cred.externalId, 'base64url'),
       type: 'public-key' as const,
@@ -115,12 +115,12 @@ export async function generateWebAuthnAuthenticationOptions(
 // Verify WebAuthn authentication
 export async function verifyWebAuthnAuthentication(
   credential: AuthenticationResponseJSON,
-  expectedChallenge: string,
+  expectedChallenge: string
 ): Promise<VerifiedAuthenticationResponse & { user?: { id: string; email: string | null } }> {
   // Lookup the credential in the database
   const dbCredential = await db.credential.findUnique({
-    where: { 
-      externalId: credential.id 
+    where: {
+      externalId: credential.id,
     },
     include: {
       user: {
@@ -166,13 +166,13 @@ export async function verifyWebAuthnAuthentication(
  */
 export async function deleteWebAuthnCredential(
   userId: string,
-  credentialId: string,
+  credentialId: string
 ): Promise<boolean> {
   try {
-    await db.webAuthnCredential.deleteMany({
+    await db.credential.deleteMany({
       where: {
         userId,
-        credentialId,
+        externalId: credentialId,
       },
     });
 
@@ -181,4 +181,4 @@ export async function deleteWebAuthnCredential(
     console.error('Error deleting WebAuthn credential:', error);
     return false;
   }
-} 
+}

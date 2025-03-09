@@ -21,16 +21,19 @@ export const authConfig: NextAuthConfig = {
       name: 'Credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' }
+        password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
+      async authorize(credentials: Record<string, unknown> | undefined) {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
+        const email = credentials.email as string;
+        const password = credentials.password as string;
+
         const user = await db.user.findUnique({
           where: {
-            email: credentials.email,
+            email,
           },
         });
 
@@ -38,12 +41,9 @@ export const authConfig: NextAuthConfig = {
           return null;
         }
 
-        const isPasswordValid = await comparePasswords(
-          credentials.password,
-          user.password
-        );
+        const passwordsMatch = await comparePasswords(password, user.password);
 
-        if (!isPasswordValid) {
+        if (!passwordsMatch) {
           return null;
         }
 
@@ -59,21 +59,16 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const protectedPaths = [
-        /^\/dashboard/,
-        /^\/profile/,
-        /^\/settings/,
-        /^\/create-mood/,
-      ];
-      
-      const isProtected = protectedPaths.some((path) => path.test(nextUrl.pathname));
-      
+      const protectedPaths = [/^\/dashboard/, /^\/profile/, /^\/settings/, /^\/create-mood/];
+
+      const isProtected = protectedPaths.some(path => path.test(nextUrl.pathname));
+
       if (isProtected && !isLoggedIn) {
         const redirectUrl = new URL('/auth/signin', nextUrl.origin);
         redirectUrl.searchParams.set('callbackUrl', nextUrl.href);
         return Response.redirect(redirectUrl);
       }
-      
+
       return true;
     },
     async jwt({ token, user }) {
@@ -99,4 +94,4 @@ export const authConfig: NextAuthConfig = {
     strategy: 'jwt',
   },
   debug: process.env.NODE_ENV === 'development',
-}; 
+};
