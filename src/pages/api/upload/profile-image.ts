@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { auth } from '@/lib/auth/auth';
 import { rateLimit } from '@/lib/auth/rate-limit';
-import formidable, { File } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await auth(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -44,15 +44,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Parse the form
-    const formData = await new Promise<{ fields: formidable.Fields; files: formidable.Files }>((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        resolve({ fields, files });
-      });
-    });
+    const formData = await new Promise<{ fields: formidable.Fields; files: formidable.Files }>(
+      (resolve, reject) => {
+        form.parse(req, (err, fields, files) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+          resolve({ fields, files });
+        });
+      }
+    );
 
     // Get the uploaded file
     const fileField = formData.files.file;
@@ -76,7 +78,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Return the URL to the uploaded file
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || 3000}`;
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || `http://localhost:${process.env.PORT || 3000}`;
     const fileUrl = `${baseUrl}/uploads/${filename}`;
 
     return res.status(200).json({
@@ -87,4 +90,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error uploading file:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -3,7 +3,13 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { WebAuthnRegister } from '@/components/auth/WebAuthnRegister';
 import { toast } from 'sonner';
@@ -39,11 +45,11 @@ export default function SecuritySettings() {
     try {
       setIsLoading(true);
       const response = await fetch('/api/auth/webauthn/credentials');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch credentials');
       }
-      
+
       const data = await response.json();
       setCredentials(data.credentials);
     } catch (error) {
@@ -63,11 +69,11 @@ export default function SecuritySettings() {
       const response = await fetch(`/api/auth/webauthn/credentials/${id}`, {
         method: 'DELETE',
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to delete credential');
       }
-      
+
       toast.success('Passkey deleted successfully');
       fetchCredentials();
     } catch (error) {
@@ -95,7 +101,7 @@ export default function SecuritySettings() {
       <MainLayout>
         <div className="container py-10">
           <h1 className="text-3xl font-bold mb-6">Security Settings</h1>
-          
+
           <div className="grid gap-6">
             {/* Passkeys Section */}
             <Card>
@@ -107,14 +113,14 @@ export default function SecuritySettings() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <WebAuthnRegister />
-                
+
                 {isLoading ? (
                   <p>Loading your passkeys...</p>
                 ) : credentials.length > 0 ? (
                   <div className="space-y-4">
                     <h3 className="text-lg font-medium">Your passkeys</h3>
                     <div className="border rounded-md divide-y">
-                      {credentials.map((credential) => (
+                      {credentials.map(credential => (
                         <div key={credential.id} className="p-4 flex justify-between items-center">
                           <div>
                             <div className="flex items-center">
@@ -139,7 +145,7 @@ export default function SecuritySettings() {
                     </div>
                   </div>
                 ) : (
-                  <p>You haven't added any passkeys yet.</p>
+                  <p>You haven&apos;t added any passkeys yet.</p>
                 )}
               </CardContent>
             </Card>
@@ -148,4 +154,4 @@ export default function SecuritySettings() {
       </MainLayout>
     </>
   );
-} 
+}

@@ -5,7 +5,14 @@ import Head from 'next/head';
 import Image from 'next/image';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { User, Upload, Loader2, Save, X } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,10 +22,6 @@ interface ExtendedUser {
   email?: string | null;
   image?: string | null;
   bio?: string | null;
-}
-
-interface ExtendedSession {
-  user?: ExtendedUser;
 }
 
 export default function EditProfile() {
@@ -76,16 +79,16 @@ export default function EditProfile() {
         // Create form data for image upload
         const formData = new FormData();
         formData.append('file', imageFile);
-        
+
         const uploadResponse = await fetch('/api/upload/profile-image', {
           method: 'POST',
           body: formData,
         });
-        
+
         if (!uploadResponse.ok) {
           throw new Error('Failed to upload image');
         }
-        
+
         const uploadData = await uploadResponse.json();
         imageUrl = uploadData.url;
       }
@@ -149,9 +152,7 @@ export default function EditProfile() {
           <Card>
             <CardHeader>
               <CardTitle>Edit Profile</CardTitle>
-              <CardDescription>
-                Update your profile information
-              </CardDescription>
+              <CardDescription>Update your profile information</CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmit}>
               <CardContent className="space-y-6">
@@ -159,11 +160,11 @@ export default function EditProfile() {
                 <div className="flex flex-col items-center space-y-4">
                   <div className="relative w-32 h-32 rounded-full overflow-hidden border-2 border-primary">
                     {imagePreview ? (
-                      <Image 
-                        src={imagePreview} 
+                      <Image
+                        src={imagePreview}
                         alt="Profile preview"
                         fill
-                        className="object-cover" 
+                        className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -172,12 +173,7 @@ export default function EditProfile() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="relative"
-                    >
+                    <Button type="button" variant="outline" size="sm" className="relative">
                       <input
                         type="file"
                         accept="image/*"
@@ -188,12 +184,7 @@ export default function EditProfile() {
                       Upload Image
                     </Button>
                     {imagePreview && imagePreview !== image && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={removeImage}
-                      >
+                      <Button type="button" variant="ghost" size="sm" onClick={removeImage}>
                         <X className="h-4 w-4 mr-2" />
                         Remove
                       </Button>
@@ -210,7 +201,7 @@ export default function EditProfile() {
                     id="name"
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    onChange={e => setName(e.target.value)}
                     placeholder="Your display name"
                   />
                 </div>
@@ -224,22 +215,16 @@ export default function EditProfile() {
                     id="bio"
                     className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     value={bio}
-                    onChange={(e) => setBio(e.target.value)}
+                    onChange={e => setBio(e.target.value)}
                     placeholder="Tell us about yourself"
                     rows={4}
                   />
-                  <p className="text-xs text-muted-foreground">
-                    {bio.length}/160 characters
-                  </p>
+                  <p className="text-xs text-muted-foreground">{bio.length}/160 characters</p>
                 </div>
               </CardContent>
 
               <CardFooter className="flex justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push('/profile')}
-                >
+                <Button type="button" variant="outline" onClick={() => router.push('/profile')}>
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isLoading}>
@@ -262,4 +247,4 @@ export default function EditProfile() {
       </MainLayout>
     </>
   );
-} 
+}

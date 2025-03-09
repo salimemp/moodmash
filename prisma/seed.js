@@ -1,11 +1,11 @@
-const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcryptjs');
+import { PrismaClient } from '@prisma/client';
+import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 // Local password hashing function for seeding
 async function hashPassword(password) {
-  return bcrypt.hash(password, 12);
+  return hash(password, 12);
 }
 
 async function main() {
@@ -276,10 +276,10 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('Error during seeding:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

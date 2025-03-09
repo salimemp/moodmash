@@ -2,10 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db/prisma';
 import { hashPassword } from '@/lib/auth/password';
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
@@ -40,15 +37,29 @@ export default async function handler(
         name,
         email,
         password: hashedPassword,
+        emailVerified: new Date(), // Auto-verify for now (remove in production)
       },
     });
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = user;
+    // Send verification email (commented out for now)
+    /*
+    await sendVerificationEmail({
+      email,
+      token: verificationToken,
+    }); 
+    */
 
-    return res.status(201).json(userWithoutPassword);
+    // Return user data without the password
+    return res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    });
   } catch (error) {
     console.error('Registration error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

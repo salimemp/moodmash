@@ -3,10 +3,16 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Image from 'next/image';
-import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Edit, Settings, User, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,10 +22,6 @@ interface ExtendedUser {
   email?: string | null;
   image?: string | null;
   bio?: string | null;
-}
-
-interface ExtendedSession {
-  user?: ExtendedUser;
 }
 
 export default function Profile() {
@@ -44,11 +46,11 @@ export default function Profile() {
     try {
       setIsLoading(true);
       const response = await fetch('/api/moods/user');
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch user moods');
       }
-      
+
       const data = await response.json();
       setUserMoods(data.moods || []);
     } catch (error) {
@@ -86,11 +88,7 @@ export default function Profile() {
                 <CardHeader>
                   <CardTitle className="text-xl flex justify-between items-center">
                     <span>Profile</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => router.push('/profile/edit')}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => router.push('/profile/edit')}>
                       <Edit className="h-4 w-4" />
                     </Button>
                   </CardTitle>
@@ -98,12 +96,7 @@ export default function Profile() {
                 <CardContent className="flex flex-col items-center space-y-4">
                   <div className="relative w-24 h-24 rounded-full overflow-hidden border-2 border-primary">
                     {user.image ? (
-                      <Image 
-                        src={user.image} 
-                        alt="Profile picture"
-                        fill
-                        className="object-cover" 
-                      />
+                      <Image src={user.image} alt="Profile picture" fill className="object-cover" />
                     ) : (
                       <div className="w-full h-full bg-muted flex items-center justify-center">
                         <User className="h-12 w-12 text-muted-foreground" />
@@ -156,9 +149,7 @@ export default function Profile() {
                 <Card>
                   <CardHeader>
                     <CardTitle>My Moods</CardTitle>
-                    <CardDescription>
-                      All the moods you've shared on MoodMash
-                    </CardDescription>
+                    <CardDescription>All the moods you&apos;ve shared on MoodMash</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {isLoading ? (
@@ -169,29 +160,25 @@ export default function Profile() {
                         <p>Your moods will be displayed here</p>
                       </div>
                     ) : (
-                      <p>You haven't shared any moods yet!</p>
+                      <p>You haven&apos;t shared any moods yet!</p>
                     )}
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle>My Mashes</CardTitle>
-                    <CardDescription>
-                      Your mood mashups
-                    </CardDescription>
+                    <CardDescription>Your mood mashups</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>Your mood mashes will be displayed here</p>
                   </CardContent>
                 </Card>
-                
+
                 <Card>
                   <CardHeader>
                     <CardTitle>Stats</CardTitle>
-                    <CardDescription>
-                      Your mood trends and statistics
-                    </CardDescription>
+                    <CardDescription>Your mood trends and statistics</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>Your mood statistics will be displayed here</p>
@@ -204,4 +191,4 @@ export default function Profile() {
       </MainLayout>
     </>
   );
-} 
+}
