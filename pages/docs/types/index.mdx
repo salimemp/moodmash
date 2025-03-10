@@ -1,0 +1,194 @@
+# TypeScript Types
+
+MoodMash uses TypeScript throughout the codebase to ensure type safety and provide better developer experience. This section documents the most important types and interfaces used in the application.
+
+## Core Types
+
+### User Types
+
+```typescript
+/**
+ * Represents a user in the system
+ */
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+  emailVerified: Date | null;
+  image: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * User profile including additional details
+ */
+interface UserProfile extends User {
+  preferences: UserPreferences | null;
+  encryptionKey: EncryptionKey | null;
+}
+
+/**
+ * User preferences
+ */
+interface UserPreferences {
+  id: string;
+  userId: string;
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+### Authentication Types
+
+```typescript
+/**
+ * Authentication result returned by the login process
+ */
+interface AuthResult {
+  user: User;
+  session: Session;
+  expires: string; // ISO date string
+}
+
+/**
+ * User session
+ */
+interface Session {
+  id: string;
+  userId: string;
+  expires: Date;
+  sessionToken: string;
+}
+
+/**
+ * Credentials used for password-based login
+ */
+interface Credentials {
+  email: string;
+  password: string;
+}
+```
+
+### Encryption Types
+
+```typescript
+/**
+ * User's encryption key
+ */
+interface EncryptionKey {
+  id: string;
+  userId: string;
+  publicKey: string;
+  salt: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Encrypted data
+ */
+interface EncryptedData {
+  ciphertext: string;
+  nonce: string;
+}
+
+/**
+ * Encrypted message
+ */
+interface EncryptedMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  ciphertext: string;
+  nonce: string;
+  senderPublicKey: string;
+  timestamp: Date;
+  read: boolean;
+  metadata: string | null;
+  createdAt: Date;
+}
+
+/**
+ * Extended encrypted message with sender and recipient info
+ */
+interface ExtendedEncryptedMessage extends EncryptedMessage {
+  sender: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+  recipient: {
+    id: string;
+    name: string | null;
+    image: string | null;
+  };
+}
+```
+
+## API Response Types
+
+```typescript
+/**
+ * Standard API response
+ */
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Paginated API response
+ */
+interface PaginatedResponse<T> {
+  items: T[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
+```
+
+## Component Props
+
+```typescript
+/**
+ * Props for the LanguageSwitcher component
+ */
+interface LanguageSwitcherProps {
+  variant?: 'dropdown' | 'select' | 'buttons';
+  showFlags?: boolean;
+  showNativeNames?: boolean;
+}
+
+/**
+ * Props for the MessageDisplay component
+ */
+interface MessageDisplayProps {
+  message: ExtendedEncryptedMessage;
+  decryptedContent?: string;
+  isOwnMessage: boolean;
+}
+```
+
+## Context Types
+
+```typescript
+/**
+ * Direction context for RTL support
+ */
+interface DirectionContextType {
+  direction: 'ltr' | 'rtl';
+  isRTL: boolean;
+  toggleDirection: () => void;
+}
+``` 

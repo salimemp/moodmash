@@ -1,0 +1,94 @@
+name: API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/pages/api/**'
+      - 'src/lib/**'
+      - 'src/__tests__/**'
+      - 'prisma/**'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/pages/api/**'
+      - 'src/lib/**'
+      - 'src/__tests__/**'
+      - 'prisma/**'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      # Setup a PostgreSQL service for tests
+      # Using the same database type as your project
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: moodmash_test
+        ports:
+          - 5432:5432
+        # Healthcheck ensures database is ready before tests run
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Generate Prisma client
+        run: npx prisma generate
+        
+      - name: Setup test database
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moodmash_test
+          
+      - name: Run tests
+        run: npm test
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/moodmash_test
+          NEXTAUTH_SECRET: testing_secret_key_for_github_actions
+          NEXTAUTH_URL: http://localhost:3000
+          NODE_ENV: test
+
+      - name: Upload test coverage reports
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: test-coverage
+          path: coverage/
+          
+  lint:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run linter
+        run: npm run lint 

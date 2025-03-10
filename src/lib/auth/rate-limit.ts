@@ -2,46 +2,52 @@ import { NextApiRequest, NextApiResponse } from 'next';
 import { Redis } from '@upstash/redis';
 
 // Initialize Redis client
-const redis = Redis.fromEnv();
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL || '',
+  token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+});
 
-// Configure rate limits
-const RATE_LIMIT_WINDOW = 60 * 15; // 15 minutes in seconds
-const MAX_LOGIN_ATTEMPTS = 5; // Max login attempts per window
-const MAX_PASSWORD_RESET_ATTEMPTS = 3; // Max password reset attempts per window
-const MAX_EMAIL_VERIFICATION_ATTEMPTS = 5; // Max email verification attempts per window
-const MAX_MFA_ATTEMPTS = 5; // Max MFA attempts per window
-const MAX_REQUESTS_PER_IP = 100; // General rate limit per IP
+// Define rate limit types
+type RateLimitType = 'general' | 'auth' | 'mfa' | 'api' | 'login' | 'passwordReset' | 'emailVerification';
 
-// Rate limit types and their configurations
-const rateLimits = {
+// Configure rate limits for different actions
+const rateLimits: Record<RateLimitType, { max: number; window: number; message: string }> = {
+  general: {
+    max: 60,
+    window: 60,
+    message: 'Too many requests, please try again later.',
+  },
+  auth: {
+    max: 10,
+    window: 60,
+    message: 'Too many authentication attempts, please try again later.',
+  },
+  mfa: {
+    max: 5,
+    window: 60,
+    message: 'Too many MFA attempts, please try again later.',
+  },
+  api: {
+    max: 60,
+    window: 60,
+    message: 'Rate limit exceeded, please try again later.',
+  },
   login: {
-    max: MAX_LOGIN_ATTEMPTS,
-    window: RATE_LIMIT_WINDOW,
+    max: 5,
+    window: 60 * 15, // 15 minutes
     message: 'Too many login attempts. Please try again later.',
   },
   passwordReset: {
-    max: MAX_PASSWORD_RESET_ATTEMPTS,
-    window: RATE_LIMIT_WINDOW,
+    max: 3,
+    window: 60 * 15, // 15 minutes
     message: 'Too many password reset attempts. Please try again later.',
   },
   emailVerification: {
-    max: MAX_EMAIL_VERIFICATION_ATTEMPTS,
-    window: RATE_LIMIT_WINDOW,
+    max: 5,
+    window: 60 * 15, // 15 minutes
     message: 'Too many email verification attempts. Please try again later.',
   },
-  mfa: {
-    max: MAX_MFA_ATTEMPTS,
-    window: RATE_LIMIT_WINDOW,
-    message: 'Too many MFA attempts. Please try again later.',
-  },
-  general: {
-    max: MAX_REQUESTS_PER_IP,
-    window: RATE_LIMIT_WINDOW,
-    message: 'Too many requests. Please try again later.',
-  },
 };
-
-type RateLimitType = keyof typeof rateLimits;
 
 /**
  * Rate limiting middleware for API routes
@@ -72,7 +78,7 @@ export async function rateLimit(
       res.status(429).json({ message: config.message });
       return false;
     }
-    
+
     // Increment count
     await redis.incr(key);
     
@@ -119,7 +125,7 @@ export async function incrementFailedLoginAttempts(
     const current = await redis.incr(key);
     
     if (current === 1) {
-      await redis.expire(key, RATE_LIMIT_WINDOW);
+      await redis.expire(key, 60);
     }
     
     return current;

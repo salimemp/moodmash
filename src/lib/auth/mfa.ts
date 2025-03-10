@@ -2,6 +2,7 @@ import { authenticator } from 'otplib';
 import QRCode from 'qrcode';
 import { db } from '@/lib/db/prisma';
 import crypto from 'crypto';
+import { nanoid } from 'nanoid';
 
 // Generate a new MFA secret for a user
 export async function generateMfaSecret(
@@ -12,20 +13,17 @@ export async function generateMfaSecret(
   qrCodeUrl: string;
   backupCodes: string[];
 }> {
-  // Generate a secret
+  // Generate a new secret
   const secret = authenticator.generateSecret();
-
-  // Generate an otpauth URL
-  const serviceName = 'MoodMash';
-  const otpauthUrl = authenticator.keyuri(email, serviceName, secret);
-
-  // Generate QR code
-  const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
-
-  // Generate backup codes (10 one-time use codes)
-  const backupCodes = Array.from({ length: 10 }, () => crypto.randomBytes(4).toString('hex'));
-
-  // Save MFA information to the user
+  
+  // Generate the QR code URL
+  const serviceName = process.env.MFA_SERVICE_NAME || 'MoodMash';
+  const qrCodeUrl = authenticator.keyuri(email, serviceName, secret);
+  
+  // Generate backup codes
+  const backupCodes = generateBackupCodes();
+  
+  // Store backup codes in the database
   await db.user.update({
     where: { id: userId },
     data: {
@@ -34,7 +32,7 @@ export async function generateMfaSecret(
       // Note: mfaEnabled remains false until verified
     },
   });
-
+  
   return {
     secret,
     qrCodeUrl,
@@ -42,11 +40,25 @@ export async function generateMfaSecret(
   };
 }
 
+/**
+ * Generate backup codes for MFA
+ */
+function generateBackupCodes(count = 10, length = 8): string[] {
+  const codes: string[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    codes.push(nanoid(length));
+  }
+  
+  return codes;
+}
+
 // Verify a TOTP code
-export function verifyTOTP(secret: string, token: string): boolean {
+export function verifyTOTP(token: string, secret: string): boolean {
   try {
     return authenticator.verify({ token, secret });
-  } catch {
+  } catch (error) {
+    console.error('TOTP verification error:', error);
     return false;
   }
 }
@@ -79,21 +91,30 @@ export async function verifyBackupCode(userId: string, code: string): Promise<bo
     where: { id: userId },
     select: { mfaBackupCodes: true },
   });
-
-  if (!user || !user.mfaBackupCodes.includes(code)) {
+  
+  if (!user || !user.mfaBackupCodes || user.mfaBackupCodes.length === 0) {
     return false;
   }
-
+  
+  const backupCodes = user.mfaBackupCodes;
+  const codeIndex = backupCodes.indexOf(code);
+  
+  if (codeIndex === -1) {
+    return false;
+  }
+  
   // Remove the used backup code
+  const updatedBackupCodes = [...backupCodes];
+  updatedBackupCodes.splice(codeIndex, 1);
+  
+  // Update the user's backup codes
   await db.user.update({
     where: { id: userId },
     data: {
-      mfaBackupCodes: {
-        set: user.mfaBackupCodes.filter((c: string) => c !== code),
-      },
+      mfaBackupCodes: updatedBackupCodes,
     },
   });
-
+  
   return true;
 }
 

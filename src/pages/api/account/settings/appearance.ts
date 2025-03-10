@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { auth } from '@/lib/auth/auth';
+import { getSessionFromReq } from '@/lib/auth/utils';
 import { db } from '@/lib/db/prisma';
 import { rateLimit } from '@/lib/auth/rate-limit';
 
@@ -13,8 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!rateLimitPassed) return;
 
   try {
-    // Get the current user session
-    const session = await auth(req, res);
+    // Get the current user session using the compatibility utility
+    const session = await getSessionFromReq(req, res);
     
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });

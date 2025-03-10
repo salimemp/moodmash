@@ -1,0 +1,156 @@
+# Messaging API
+
+The Messaging API allows you to send and retrieve encrypted messages between users.
+
+## Endpoints
+
+### Send Encrypted Message
+
+Sends an encrypted message to another user.
+
+```
+POST /api/messages/secure
+```
+
+#### Request Body
+
+| Field           | Type   | Description                         |
+| --------------- | ------ | ----------------------------------- |
+| recipientId     | string | The recipient's user ID             |
+| ciphertext      | string | The encrypted message content       |
+| nonce           | string | The nonce used for encryption       |
+| senderPublicKey | string | The sender's public key             |
+| metadata        | string | (Optional) Additional data          |
+
+#### Response
+
+**Status Code: 201**
+
+```json
+{
+  "id": "message123",
+  "senderId": "user456",
+  "recipientId": "user789",
+  "timestamp": "2025-05-10T12:34:56Z",
+  "message": "Message sent successfully"
+}
+```
+
+**Error Responses:**
+
+- `400 Bad Request`: Missing required fields
+- `401 Unauthorized`: Not authenticated
+- `404 Not Found`: Recipient not found
+- `500 Internal Server Error`: Failed to send message
+
+### Get Encrypted Messages
+
+Retrieves encrypted messages for the authenticated user.
+
+```
+GET /api/messages/secure
+```
+
+#### Query Parameters
+
+| Parameter | Type   | Description                               | Default |
+| --------- | ------ | ----------------------------------------- | ------- |
+| limit     | number | Maximum number of messages to return      | 20      |
+| offset    | number | Number of messages to skip                | 0       |
+| partnerId | string | Filter messages to/from a specific user   | (none)  |
+
+#### Response
+
+**Status Code: 200**
+
+```json
+{
+  "success": true,
+  "data": {
+    "messages": [
+      {
+        "id": "msg123",
+        "senderId": "user1",
+        "recipientId": "user2",
+        "ciphertext": "encrypted-data",
+        "nonce": "encryption-nonce",
+        "senderPublicKey": "sender-public-key",
+        "timestamp": "2025-05-10T12:34:56Z",
+        "read": false,
+        "sender": {
+          "id": "user1",
+          "name": "John Doe",
+          "image": "https://example.com/avatar.jpg"
+        },
+        "recipient": {
+          "id": "user2",
+          "name": "Jane Smith",
+          "image": "https://example.com/avatar2.jpg"
+        }
+      }
+    ],
+    "pagination": {
+      "total": 45,
+      "limit": 20,
+      "offset": 0,
+      "hasMore": true
+    }
+  }
+}
+```
+
+**Error Responses:**
+
+- `401 Unauthorized`: Not authenticated
+- `500 Internal Server Error`: Failed to get messages
+
+## Code Example
+
+Here's how to use the messaging API with client-side encryption:
+
+```typescript
+import { encrypt, decrypt } from '@/lib/encryption/crypto';
+
+// Sending a message
+async function sendMessage(recipientId: string, message: string, recipientPublicKey: string) {
+  // Encrypt the message
+  const { ciphertext, nonce } = await encrypt(message, recipientPublicKey);
+  
+  // Send the encrypted message
+  const response = await fetch('/api/messages/secure', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipientId,
+      ciphertext,
+      nonce,
+      senderPublicKey: yourPublicKey,
+    }),
+  });
+  
+  return response.json();
+}
+
+// Receiving messages
+async function getMessages() {
+  const response = await fetch('/api/messages/secure');
+  const data = await response.json();
+  
+  // Decrypt each message
+  const decryptedMessages = await Promise.all(
+    data.data.messages.map(async (msg) => {
+      const decrypted = await decrypt({
+        ciphertext: msg.ciphertext,
+        nonce: msg.nonce
+      }, yourPrivateKey);
+      
+      return {
+        ...msg,
+        decryptedContent: decrypted
+      };
+    })
+  );
+  
+  return decryptedMessages;
+}
+``` 

@@ -2,7 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { verifyWebAuthnAuthentication } from '@/lib/auth/webauthn';
 import { authenticationChallengeStore } from './login-options';
 import { rateLimit, resetRateLimit } from '@/lib/auth/rate-limit';
-import { signIn } from '@/lib/auth/auth';
+import { db } from '@/lib/db/prisma';
+import { getServerSession } from 'next-auth';
+import { authConfig } from '@/lib/auth/auth.config';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -46,18 +48,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await resetRateLimit('login', verification.user.email);
     }
 
-    // Sign in the user
-    const result = await signIn('credentials', {
-      redirect: false,
-      email: verification.user.email,
-      userId: verification.user.id,
-      passwordless: true,
-    });
-
-    if (!result?.ok) {
-      return res.status(400).json({ message: 'Failed to create session' });
+    // Create a custom JWT token for the user
+    const session = await getServerSession(req, res, authConfig);
+    
+    if (!session) {
+      // If no session exists, return the user info for client-side sign-in
+      return res.status(200).json({
+        message: 'Authentication successful',
+        user: {
+          id: verification.user.id,
+          email: verification.user.email,
+        },
+      });
     }
 
+    // If a session already exists, update it
     return res.status(200).json({
       message: 'Authentication successful',
       user: {

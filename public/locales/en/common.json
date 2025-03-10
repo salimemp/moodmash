@@ -1,0 +1,54 @@
+{
+  "app": {
+    "name": "MoodMash",
+    "tagline": "Secure conversations for the digital age",
+    "description": "End-to-end encrypted messaging platform"
+  },
+  "nav": {
+    "home": "Home",
+    "messages": "Messages",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout",
+    "login": "Login",
+    "signup": "Sign Up"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "send": "Send",
+    "search": "Search",
+    "loading": "Loading..."
+  },
+  "language": {
+    "select": "Select language",
+    "english": "English",
+    "spanish": "Spanish",
+    "french": "French",
+    "german": "German",
+    "chinese": "Chinese",
+    "japanese": "Japanese",
+    "korean": "Korean",
+    "russian": "Russian",
+    "portuguese": "Portuguese",
+    "italian": "Italian",
+    "arabic": "Arabic",
+    "hebrew": "Hebrew",
+    "persian": "Persian",
+    "urdu": "Urdu",
+    "hindi": "Hindi",
+    "bengali": "Bengali",
+    "turkish": "Turkish",
+    "dutch": "Dutch",
+    "swedish": "Swedish",
+    "polish": "Polish"
+  },
+  "footer": {
+    "copyright": "© {{year}} MoodMash. All rights reserved.",
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "contact": "Contact Us"
+  }
+} 

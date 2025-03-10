@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { auth } from '@/lib/auth/auth';
+import { getSessionFromReq } from '@/lib/auth/utils';
 import { db } from '@/lib/db/prisma';
 import { rateLimit } from '@/lib/auth/rate-limit';
 
@@ -12,32 +12,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const rateLimitPassed = await rateLimit(req, res, 'general');
   if (!rateLimitPassed) return;
 
+  const credentialId = req.query.id as string;
+
+  if (!credentialId) {
+    return res.status(400).json({ message: 'Credential ID is required' });
+  }
+
   try {
     // Get the current user session
-    const session = await auth(req, res);
-    
+    const session = await getSessionFromReq(req, res);
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const credentialId = req.query.id as string;
-    
-    if (!credentialId) {
-      return res.status(400).json({ message: 'Credential ID is required' });
-    }
+    const userId = session.user.id;
 
-    // Find the credential to ensure it belongs to the user
-    const credential = await db.credential.findUnique({
-      where: { id: credentialId },
-      select: { userId: true },
+    // Check if the credential exists and belongs to the user
+    const credential = await db.credential.findFirst({
+      where: {
+        id: credentialId,
+        userId,
+      },
     });
 
     if (!credential) {
       return res.status(404).json({ message: 'Credential not found' });
-    }
-
-    if (credential.userId !== session.user.id) {
-      return res.status(403).json({ message: 'Forbidden' });
     }
 
     // Count the number of credentials for this user
@@ -54,14 +54,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Delete the credential
     await db.credential.delete({
-      where: { id: credentialId },
+      where: {
+        id: credentialId,
+      },
     });
 
-    return res.status(200).json({
-      message: 'Credential deleted successfully',
-    });
+    return res.status(200).json({ message: 'Credential deleted successfully' });
   } catch (error) {
-    console.error('Error deleting WebAuthn credential:', error);
+    console.error('Error deleting credential:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 } 

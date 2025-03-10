@@ -103,6 +103,36 @@ export default function SecuritySettings() {
           <h1 className="text-3xl font-bold mb-6">Security Settings</h1>
 
           <div className="grid gap-6">
+            {/* Two-Factor Authentication Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl">Two-Factor Authentication</CardTitle>
+                <CardDescription>
+                  Add an extra layer of security to your account by requiring a verification code when you sign in.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">
+                      {session?.user?.mfaEnabled ? 'Enabled' : 'Not enabled'}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {session?.user?.mfaEnabled
+                        ? 'Your account is protected with two-factor authentication.'
+                        : 'Protect your account with two-factor authentication.'}
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/settings/mfa')}
+                    variant={session?.user?.mfaEnabled ? 'outline' : 'default'}
+                  >
+                    {session?.user?.mfaEnabled ? 'Manage' : 'Enable'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Passkeys Section */}
             <Card>
               <CardHeader>

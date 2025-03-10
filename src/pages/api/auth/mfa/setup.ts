@@ -1,16 +1,21 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { auth } from '@/lib/auth/auth';
-import { generateMfaSecret } from '@/lib/auth/mfa';
+import { getSessionFromReq } from '@/lib/auth/utils';
 import { db } from '@/lib/db/prisma';
+import { generateMfaSecret } from '@/lib/auth/mfa';
+import { rateLimit } from '@/lib/auth/rate-limit';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
+  // Apply rate limiting
+  const rateLimitPassed = await rateLimit(req, res, 'mfa');
+  if (!rateLimitPassed) return;
+
   try {
     // Get the current user session
-    const session = await auth();
+    const session = await getSessionFromReq(req, res);
 
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
@@ -24,11 +29,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: { email: true, mfaEnabled: true },
     });
 
-    if (!user || !user.email) {
-      return res.status(404).json({ message: 'User not found or email missing' });
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if MFA is already enabled
+    if (!user.email) {
+      return res.status(400).json({ message: 'User email is missing' });
+    }
+
     if (user.mfaEnabled) {
       return res.status(400).json({ message: 'MFA is already enabled for this account' });
     }
@@ -37,12 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const mfaData = await generateMfaSecret(userId, user.email);
 
     return res.status(200).json({
+      secret: mfaData.secret,
       qrCodeUrl: mfaData.qrCodeUrl,
       backupCodes: mfaData.backupCodes,
-      message: 'MFA setup initiated. Please verify with a code before MFA is enabled.',
     });
   } catch (error) {
-    console.error('MFA setup error:', error);
+    console.error('Error setting up MFA:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 } 

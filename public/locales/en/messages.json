@@ -1,0 +1,43 @@
+{
+  "messages": {
+    "title": "Messages",
+    "empty": "No messages yet",
+    "new": "New Message",
+    "search": "Search messages",
+    "load_more": "Load more",
+    "encryption_info": "Messages are end-to-end encrypted"
+  },
+  "conversation": {
+    "with": "Conversation with {{name}}",
+    "start": "Start a new conversation",
+    "empty": "No messages yet. Say hello!",
+    "message_placeholder": "Type a message...",
+    "send": "Send",
+    "encrypted": "End-to-end encrypted",
+    "read": "Read",
+    "delivered": "Delivered",
+    "sent": "Sent"
+  },
+  "secure": {
+    "setup_required": "You need to set up encryption to send secure messages",
+    "setup_button": "Set Up Encryption",
+    "recipient_no_key": "{{name}} has not set up encryption yet",
+    "generate_keys": "Generate Encryption Keys",
+    "encryption_active": "Your messages are protected with end-to-end encryption",
+    "info": "Only you and the recipient can read these messages"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "empty": "No contacts yet",
+    "search": "Search contacts",
+    "add": "Add Contact",
+    "remove": "Remove Contact",
+    "block": "Block Contact"
+  },
+  "notifications": {
+    "new_message": "New message from {{name}}",
+    "message_received": "You have received a new message",
+    "enable": "Enable notifications",
+    "disable": "Disable notifications"
+  }
+} 

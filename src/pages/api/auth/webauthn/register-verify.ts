@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { auth } from '@/lib/auth/auth';
+import { getSessionFromReq } from '@/lib/auth/utils';
 import { verifyWebAuthnRegistration } from '@/lib/auth/webauthn';
 import { db } from '@/lib/db/prisma';
 import { registrationChallengeStore } from './register-options';
@@ -16,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Get the current user session
-    const session = await auth(req, res);
+    const session = await getSessionFromReq(req, res);
     
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });

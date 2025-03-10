@@ -60,6 +60,12 @@ model User {
   moodComments  MoodComment[]
   moodMashes    MoodMash[]
   achievements  AchievementUser[]
+
+  // Encryption and E2EE fields
+  encryptionKey      EncryptionKey?
+  encryptedPrefs     EncryptedPreferences?
+  sentMessages       EncryptedMessage[] @relation("SentMessages")
+  receivedMessages   EncryptedMessage[] @relation("ReceivedMessages")
 }
 
 model VerificationToken {
@@ -163,4 +169,43 @@ model Credential {
   user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// Encryption key for a user
+model EncryptionKey {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKey     String   // Base64 encoded public key
+  salt          String   // Base64 encoded salt for key derivation
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Encrypted user preferences
+model EncryptedPreferences {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ciphertext    String   @db.Text // Base64 encoded encrypted data
+  nonce         String   // Base64 encoded nonce
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// Encrypted messages between users
+model EncryptedMessage {
+  id              String    @id @default(cuid())
+  senderId        String
+  sender          User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipientId     String
+  recipient       User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  ciphertext      String    @db.Text // Base64 encoded encrypted message
+  nonce           String    // Base64 encoded nonce
+  senderPublicKey String    // Base64 encoded sender's public key
+  timestamp       DateTime  @default(now())
+  read            Boolean   @default(false)
+  metadata        String?   @db.Text // Optional JSON metadata (e.g., message type)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 }
