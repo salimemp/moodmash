@@ -26,7 +26,7 @@ vi.mock('next/router', () => ({
 
 // Mock Next.js image
 vi.mock('next/image', () => ({
-  default: (props: any) => {
+  default: (props: Record<string, unknown>) => {
     const { src, alt, ...rest } = props;
     // eslint-disable-next-line @next/next/no-img-element
     return React.createElement('img', { src, alt, ...rest });

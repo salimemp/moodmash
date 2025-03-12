@@ -47,8 +47,18 @@ vi.mock('@/lib/auth/rate-limit', () => ({
   })),
 }));
 
+
+// Tests for Dashboard Stats functionality
+// Validates core behaviors and edge cases
+
+// Tests for the dashboard stats module
+// Validates core functionality and edge cases
+// Tests for dashboard stats api functionality
+// Validates expected behavior in various scenarios
 describe('Dashboard Stats API', () => {
-  it('handles method not allowed', async () => {
+  // Verifies handles method not allowed
+// Ensures expected behavior in this scenario
+it('handles method not allowed', async () => {
     // Mock the request
     const { req, res } = createMocks({
       method: 'POST',

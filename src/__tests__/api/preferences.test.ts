@@ -40,8 +40,18 @@ vi.mock('@/lib/auth/rate-limit', () => ({
   })),
 }));
 
+
+// Tests for Preferences functionality
+// Validates core behaviors and edge cases
+
+// Tests for the preferences module
+// Validates core functionality and edge cases
+// Tests for user preferences api functionality
+// Validates expected behavior in various scenarios
 describe('User Preferences API', () => {
-  it('handles method not allowed', async () => {
+  // Verifies handles method not allowed
+// Ensures expected behavior in this scenario
+it('handles method not allowed', async () => {
     const { req, res } = createMocks({
       method: 'DELETE',
     });

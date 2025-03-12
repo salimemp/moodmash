@@ -1,12 +1,20 @@
 import { compare, hash } from 'bcryptjs';
 
 export async function hashPassword(password: string): Promise<string> {
-  return hash(password, 12);
+  try {
+    return await hash(password, 12);
+  } catch (error: unknown) {
+    throw new Error('Error hashing password');
+  }
 }
 
 export async function comparePasswords(
   plainPassword: string,
   hashedPassword: string
 ): Promise<boolean> {
-  return compare(plainPassword, hashedPassword);
+  try {
+    return await compare(plainPassword, hashedPassword);
+  } catch (error: unknown) {
+    throw new Error('Error comparing passwords');
+  }
 }
