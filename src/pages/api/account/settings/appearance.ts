@@ -15,21 +15,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session using the compatibility utility
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // Get the appearance settings from the request body
     const appearanceSettings = req.body;
-    
+
     // Validate appearance settings
     if (typeof appearanceSettings !== 'object') {
       return res.status(400).json({ message: 'Invalid appearance settings' });
     }
 
     // Validate theme value
-    if (appearanceSettings.theme && !['light', 'dark', 'system'].includes(appearanceSettings.theme)) {
+    if (
+      appearanceSettings.theme &&
+      !['light', 'dark', 'system'].includes(appearanceSettings.theme)
+    ) {
       return res.status(400).json({ message: 'Invalid theme value' });
     }
 
@@ -60,9 +63,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (user.settings) {
       try {
-        currentSettings = typeof user.settings === 'string' 
-          ? JSON.parse(user.settings) 
-          : user.settings;
+        currentSettings =
+          typeof user.settings === 'string' ? JSON.parse(user.settings) : user.settings;
       } catch (e) {
         console.error('Error parsing user settings:', e);
       }
@@ -94,4 +96,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error updating appearance settings:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

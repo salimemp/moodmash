@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -31,16 +31,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get the expected challenge from the store
     const expectedChallenge = registrationChallengeStore[challengeId];
     if (!expectedChallenge) {
-      return res.status(400).json({ 
-        message: 'Registration challenge not found or expired. Please try again.' 
+      return res.status(400).json({
+        message: 'Registration challenge not found or expired. Please try again.',
       });
     }
 
     // Verify the registration
-    const verification = await verifyWebAuthnRegistration(
-      credential,
-      expectedChallenge,
-    );
+    const verification = await verifyWebAuthnRegistration(credential, expectedChallenge);
 
     // Remove the challenge from the store
     delete registrationChallengeStore[challengeId];
@@ -82,4 +79,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('WebAuthn registration verification error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -51,10 +51,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (user.settings) {
       try {
-        const parsedSettings = typeof user.settings === 'string' 
-          ? JSON.parse(user.settings) 
-          : user.settings;
-        
+        const parsedSettings =
+          typeof user.settings === 'string' ? JSON.parse(user.settings) : user.settings;
+
         settings = {
           notifications: {
             ...settings.notifications,
@@ -75,4 +74,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error fetching user settings:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

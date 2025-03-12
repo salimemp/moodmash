@@ -1,4 +1,4 @@
-export default {
+const themeConfig = {
   logo: <span style={{ fontWeight: 'bold' }}>MoodMash Docs</span>,
   project: {
     link: 'https://github.com/yourusername/moodmash',
@@ -6,8 +6,8 @@ export default {
   docsRepositoryBase: 'https://github.com/yourusername/moodmash/tree/main/docs',
   useNextSeoProps() {
     return {
-      titleTemplate: '%s – MoodMash Documentation'
-    }
+      titleTemplate: '%s – MoodMash Documentation',
+    };
   },
   head: (
     <>
@@ -17,18 +17,18 @@ export default {
     </>
   ),
   editLink: {
-    text: 'Edit this page on GitHub →'
+    text: 'Edit this page on GitHub →',
   },
   feedback: {
     content: 'Question? Give us feedback →',
-    labels: 'feedback'
+    labels: 'feedback',
   },
   sidebar: {
     titleComponent({ title, type }) {
       if (type === 'separator') {
-        return <span className="cursor-default">{title}</span>
+        return <span className="cursor-default">{title}</span>;
       }
-      return <>{title}</>
+      return <>{title}</>;
     },
     defaultMenuCollapseLevel: 1,
     toggleButton: true,
@@ -36,10 +36,10 @@ export default {
   footer: {
     text: (
       <div className="flex w-full flex-col items-center sm:items-start">
-        <p>
-          © {new Date().getFullYear()} MoodMash. All rights reserved.
-        </p>
+        <p>© {new Date().getFullYear()} MoodMash. All rights reserved.</p>
       </div>
-    )
-  }
-} 
+    ),
+  },
+};
+
+export default themeConfig;

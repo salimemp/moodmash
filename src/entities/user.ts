@@ -20,4 +20,4 @@ export interface Achievement {
   description: string;
   icon: string;
   unlockedAt?: Date;
-} 
+}

@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs';
 
 export class ApiError extends Error {
   statusCode: number;
-  
+
   constructor(statusCode: number, message: string) {
     super(message);
     this.statusCode = statusCode;
@@ -11,10 +11,7 @@ export class ApiError extends Error {
   }
 }
 
-type ApiHandler = (
-  req: NextApiRequest,
-  res: NextApiResponse
-) => Promise<void | NextApiResponse>;
+type ApiHandler = (req: NextApiRequest, res: NextApiResponse) => Promise<void | NextApiResponse>;
 
 /**
  * Wraps an API handler with error handling logic
@@ -27,10 +24,10 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
       return await handler(req, res);
     } catch (error) {
       console.error('API Error:', error);
-      
+
       // Capture the error with Sentry
       Sentry.captureException(error);
-      
+
       // Handle known API errors
       if (error instanceof ApiError) {
         res.status(error.statusCode).json({
@@ -38,11 +35,11 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
         });
         return;
       }
-      
+
       // Handle unexpected errors
       const statusCode = 500;
       const message = 'Internal Server Error';
-      
+
       res.status(statusCode).json({
         error: message,
       });
@@ -57,11 +54,7 @@ export function withErrorHandler(handler: ApiHandler): ApiHandler {
  * @param statusCode HTTP status code
  * @param message Error message
  */
-export function errorResponse(
-  res: NextApiResponse,
-  statusCode: number,
-  message: string
-): void {
+export function errorResponse(res: NextApiResponse, statusCode: number, message: string): void {
   res.status(statusCode).json({
     error: message,
   });
@@ -80,4 +73,4 @@ export function validationErrorResponse(
     error: 'Validation Error',
     errors,
   });
-} 
+}

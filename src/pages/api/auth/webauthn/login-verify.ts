@@ -1,10 +1,9 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { verifyWebAuthnAuthentication } from '@/lib/auth/webauthn';
-import { authenticationChallengeStore } from './login-options';
-import { rateLimit, resetRateLimit } from '@/lib/auth/rate-limit';
-import { db } from '@/lib/db/prisma';
-import { getServerSession } from 'next-auth';
 import { authConfig } from '@/lib/auth/auth.config';
+import { rateLimit, resetRateLimit } from '@/lib/auth/rate-limit';
+import { verifyWebAuthnAuthentication } from '@/lib/auth/webauthn';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import { getServerSession } from 'next-auth';
+import { authenticationChallengeStore } from './login-options';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -25,16 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get the challenge from the store
     const expectedChallenge = authenticationChallengeStore[requestId];
     if (!expectedChallenge) {
-      return res.status(400).json({ 
-        message: 'Authentication challenge not found or expired. Please try again.' 
+      return res.status(400).json({
+        message: 'Authentication challenge not found or expired. Please try again.',
       });
     }
 
     // Verify the authentication
-    const verification = await verifyWebAuthnAuthentication(
-      credential,
-      expectedChallenge,
-    );
+    const verification = await verifyWebAuthnAuthentication(credential, expectedChallenge);
 
     // Remove the challenge from the store
     delete authenticationChallengeStore[requestId];
@@ -50,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Create a custom JWT token for the user
     const session = await getServerSession(req, res, authConfig);
-    
+
     if (!session) {
       // If no session exists, return the user info for client-side sign-in
       return res.status(200).json({
@@ -74,4 +70,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('WebAuthn authentication verification error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

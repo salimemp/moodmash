@@ -25,31 +25,31 @@ export function MoodCard({
 }: MoodCardProps) {
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(likes);
-  
+
   const handleLike = () => {
     setLiked(!liked);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    setLikeCount(prev => (liked ? prev - 1 : prev + 1));
     // In a real app, you would call an API to update the like status
   };
 
   const timeAgo = (date: Date) => {
     const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
-    
+
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + 'y';
-    
+
     interval = seconds / 2592000;
     if (interval > 1) return Math.floor(interval) + 'mo';
-    
+
     interval = seconds / 86400;
     if (interval > 1) return Math.floor(interval) + 'd';
-    
+
     interval = seconds / 3600;
     if (interval > 1) return Math.floor(interval) + 'h';
-    
+
     interval = seconds / 60;
     if (interval > 1) return Math.floor(interval) + 'm';
-    
+
     return Math.floor(seconds) + 's';
   };
 
@@ -61,20 +61,13 @@ export function MoodCard({
   return (
     <Card className="overflow-hidden">
       <CardHeader className="p-0">
-        <div
-          className="h-48 flex items-center justify-center"
-          style={gradientStyle}
-        >
-          {emoji && (
-            <span className="text-6xl">{emoji}</span>
-          )}
+        <div className="h-48 flex items-center justify-center" style={gradientStyle}>
+          {emoji && <span className="text-6xl">{emoji}</span>}
         </div>
       </CardHeader>
       <CardContent className="pt-4">
         {text && <p className="text-sm">{text}</p>}
-        <p className="text-xs text-muted-foreground mt-2">
-          {timeAgo(createdAt)} ago
-        </p>
+        <p className="text-xs text-muted-foreground mt-2">{timeAgo(createdAt)} ago</p>
       </CardContent>
       <CardFooter className="flex justify-between pt-0">
         <Button
@@ -97,4 +90,4 @@ export function MoodCard({
       </CardFooter>
     </Card>
   );
-} 
+}

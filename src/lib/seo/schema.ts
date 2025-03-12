@@ -1,5 +1,5 @@
 /**
- * Helper functions to generate structured data for SEO 
+ * Helper functions to generate structured data for SEO
  * Using the Schema.org vocabulary
  */
 
@@ -9,9 +9,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://moodmash.com';
 /**
  * Generate BreadcrumbList schema
  */
-export function generateBreadcrumbSchema(
-  items: Array<{ name: string; url: string }>
-) {
+export function generateBreadcrumbSchema(items: Array<{ name: string; url: string }>) {
   return {
     '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
@@ -50,13 +48,11 @@ export function generatePersonSchema(
 /**
  * Generate FAQ schema
  */
-export function generateFAQSchema(
-  questions: Array<{ question: string; answer: string }>
-) {
+export function generateFAQSchema(questions: Array<{ question: string; answer: string }>) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: questions.map((item) => ({
+    mainEntity: questions.map(item => ({
       '@type': 'Question',
       name: item.question,
       acceptedAnswer: {
@@ -83,10 +79,12 @@ export function generateArticleSchema(
   keywords?: string[]
 ) {
   const fullImageUrl = image.startsWith('http') ? image : `${BASE_URL}${image}`;
-  const fullArticleUrl = articleUrl 
-    ? (articleUrl.startsWith('http') ? articleUrl : `${BASE_URL}${articleUrl}`)
+  const fullArticleUrl = articleUrl
+    ? articleUrl.startsWith('http')
+      ? articleUrl
+      : `${BASE_URL}${articleUrl}`
     : undefined;
-  
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Article',
@@ -97,7 +95,9 @@ export function generateArticleSchema(
     author: {
       '@type': 'Person',
       name: authorName,
-      ...(authorUrl && { url: authorUrl.startsWith('http') ? authorUrl : `${BASE_URL}${authorUrl}` }),
+      ...(authorUrl && {
+        url: authorUrl.startsWith('http') ? authorUrl : `${BASE_URL}${authorUrl}`,
+      }),
     },
     publisher: {
       '@type': 'Organization',
@@ -132,9 +132,7 @@ export function generateProductSchema(
   }
 ) {
   const fullImageUrl = image.startsWith('http') ? image : `${BASE_URL}${image}`;
-  const productUrl = url 
-    ? (url.startsWith('http') ? url : `${BASE_URL}${url}`)
-    : undefined;
+  const productUrl = url ? (url.startsWith('http') ? url : `${BASE_URL}${url}`) : undefined;
 
   return {
     '@context': 'https://schema.org',
@@ -156,4 +154,4 @@ export function generateProductSchema(
       },
     }),
   };
-} 
+}

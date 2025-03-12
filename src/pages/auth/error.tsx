@@ -2,7 +2,14 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 
 export default function AuthError() {
@@ -22,9 +29,10 @@ export default function AuthError() {
     'account-exists': 'An account already exists with a different provider.',
   };
 
-  const errorMessage = error && typeof error === 'string' 
-    ? errorMessages[error] || errorMessages.default
-    : errorMessages.default;
+  const errorMessage =
+    error && typeof error === 'string'
+      ? errorMessages[error] || errorMessages.default
+      : errorMessages.default;
 
   return (
     <>
@@ -39,9 +47,7 @@ export default function AuthError() {
               <CardTitle className="text-2xl font-bold text-center text-red-500">
                 Authentication Error
               </CardTitle>
-              <CardDescription className="text-center">
-                {errorMessage}
-              </CardDescription>
+              <CardDescription className="text-center">{errorMessage}</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center">
               <div className="text-center mb-4">
@@ -51,16 +57,11 @@ export default function AuthError() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-center space-x-4">
-              <Button 
-                variant="outline" 
-                onClick={() => router.back()}
-              >
+              <Button variant="outline" onClick={() => router.back()}>
                 Go Back
               </Button>
               <Button asChild>
-                <Link href="/auth/signin">
-                  Try Again
-                </Link>
+                <Link href="/auth/signin">Try Again</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -68,4 +69,4 @@ export default function AuthError() {
       </MainLayout>
     </>
   );
-} 
+}

@@ -1,7 +1,7 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { rateLimit } from '@/lib/auth/rate-limit';
 import { getSessionFromReq } from '@/lib/auth/utils';
 import { db } from '@/lib/db/prisma';
-import { rateLimit } from '@/lib/auth/rate-limit';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'GET') {
@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         lastUsed: true,
       },
       orderBy: { createdAt: 'desc' },
+      take: 50, // Limit the number of credentials to prevent performance issues
     });
 
     return res.status(200).json({
@@ -40,4 +41,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error fetching WebAuthn credentials:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

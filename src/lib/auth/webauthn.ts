@@ -1,3 +1,12 @@
+import { db } from '@/lib/db/prisma';
+import type {
+  GenerateAuthenticationOptionsOpts,
+  GenerateRegistrationOptionsOpts,
+  VerifiedAuthenticationResponse,
+  VerifiedRegistrationResponse,
+  VerifyAuthenticationResponseOpts,
+  VerifyRegistrationResponseOpts,
+} from '@simplewebauthn/server';
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
@@ -5,23 +14,14 @@ import {
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
 import type {
+  AttestationConveyancePreference,
   AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
   PublicKeyCredentialCreationOptionsJSON,
   PublicKeyCredentialRequestOptionsJSON,
   RegistrationResponseJSON,
-  AuthenticatorTransportFuture,
-  AttestationConveyancePreference,
   UserVerificationRequirement,
 } from '@simplewebauthn/types';
-import type {
-  VerifiedAuthenticationResponse,
-  VerifiedRegistrationResponse,
-  GenerateRegistrationOptionsOpts,
-  GenerateAuthenticationOptionsOpts,
-  VerifyRegistrationResponseOpts,
-  VerifyAuthenticationResponseOpts,
-} from '@simplewebauthn/server';
-import { db } from '@/lib/db/prisma';
 
 // Your RP (Relying Party) ID should be the domain name of your app
 // For local development, this works with domains like localhost or 127.0.0.1
@@ -42,6 +42,7 @@ export async function generateWebAuthnRegistrationOptions(
   const existingCredentials = await db.credential.findMany({
     where: { userId },
     select: { externalId: true },
+    take: 50, // Limit the number of credentials to prevent performance issues
   });
 
   const options: GenerateRegistrationOptionsOpts = {
@@ -93,6 +94,7 @@ export async function generateWebAuthnAuthenticationOptions(
     const userCredentials = await db.credential.findMany({
       where: { userId },
       select: { externalId: true },
+      take: 50, // Limit the number of credentials to prevent performance issues
     });
 
     allowCredentials = userCredentials.map((cred: { externalId: string }) => ({

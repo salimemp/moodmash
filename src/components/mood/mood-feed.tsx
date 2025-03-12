@@ -47,9 +47,9 @@ export function MoodFeed() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Recent Moods</h2>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {sampleMoods.map((mood) => (
-          <MoodCard 
-            key={mood.id} 
+        {sampleMoods.map(mood => (
+          <MoodCard
+            key={mood.id}
             id={mood.id}
             gradientColors={mood.gradientColors}
             emoji={mood.emoji}
@@ -62,4 +62,4 @@ export function MoodFeed() {
       </div>
     </div>
   );
-} 
+}

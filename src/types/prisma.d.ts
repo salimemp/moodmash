@@ -1,8 +1,87 @@
-import { 
-  PrismaClient as OriginalPrismaClient, 
-  Prisma as PrismaNamespace,
-  User
+import {
+  PrismaClient as OriginalPrismaClient,
+  Prisma as PrismaNamespace
 } from '@prisma/client';
+
+// Define the shape of Encryption Key record
+interface EncryptionKey {
+  id: string;
+  userId: string;
+  publicKey: string;
+  salt: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Define selection types for Encryption Key
+type EncryptionKeySelect = {
+  id?: boolean;
+  userId?: boolean;
+  publicKey?: boolean;
+  salt?: boolean;
+  createdAt?: boolean;
+  updatedAt?: boolean;
+};
+
+// Define the shape of Encrypted Preferences record
+interface EncryptedPreferences {
+  id: string;
+  userId: string;
+  ciphertext: string;
+  nonce: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Define selection types for Encrypted Preferences
+type EncryptedPreferencesSelect = {
+  id?: boolean;
+  userId?: boolean;
+  ciphertext?: boolean;
+  nonce?: boolean;
+  createdAt?: boolean;
+  updatedAt?: boolean;
+};
+
+// Define the shape of Encrypted Message record
+interface EncryptedMessage {
+  id: string;
+  senderId: string;
+  recipientId: string;
+  ciphertext: string;
+  nonce: string;
+  senderPublicKey: string;
+  timestamp: Date;
+  metadata?: string | null;
+  read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  sender?: {
+    id: string;
+    name?: string | null;
+    image?: string | null;
+  };
+  recipient?: {
+    id: string;
+    name?: string | null;
+    image?: string | null;
+  };
+}
+
+// Define selection types for Encrypted Message
+type EncryptedMessageSelect = {
+  id?: boolean;
+  senderId?: boolean;
+  recipientId?: boolean;
+  ciphertext?: boolean;
+  nonce?: boolean;
+  senderPublicKey?: boolean;
+  timestamp?: boolean;
+  metadata?: boolean;
+  read?: boolean;
+  createdAt?: boolean;
+  updatedAt?: boolean;
+};
 
 // Define the shape of the Encryption Key model
 interface EncryptionKeyModel {
@@ -11,16 +90,16 @@ interface EncryptionKeyModel {
       id?: string;
       userId?: string;
     };
-    select?: any;
-  }) => Promise<any>;
-  
+    select?: EncryptionKeySelect;
+  }) => Promise<EncryptionKey | null>;
+
   findFirst: (args: {
     where: {
       userId?: string;
     };
-    select?: any;
-  }) => Promise<any>;
-  
+    select?: EncryptionKeySelect;
+  }) => Promise<EncryptionKey | null>;
+
   update: (args: {
     where: {
       id?: string;
@@ -31,9 +110,9 @@ interface EncryptionKeyModel {
       salt?: string;
       updatedAt?: Date;
     };
-    select?: any;
-  }) => Promise<any>;
-  
+    select?: EncryptionKeySelect;
+  }) => Promise<EncryptionKey>;
+
   create: (args: {
     data: {
       userId: string;
@@ -41,8 +120,8 @@ interface EncryptionKeyModel {
       salt: string;
       user?: { connect: { id: string } };
     };
-    select?: any;
-  }) => Promise<any>;
+    select?: EncryptionKeySelect;
+  }) => Promise<EncryptionKey>;
 }
 
 // Define the shape of the Encrypted Preferences model
@@ -52,9 +131,9 @@ interface EncryptedPreferencesModel {
       id?: string;
       userId?: string;
     };
-    select?: any;
-  }) => Promise<any>;
-  
+    select?: EncryptedPreferencesSelect;
+  }) => Promise<EncryptedPreferences | null>;
+
   update: (args: {
     where: {
       id?: string;
@@ -65,9 +144,9 @@ interface EncryptedPreferencesModel {
       nonce: string;
       updatedAt?: Date;
     };
-    select?: any;
-  }) => Promise<any>;
-  
+    select?: EncryptedPreferencesSelect;
+  }) => Promise<EncryptedPreferences>;
+
   create: (args: {
     data: {
       userId: string;
@@ -75,8 +154,8 @@ interface EncryptedPreferencesModel {
       nonce: string;
       user?: { connect: { id: string } };
     };
-    select?: any;
-  }) => Promise<any>;
+    select?: EncryptedPreferencesSelect;
+  }) => Promise<EncryptedPreferences>;
 }
 
 // Define the shape of the Encrypted Message model
@@ -110,8 +189,8 @@ interface EncryptedMessageModel {
     };
     take?: number;
     skip?: number;
-  }) => Promise<any[]>;
-  
+  }) => Promise<EncryptedMessage[]>;
+
   count: (args: {
     where: {
       id?: string;
@@ -120,7 +199,7 @@ interface EncryptedMessageModel {
       read?: boolean;
     };
   }) => Promise<number>;
-  
+
   create: (args: {
     data: {
       sender: { connect: { id: string } };
@@ -132,12 +211,16 @@ interface EncryptedMessageModel {
       metadata?: string | null;
       read?: boolean;
     };
-    select?: any;
-  }) => Promise<any>;
+    select?: EncryptedMessageSelect;
+  }) => Promise<EncryptedMessage>;
 }
 
+// Define a type for generic Prisma promises instead of using any
+type PrismaPromise<T> = PrismaNamespace.PrismaPromise<T>;
+
 // Extend the transaction context for Prisma
-interface ExtendedTransactionClient extends Omit<PrismaNamespace.TransactionClient, keyof PrismaNamespace.TransactionClient> {
+interface ExtendedTransactionClient
+  extends Omit<PrismaNamespace.TransactionClient, keyof PrismaNamespace.TransactionClient> {
   encryptionKey: EncryptionKeyModel;
   encryptedPreferences: EncryptedPreferencesModel;
   encryptedMessage: EncryptedMessageModel;
@@ -149,16 +232,24 @@ declare module '@prisma/client' {
     encryptionKey: EncryptionKeyModel;
     encryptedPreferences: EncryptedPreferencesModel;
     encryptedMessage: EncryptedMessageModel;
-    
+
     // Extend the $transaction method to use our extended transaction client
-    $transaction<P extends PrismaNamespace.PrismaPromise<any>[]>(
+    $transaction<P extends PrismaPromise<unknown>[]>(
       arg: [...P],
-      options?: { maxWait?: number; timeout?: number; isolationLevel?: PrismaNamespace.TransactionIsolationLevel }
+      options?: {
+        maxWait?: number;
+        timeout?: number;
+        isolationLevel?: PrismaNamespace.TransactionIsolationLevel;
+      }
     ): Promise<PrismaNamespace.UnwrapTuple<P>>;
-    
+
     $transaction<R>(
       fn: (prisma: ExtendedTransactionClient) => Promise<R>,
-      options?: { maxWait?: number; timeout?: number; isolationLevel?: PrismaNamespace.TransactionIsolationLevel }
+      options?: {
+        maxWait?: number;
+        timeout?: number;
+        isolationLevel?: PrismaNamespace.TransactionIsolationLevel;
+      }
     ): Promise<R>;
   }
-} 
+}

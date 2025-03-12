@@ -15,7 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
@@ -53,10 +53,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         pages: Math.ceil(totalMoods / limit),
         currentPage: page,
         limit,
-      }
+      },
     });
   } catch (error) {
     console.error('Error fetching user moods:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

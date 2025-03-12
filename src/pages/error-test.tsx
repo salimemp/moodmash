@@ -52,7 +52,8 @@ const ErrorTestPage: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold mb-4">Without Error Boundary</h2>
             <p className="text-sm text-gray-500 mb-4">
-              This component relies on the app-level error boundary. If it crashes, the entire page will show the error UI.
+              This component relies on the app-level error boundary. If it crashes, the entire page
+              will show the error UI.
             </p>
             <ErrorTest />
           </div>
@@ -61,18 +62,19 @@ const ErrorTestPage: React.FC = () => {
         <div className="mt-12 p-6 bg-white rounded-lg shadow">
           <h2 className="text-xl font-semibold mb-4">About Error Handling</h2>
           <div className="prose">
-            <p>
-              This page demonstrates several error handling mechanisms:
-            </p>
+            <p>This page demonstrates several error handling mechanisms:</p>
             <ul className="list-disc pl-5 space-y-2">
               <li>
-                <strong>React Error Boundaries:</strong> Catch errors during rendering, in lifecycle methods, and in constructors.
+                <strong>React Error Boundaries:</strong> Catch errors during rendering, in lifecycle
+                methods, and in constructors.
               </li>
               <li>
-                <strong>Sentry Integration:</strong> Automatically captures unhandled exceptions and sends them to Sentry.
+                <strong>Sentry Integration:</strong> Automatically captures unhandled exceptions and
+                sends them to Sentry.
               </li>
               <li>
-                <strong>Custom Error UI:</strong> Provides a user-friendly interface when errors occur.
+                <strong>Custom Error UI:</strong> Provides a user-friendly interface when errors
+                occur.
               </li>
               <li>
                 <strong>Global Error Handler:</strong> Catches errors at the application level.
@@ -85,4 +87,4 @@ const ErrorTestPage: React.FC = () => {
   );
 };
 
-export default ErrorTestPage; 
+export default ErrorTestPage;

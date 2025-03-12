@@ -1,16 +1,13 @@
 'use client';
 
-import { ReactNode, useState } from 'react';
-import { useTheme } from '@/lib/providers/theme-provider';
 import { Button } from '@/components/ui/button/button';
-import { MoonIcon, SunIcon, UserIcon, LogOutIcon, LogInIcon, MenuIcon } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/modal/dialog';
+import { useTheme } from '@/lib/providers/theme-provider';
+import { LogInIcon, LogOutIcon, MenuIcon, MoonIcon, SunIcon, UserIcon } from 'lucide-react';
+import { signOut, useSession } from 'next-auth/react';
+import Image from 'next/image';
 import Link from 'next/link';
-import { useSession, signOut } from 'next-auth/react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogTrigger 
-} from '@/components/ui/modal/dialog';
+import { ReactNode, useState } from 'react';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -35,9 +32,11 @@ export function MainLayout({ children }: MainLayoutProps) {
       <header className="sticky top-0 z-50 border-b bg-background">
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="text-xl font-bold">MoodMash</Link>
+            <Link href="/" className="text-xl font-bold">
+              MoodMash
+            </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <nav className="flex items-center gap-6">
@@ -58,17 +57,16 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </>
               )}
             </nav>
-            
+
             <div className="flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleTheme}
-                aria-label="Toggle theme"
-              >
-                {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+              <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+                {theme === 'dark' ? (
+                  <SunIcon className="h-5 w-5" />
+                ) : (
+                  <MoonIcon className="h-5 w-5" />
+                )}
               </Button>
-              
+
               {status === 'loading' ? (
                 <div className="h-9 w-9 rounded-full bg-muted animate-pulse"></div>
               ) : session ? (
@@ -76,13 +74,17 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <DialogTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
                       {session.user?.image ? (
-                        <img 
-                          src={session.user.image} 
-                          alt={session.user.name || 'User'} 
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
                           className="h-8 w-8 rounded-full"
+                          width={32}
+                          height={32}
                         />
                       ) : (
-                        <UserIcon className="h-5 w-5" />
+                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <UserIcon className="h-5 w-5" />
+                        </div>
                       )}
                     </Button>
                   </DialogTrigger>
@@ -98,8 +100,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                           Profile
                         </Button>
                       </Link>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                         onClick={handleSignOut}
                       >
@@ -119,41 +121,36 @@ export function MainLayout({ children }: MainLayoutProps) {
               )}
             </div>
           </div>
-          
+
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-            >
-              {theme === 'dark' ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
+            <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+              {theme === 'dark' ? (
+                <SunIcon className="h-5 w-5" />
+              ) : (
+                <MoonIcon className="h-5 w-5" />
+              )}
             </Button>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               <MenuIcon className="h-5 w-5" />
             </Button>
           </div>
         </div>
-        
+
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t">
             <div className="container py-4 space-y-4">
               <nav className="flex flex-col space-y-4">
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   className="text-sm font-medium hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Home
                 </Link>
-                <Link 
-                  href="/explore" 
+                <Link
+                  href="/explore"
                   className="text-sm font-medium hover:text-primary"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -161,15 +158,15 @@ export function MainLayout({ children }: MainLayoutProps) {
                 </Link>
                 {session && (
                   <>
-                    <Link 
-                      href="/dashboard" 
+                    <Link
+                      href="/dashboard"
                       className="text-sm font-medium hover:text-primary"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Dashboard
                     </Link>
-                    <Link 
-                      href="/profile" 
+                    <Link
+                      href="/profile"
                       className="text-sm font-medium hover:text-primary"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -178,7 +175,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   </>
                 )}
               </nav>
-              
+
               <div className="pt-4 border-t">
                 {status === 'loading' ? (
                   <div className="h-9 w-full bg-muted animate-pulse rounded"></div>
@@ -186,21 +183,25 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <div className="space-y-4">
                     <div className="flex items-center gap-4">
                       {session.user?.image ? (
-                        <img 
-                          src={session.user.image} 
-                          alt={session.user.name || 'User'} 
+                        <Image
+                          src={session.user.image}
+                          alt={session.user.name || 'User'}
                           className="h-8 w-8 rounded-full"
+                          width={32}
+                          height={32}
                         />
                       ) : (
-                        <UserIcon className="h-8 w-8 p-1 bg-muted rounded-full" />
+                        <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <UserIcon className="h-5 w-5" />
+                        </div>
                       )}
                       <div>
                         <p className="font-medium">{session.user?.name}</p>
                         <p className="text-sm text-muted-foreground">{session.user?.email}</p>
                       </div>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="w-full justify-start"
                       onClick={handleSignOut}
                     >
@@ -209,11 +210,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                     </Button>
                   </div>
                 ) : (
-                  <Button 
-                    className="w-full" 
-                    asChild
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Button className="w-full" asChild onClick={() => setMobileMenuOpen(false)}>
                     <Link href="/auth/signin">
                       <LogInIcon className="mr-2 h-4 w-4" />
                       Sign in
@@ -225,9 +222,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           </div>
         )}
       </header>
-      <main className="container py-6">
-        {children}
-      </main>
+      <main className="container py-6">{children}</main>
       <footer className="border-t bg-background">
         <div className="container py-6 text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} MoodMash App
@@ -235,4 +230,4 @@ export function MainLayout({ children }: MainLayoutProps) {
       </footer>
     </div>
   );
-} 
+}

@@ -39,4 +39,4 @@ export interface MoodMash {
   resultText?: string;
   userId: string;
   createdAt: Date;
-} 
+}

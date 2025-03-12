@@ -4,7 +4,14 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { GithubIcon, GoogleIcon } from '@/components/ui/icons';
 import { WebAuthnLogin } from '@/components/auth/WebAuthnLogin';
@@ -62,9 +69,7 @@ export default function SignIn() {
         <div className="flex justify-center items-center py-10">
           <Card className="w-full max-w-md">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">
-                Sign In
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">Sign In</CardTitle>
               <CardDescription className="text-center">
                 Enter your credentials to sign in to your account
               </CardDescription>
@@ -91,10 +96,10 @@ export default function SignIn() {
                     GitHub
                   </Button>
                 </div>
-                
+
                 {/* WebAuthn Login Button */}
                 <WebAuthnLogin />
-                
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t" />
@@ -116,7 +121,7 @@ export default function SignIn() {
                         type="email"
                         placeholder="name@example.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={e => setEmail(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -130,16 +135,14 @@ export default function SignIn() {
                         type="password"
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={e => setPassword(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
-                    {error && (
-                      <div className="text-sm text-red-500">{error}</div>
-                    )}
+                    {error && <div className="text-sm text-red-500">{error}</div>}
                     <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Signing in..." : "Sign In"}
+                      {isLoading ? 'Signing in...' : 'Sign In'}
                     </Button>
                   </div>
                 </form>
@@ -147,7 +150,7 @@ export default function SignIn() {
             </CardContent>
             <CardFooter className="flex flex-col space-y-4">
               <div className="text-sm text-center text-muted-foreground">
-                <Link 
+                <Link
                   href="/auth/reset-password"
                   className="text-primary underline underline-offset-4 hover:text-primary/90"
                 >
@@ -155,8 +158,8 @@ export default function SignIn() {
                 </Link>
               </div>
               <div className="text-sm text-center text-muted-foreground">
-                Don&apos;t have an account?{" "}
-                <Link 
+                Don&apos;t have an account?{' '}
+                <Link
                   href="/auth/register"
                   className="text-primary underline underline-offset-4 hover:text-primary/90"
                 >
@@ -169,4 +172,4 @@ export default function SignIn() {
       </MainLayout>
     </>
   );
-} 
+}

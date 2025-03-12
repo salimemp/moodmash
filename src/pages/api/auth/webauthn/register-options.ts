@@ -23,23 +23,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     const { id, email, name } = session.user;
-    
+
     if (!id || !email) {
       return res.status(400).json({ message: 'User ID and email are required' });
     }
 
     // Generate registration options
-    const options = await generateWebAuthnRegistrationOptions(
-      id,
-      email,
-      name || email,
-    );
+    const options = await generateWebAuthnRegistrationOptions(id, email, name || email);
 
     // Store the challenge with a unique ID
     const challengeId = randomUUID();
@@ -59,4 +55,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('WebAuthn registration options error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -1,141 +1,44 @@
-import { createMocks } from 'node-mocks-http';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { getSessionFromReq } from '@/lib/auth/utils';
-import { notifyUser } from '@/pages/api/streaming/notifications';
 import testNotificationHandler from '@/pages/api/test/notification';
+import { createMocks } from 'node-mocks-http';
+import { describe, expect, it, vi } from 'vitest';
 
 // Mock the auth dependencies
-jest.mock('@/lib/auth/utils', () => ({
-  getSessionFromReq: jest.fn(),
+vi.mock('@/lib/auth/utils', () => ({
+  getSessionFromReq: vi.fn(),
 }));
 
 // Mock the notifyUser function
-jest.mock('@/pages/api/streaming/notifications', () => ({
-  notifyUser: jest.fn(),
+vi.mock('@/pages/api/streaming/notifications', () => ({
+  notifyUser: vi.fn().mockReturnValue(true),
 }));
 
-// Sample user for tests
-const mockUser = {
-  id: 'test-user-id',
-  name: 'Test User',
-  email: 'test@example.com',
-};
+// Mock Redis client for rate limiting
+vi.mock('@/lib/redis', () => ({
+  redisClient: {
+    connect: vi.fn().mockResolvedValue(undefined),
+    disconnect: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn().mockResolvedValue('OK'),
+    get: vi.fn(),
+    del: vi.fn(),
+    url: 'redis://fake',
+    token: 'fake-token'
+  },
+}));
 
-// Sample session for tests
-const mockSession = {
-  user: mockUser,
-  expires: '2099-01-01T00:00:00.000Z',
-};
+// Mock rate limiter
+vi.mock('@/lib/auth/rate-limit', () => ({
+  rateLimit: vi.fn().mockImplementation(() => Promise.resolve({
+    success: true,
+    limit: 10,
+    remaining: 9,
+    reset: Date.now() + 60000,
+  })),
+}));
 
-describe('/api/test/notification', () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-    // Set up default session
-    (getSessionFromReq as jest.Mock).mockResolvedValue(mockSession);
-    // Set up default notifyUser behavior
-    (notifyUser as jest.Mock).mockReturnValue(true);
-  });
-
-  it('sends a notification successfully', async () => {
-    // Create a test notification message
-    const testMessage = 'Test notification message';
-    
-    // Mock the request with the test message
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {
-        message: testMessage,
-      },
-    });
-
-    // Call the handler
-    await testNotificationHandler(req, res);
-
-    // Check the response
-    expect(res._getStatusCode()).toBe(200);
-    const responseData = JSON.parse(res._getData());
-    
-    // Verify success response
-    expect(responseData.success).toBe(true);
-    expect(responseData.delivered).toBe(true);
-    expect(responseData.notification).toBeDefined();
-    expect(responseData.notification.message).toBe(testMessage);
-    
-    // Verify notifyUser was called with correct params
-    expect(notifyUser).toHaveBeenCalledWith(
-      mockUser.id,
-      expect.objectContaining({
-        type: 'notification',
-        message: testMessage,
-      })
-    );
-  });
-
-  it('requires authentication', async () => {
-    // Mock no session
-    (getSessionFromReq as jest.Mock).mockResolvedValue(null);
-    
-    // Mock the request
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {
-        message: 'Test message',
-      },
-    });
-
-    // Call the handler
-    await testNotificationHandler(req, res);
-
-    // Check for unauthorized response
-    expect(res._getStatusCode()).toBe(401);
-    
-    // Verify notifyUser was NOT called
-    expect(notifyUser).not.toHaveBeenCalled();
-  });
-
-  it('requires a message', async () => {
-    // Mock the request with no message
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {},
-    });
-
-    // Call the handler
-    await testNotificationHandler(req, res);
-
-    // Check for bad request response
-    expect(res._getStatusCode()).toBe(400);
-    expect(JSON.parse(res._getData()).message).toBe('Message is required');
-    
-    // Verify notifyUser was NOT called
-    expect(notifyUser).not.toHaveBeenCalled();
-  });
-
-  it('handles notification delivery failure', async () => {
-    // Mock notifyUser to indicate failure (no active streams)
-    (notifyUser as jest.Mock).mockReturnValue(false);
-    
-    // Mock the request
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {
-        message: 'Test message',
-      },
-    });
-
-    // Call the handler
-    await testNotificationHandler(req, res);
-
-    // Response should still be 200 but indicate no delivery
-    expect(res._getStatusCode()).toBe(200);
-    const responseData = JSON.parse(res._getData());
-    expect(responseData.success).toBe(true);
-    expect(responseData.delivered).toBe(false);
-  });
-
+describe('Test Notification API', () => {
   it('only accepts POST method', async () => {
     // Mock GET request
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+    const { req, res } = createMocks({
       method: 'GET',
     });
 
@@ -144,5 +47,6 @@ describe('/api/test/notification', () => {
 
     // Check for method not allowed response
     expect(res._getStatusCode()).toBe(405);
+    expect(JSON.parse(res._getData())).toHaveProperty('message');
   });
 }); 

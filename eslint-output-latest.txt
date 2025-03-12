@@ -1,0 +1,88 @@
+
+C:\Users\abdul\Desktop\moodmash\src\__tests__\api\dashboard-stats.test.ts
+  150:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\lib\api\client.ts
+   95:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:13  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  101:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  107:16  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\lib\api\streaming.ts
+   15:40  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+   74:5   error  'closeOnComplete' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  120:18  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  196:23  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  239:29  error  'event' is defined but never used. Allowed unused args must match /^_/u                     @typescript-eslint/no-unused-vars
+
+C:\Users\abdul\Desktop\moodmash\src\lib\auth\mfa.ts
+  102:12  error  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\abdul\Desktop\moodmash\src\lib\email\sendPasswordResetEmail.ts
+  82:5  warning  Unexpected console statement  no-console
+
+C:\Users\abdul\Desktop\moodmash\src\lib\email\sendVerificationEmail.ts
+  81:5  warning  Unexpected console statement  no-console
+
+C:\Users\abdul\Desktop\moodmash\src\lib\encryption\crypto.ts
+   16:7   error  'KEY_LENGTH' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+   17:7   error  'SECRET_LENGTH' is assigned a value but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+   20:7   error  'AUTH_KEY_LENGTH' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   41:20  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  291:45  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  313:4   error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  321:12  error  'e' is defined but never used                                                               @typescript-eslint/no-unused-vars
+  356:49  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+  366:90  error  Unexpected any. Specify a different type                                                    @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\lib\hooks\useEncryptedPreferences.ts
+   69:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  197:14  error  '_' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\abdul\Desktop\moodmash\src\lib\hooks\useFetch.ts
+    5:6   error  'FetcherFn' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   27:33  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   27:46  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   43:72  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   43:89  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   79:69  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+   79:86  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  102:36  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  102:49  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+  102:69  error  Unexpected any. Specify a different type                                     @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\lib\hooks\usePreferences.ts
+   37:9   warning  The 'defaultPreferences' object makes the dependencies of useCallback Hook (at line 76) change on every render. To fix this, wrap the initialization of 'defaultPreferences' in its own useMemo() Hook  react-hooks/exhaustive-deps
+  147:14  error    '_' is defined but never used                                                                                                                                                                           @typescript-eslint/no-unused-vars
+
+C:\Users\abdul\Desktop\moodmash\src\lib\patched-next-auth.ts
+  30:9  warning  Unexpected console statement  no-console
+  39:9  warning  Unexpected console statement  no-console
+
+C:\Users\abdul\Desktop\moodmash\src\pages\_app.tsx
+  27:5  warning  Unexpected console statement  no-console
+
+C:\Users\abdul\Desktop\moodmash\src\pages\api-docs.tsx
+  13:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\pages\api\auth\webauthn\login-verify.ts
+  5:10  error  'db' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\abdul\Desktop\moodmash\src\pages\api\dashboard\stats.ts
+  117:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\pages\api\messages\secure.ts
+  171:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\abdul\Desktop\moodmash\src\pages\api\streaming\notifications.ts
+   5:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  10:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  57:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 51 problems (45 errors, 6 warnings)
+

@@ -8,7 +8,14 @@ const redis = new Redis({
 });
 
 // Define rate limit types
-type RateLimitType = 'general' | 'auth' | 'mfa' | 'api' | 'login' | 'passwordReset' | 'emailVerification';
+type RateLimitType =
+  | 'general'
+  | 'auth'
+  | 'mfa'
+  | 'api'
+  | 'login'
+  | 'passwordReset'
+  | 'emailVerification';
 
 // Configure rate limits for different actions
 const rateLimits: Record<RateLimitType, { max: number; window: number; message: string }> = {
@@ -61,17 +68,15 @@ export async function rateLimit(
 ): Promise<boolean> {
   try {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    
+
     // Use IP address as identifier if none provided
-    const key = identifier 
-      ? `ratelimit:${type}:${identifier}` 
-      : `ratelimit:${type}:ip:${ip}`;
-    
+    const key = identifier ? `ratelimit:${type}:${identifier}` : `ratelimit:${type}:ip:${ip}`;
+
     const config = rateLimits[type];
-    
+
     // Get current count
-    const current = await redis.get<number>(key) || 0;
-    
+    const current = (await redis.get<number>(key)) || 0;
+
     if (current >= config.max) {
       // Rate limit exceeded
       res.setHeader('Retry-After', config.window);
@@ -81,16 +86,16 @@ export async function rateLimit(
 
     // Increment count
     await redis.incr(key);
-    
+
     // Set expiry if first request
     if (current === 0) {
       await redis.expire(key, config.window);
     }
-    
+
     // Add rate limit headers
     res.setHeader('X-RateLimit-Limit', config.max);
     res.setHeader('X-RateLimit-Remaining', Math.max(0, config.max - current - 1));
-    
+
     return true;
   } catch (error) {
     console.error('Rate limit error:', error);
@@ -102,10 +107,7 @@ export async function rateLimit(
 /**
  * Reset rate limit for a specific identifier
  */
-export async function resetRateLimit(
-  type: RateLimitType,
-  identifier: string
-): Promise<void> {
+export async function resetRateLimit(type: RateLimitType, identifier: string): Promise<void> {
   try {
     const key = `ratelimit:${type}:${identifier}`;
     await redis.del(key);
@@ -117,20 +119,18 @@ export async function resetRateLimit(
 /**
  * Increment failed attempt counter for login brute force protection
  */
-export async function incrementFailedLoginAttempts(
-  identifier: string
-): Promise<number> {
+export async function incrementFailedLoginAttempts(identifier: string): Promise<number> {
   try {
     const key = `ratelimit:login:${identifier}`;
     const current = await redis.incr(key);
-    
+
     if (current === 1) {
       await redis.expire(key, 60);
     }
-    
+
     return current;
   } catch (error) {
     console.error('Increment failed login attempts error:', error);
     return 0;
   }
-} 
+}

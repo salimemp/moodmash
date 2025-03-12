@@ -7,26 +7,26 @@ module.exports = {
   i18n: {
     defaultLocale: 'en',
     locales: [
-      'en',      // English
-      'es',      // Spanish
-      'fr',      // French
-      'de',      // German
-      'zh',      // Chinese
-      'ja',      // Japanese
-      'ko',      // Korean
-      'ru',      // Russian
-      'pt',      // Portuguese
-      'it',      // Italian
-      'ar',      // Arabic (RTL)
-      'he',      // Hebrew (RTL)
-      'fa',      // Persian/Farsi (RTL)
-      'ur',      // Urdu (RTL)
-      'hi',      // Hindi
-      'bn',      // Bengali
-      'tr',      // Turkish
-      'nl',      // Dutch
-      'sv',      // Swedish
-      'pl',      // Polish
+      'en', // English
+      'es', // Spanish
+      'fr', // French
+      'de', // German
+      'zh', // Chinese
+      'ja', // Japanese
+      'ko', // Korean
+      'ru', // Russian
+      'pt', // Portuguese
+      'it', // Italian
+      'ar', // Arabic (RTL)
+      'he', // Hebrew (RTL)
+      'fa', // Persian/Farsi (RTL)
+      'ur', // Urdu (RTL)
+      'hi', // Hindi
+      'bn', // Bengali
+      'tr', // Turkish
+      'nl', // Dutch
+      'sv', // Swedish
+      'pl', // Polish
     ],
     // List of RTL languages for special handling
     rtlLocales: ['ar', 'he', 'fa', 'ur'],
@@ -41,7 +41,7 @@ module.exports = {
   // Configuration for server-side rendering
   serializeConfig: false,
   // Allow using HTML in translation strings
-  react: { 
+  react: {
     useSuspense: false,
     transSupportBasicHtmlNodes: true,
     transKeepBasicHtmlNodesFor: ['br', 'strong', 'i', 'em', 'p', 'span'],
@@ -56,6 +56,5 @@ module.exports = {
     lookupLocalStorage: 'i18nextLng',
     caches: ['cookie', 'localStorage'],
     cookieSecure: process.env.NODE_ENV === 'production',
-    htmlTag: document.documentElement,
   },
-} 
+};

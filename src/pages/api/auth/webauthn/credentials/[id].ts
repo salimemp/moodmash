@@ -47,8 +47,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Don't allow deleting the last credential if it's the only one
     if (credentialCount <= 1) {
-      return res.status(400).json({ 
-        message: 'Cannot delete your only passkey. Add another one first.' 
+      return res.status(400).json({
+        message: 'Cannot delete your only passkey. Add another one first.',
       });
     }
 
@@ -64,4 +64,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error deleting credential:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -3,14 +3,21 @@ import { useRouter } from 'next/router';
 import { MainLayout } from '@/components/layout/main-layout';
 import Head from 'next/head';
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function VerifyEmail() {
   const router = useRouter();
   const { token } = router.query;
-  
+
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('Verifying your email...');
 
@@ -27,7 +34,8 @@ export default function VerifyEmail() {
           setMessage(data.message || 'Your email has been verified successfully!');
         } else {
           setStatus('error');
-          const errorMessage = data.message || 'Failed to verify your email. The link may have expired or is invalid.';
+          const errorMessage =
+            data.message || 'Failed to verify your email. The link may have expired or is invalid.';
           setMessage(errorMessage);
           console.error('Email verification error:', errorMessage);
         }
@@ -56,21 +64,15 @@ export default function VerifyEmail() {
                 {status === 'loading' && (
                   <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                 )}
-                {status === 'success' && (
-                  <CheckCircle className="w-16 h-16 text-green-500" />
-                )}
-                {status === 'error' && (
-                  <XCircle className="w-16 h-16 text-red-500" />
-                )}
+                {status === 'success' && <CheckCircle className="w-16 h-16 text-green-500" />}
+                {status === 'error' && <XCircle className="w-16 h-16 text-red-500" />}
               </div>
               <CardTitle className="text-2xl font-bold text-center">
                 {status === 'loading' && 'Verifying Email'}
                 {status === 'success' && 'Email Verified'}
                 {status === 'error' && 'Verification Failed'}
               </CardTitle>
-              <CardDescription className="text-center">
-                {message}
-              </CardDescription>
+              <CardDescription className="text-center">{message}</CardDescription>
             </CardHeader>
             <CardContent>
               {status === 'success' && (
@@ -80,7 +82,8 @@ export default function VerifyEmail() {
               )}
               {status === 'error' && (
                 <p className="text-center text-sm text-muted-foreground">
-                  You can request a new verification link from your profile or contact support if the issue persists.
+                  You can request a new verification link from your profile or contact support if
+                  the issue persists.
                 </p>
               )}
             </CardContent>
@@ -96,4 +99,4 @@ export default function VerifyEmail() {
       </MainLayout>
     </>
   );
-} 
+}

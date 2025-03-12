@@ -36,8 +36,8 @@ const CustomErrorPage: NextPage<CustomErrorProps> = ({ statusCode, title }) => {
         </h1>
         <p className="text-gray-600 mb-6">
           {statusCode === 404
-            ? "We couldn&apos;t find the page you were looking for."
-            : "We&apos;re sorry, but something went wrong on our end."}
+            ? 'We couldn&apos;t find the page you were looking for.'
+            : 'We&apos;re sorry, but something went wrong on our end.'}
         </p>
         <div className="space-y-4">
           <Link href="/">
@@ -62,10 +62,10 @@ interface ErrorWithStatusCode extends Error {
 
 CustomErrorPage.getInitialProps = ({ res, err }: NextPageContext): CustomErrorProps => {
   const statusCode = res ? res.statusCode : err ? (err as ErrorWithStatusCode).statusCode : 404;
-  return { 
+  return {
     statusCode: statusCode || 500, // Ensure statusCode is always a number
-    title: err?.message || 'Unknown error' 
+    title: err?.message || 'Unknown error',
   };
 };
 
-export default CustomErrorPage; 
+export default CustomErrorPage;

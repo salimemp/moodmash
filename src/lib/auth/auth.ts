@@ -19,4 +19,4 @@ export const signIn = () => {
 
 export const signOut = () => {
   throw new Error('Use next-auth/react signOut instead');
-}; 
+};

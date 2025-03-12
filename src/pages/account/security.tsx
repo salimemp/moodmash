@@ -108,7 +108,8 @@ export default function SecuritySettings() {
               <CardHeader>
                 <CardTitle className="text-xl">Two-Factor Authentication</CardTitle>
                 <CardDescription>
-                  Add an extra layer of security to your account by requiring a verification code when you sign in.
+                  Add an extra layer of security to your account by requiring a verification code
+                  when you sign in.
                 </CardDescription>
               </CardHeader>
               <CardContent>

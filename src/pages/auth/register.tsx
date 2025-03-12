@@ -3,7 +3,14 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { GithubIcon, GoogleIcon } from '@/components/ui/icons';
 import { signIn } from 'next-auth/react';
@@ -80,9 +87,7 @@ export default function Register() {
         <div className="flex justify-center items-center py-10">
           <Card className="w-full max-w-md">
             <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">
-                Create an account
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
               <CardDescription className="text-center">
                 Enter your information to create a MoodMash account
               </CardDescription>
@@ -130,7 +135,7 @@ export default function Register() {
                         type="text"
                         placeholder="John Doe"
                         value={name}
-                        onChange={(e) => setName(e.target.value)}
+                        onChange={e => setName(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -144,7 +149,7 @@ export default function Register() {
                         type="email"
                         placeholder="name@example.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={e => setEmail(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -158,7 +163,7 @@ export default function Register() {
                         type="password"
                         placeholder="••••••••"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={e => setPassword(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
@@ -172,16 +177,14 @@ export default function Register() {
                         type="password"
                         placeholder="••••••••"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={e => setConfirmPassword(e.target.value)}
                         required
                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                     </div>
-                    {error && (
-                      <div className="text-sm text-red-500">{error}</div>
-                    )}
+                    {error && <div className="text-sm text-red-500">{error}</div>}
                     <Button type="submit" disabled={isLoading}>
-                      {isLoading ? "Creating account..." : "Create account"}
+                      {isLoading ? 'Creating account...' : 'Create account'}
                     </Button>
                   </div>
                 </form>
@@ -189,8 +192,8 @@ export default function Register() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <div className="text-sm text-center text-muted-foreground">
-                Already have an account?{" "}
-                <Link 
+                Already have an account?{' '}
+                <Link
                   href="/auth/signin"
                   className="text-primary underline underline-offset-4 hover:text-primary/90"
                 >
@@ -203,4 +206,4 @@ export default function Register() {
       </MainLayout>
     </>
   );
-} 
+}

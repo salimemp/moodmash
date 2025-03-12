@@ -37,4 +37,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Token validation error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

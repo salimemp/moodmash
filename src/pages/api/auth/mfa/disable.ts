@@ -31,10 +31,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get user's MFA information
     const user = await db.user.findUnique({
       where: { id: userId },
-      select: { 
+      select: {
         mfaEnabled: true,
         mfaSecret: true,
-        mfaBackupCodes: true
+        mfaBackupCodes: true,
       },
     });
 
@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verify the code based on type
     let isValid = false;
-    
+
     if (isBackupCode) {
       // Verify backup code
       isValid = await verifyBackupCode(userId, code);
@@ -57,7 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!user.mfaSecret) {
         return res.status(400).json({ message: 'MFA secret not found' });
       }
-      
+
       isValid = verifyTOTP(code, user.mfaSecret);
     }
 
@@ -80,4 +80,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error disabling MFA:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

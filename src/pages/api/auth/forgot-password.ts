@@ -55,4 +55,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Password reset request error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

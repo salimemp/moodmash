@@ -13,12 +13,12 @@ export function WebAuthnRegister() {
 
       // 1. Get registration options from the server
       const optionsResponse = await fetch('/api/auth/webauthn/register-options');
-      
+
       if (!optionsResponse.ok) {
         const error = await optionsResponse.json();
         throw new Error(error.message || 'Failed to get registration options');
       }
-      
+
       const { options, challengeId } = await optionsResponse.json();
 
       // 2. Start the registration process in the browser
@@ -41,12 +41,11 @@ export function WebAuthnRegister() {
 
       // Registration was successful, proceed
       await verificationResponse.json();
-      
+
       // 4. Show success message
       toast.success('Passkey registered successfully!', {
         description: 'You can now use this device to sign in.',
       });
-      
     } catch (error) {
       console.error('WebAuthn registration error:', error);
       toast.error('Failed to register passkey', {
@@ -58,12 +57,7 @@ export function WebAuthnRegister() {
   };
 
   return (
-    <Button
-      onClick={handleRegister}
-      disabled={isRegistering}
-      variant="outline"
-      className="w-full"
-    >
+    <Button onClick={handleRegister} disabled={isRegistering} variant="outline" className="w-full">
       {isRegistering ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -77,4 +71,4 @@ export function WebAuthnRegister() {
       )}
     </Button>
   );
-} 
+}

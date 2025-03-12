@@ -1,8 +1,3 @@
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/router';
-import Head from 'next/head';
-import Image from 'next/image';
 import { MainLayout } from '@/components/layout/main-layout';
 import { Button } from '@/components/ui/button/button';
 import {
@@ -13,9 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card/card';
-import { User, Upload, Loader2, Save, X, RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
 import { useMutation } from '@/lib/hooks/useFetch';
+import { Loader2, Save, Upload, User, X } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Head from 'next/head';
+import Image from 'next/image';
+import { useRouter } from 'next/router';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 interface ExtendedUser {
   id: string;
@@ -23,12 +23,6 @@ interface ExtendedUser {
   email?: string | null;
   image?: string | null;
   bio?: string | null;
-}
-
-interface ProfileUpdateData {
-  name: string;
-  bio: string;
-  image: string;
 }
 
 export default function EditProfile() {
@@ -42,8 +36,8 @@ export default function EditProfile() {
   const [isUploading, setIsUploading] = useState(false);
 
   // Use the enhanced mutation hook for profile updates
-  const [updateProfile, { isLoading: isSaving, error: updateError, reset: resetUpdateError }] = 
-    useMutation<{ success: boolean, user: ExtendedUser }, ProfileUpdateData>(
+  const [updateProfile, { isLoading: isSaving, error: _updateError, reset: resetUpdateError }] =
+    useMutation<{ success: boolean; user: ExtendedUser }, { name: string; bio: string; image: string }>(
       '/api/profile/update',
       'POST',
       {
@@ -51,7 +45,7 @@ export default function EditProfile() {
         messages: {
           loading: 'Saving profile changes...',
           success: 'Profile updated successfully',
-          error: 'Failed to update profile'
+          error: 'Failed to update profile',
         },
         // Optimistic update function would go here if needed
         // optimisticUpdate: (data) => { ... }
@@ -79,12 +73,12 @@ export default function EditProfile() {
     if (file) {
       // Check file size (limit to 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image too large', { 
-          description: 'Please select an image under 5MB' 
+        toast.error('Image too large', {
+          description: 'Please select an image under 5MB',
         });
         return;
       }
-      
+
       setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -102,16 +96,16 @@ export default function EditProfile() {
 
   const uploadImage = async () => {
     if (!imageFile) return null;
-    
+
     setIsUploading(true);
-    
+
     try {
       // Create form data for image upload
       const formData = new FormData();
       formData.append('file', imageFile);
 
       const toastId = toast.loading('Uploading image...');
-      
+
       const uploadResponse = await fetch('/api/upload/profile-image', {
         method: 'POST',
         body: formData,
@@ -123,7 +117,7 @@ export default function EditProfile() {
 
       const uploadData = await uploadResponse.json();
       toast.success('Image uploaded', { id: toastId });
-      
+
       return uploadData.url;
     } catch (error) {
       console.error('Error uploading image:', error);
@@ -136,7 +130,7 @@ export default function EditProfile() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     try {
       // First upload image if needed
       let imageUrl = image;
@@ -164,7 +158,7 @@ export default function EditProfile() {
             image: imageUrl,
           },
         });
-        
+
         // Navigate back to profile page
         router.push('/profile');
       }
@@ -173,7 +167,7 @@ export default function EditProfile() {
       console.error('Error in profile update flow:', error);
     }
   };
-  
+
   // Reset error when leaving page
   useEffect(() => {
     return () => resetUpdateError();
@@ -229,7 +223,13 @@ export default function EditProfile() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button type="button" variant="outline" size="sm" className="relative" disabled={isUploading}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="relative"
+                      disabled={isUploading}
+                    >
                       <input
                         type="file"
                         accept="image/*"
@@ -241,10 +241,10 @@ export default function EditProfile() {
                       Upload Image
                     </Button>
                     {imagePreview && imagePreview !== image && (
-                      <Button 
-                        type="button" 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={removeImage}
                         disabled={isUploading}
                       >
@@ -291,18 +291,15 @@ export default function EditProfile() {
               </CardContent>
 
               <CardFooter className="flex justify-between">
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => router.push('/profile')}
                   disabled={isSaving || isUploading}
                 >
                   Cancel
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={isSaving || isUploading}
-                >
+                <Button type="submit" disabled={isSaving || isUploading}>
                   {isSaving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />

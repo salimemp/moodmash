@@ -60,10 +60,7 @@ import { db } from '@/lib/db/prisma';
  * Returns 200 OK if the API is working correctly
  * Also tests database connectivity
  */
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // Only allow GET method
   if (req.method !== 'GET') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -72,7 +69,7 @@ export default async function handler(
   try {
     // Test database connection
     await db.$queryRaw`SELECT 1`;
-    
+
     // Return health information
     return res.status(200).json({
       status: 'healthy',
@@ -82,7 +79,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error('Health check failed:', error);
-    
+
     // Return error status
     return res.status(503).json({
       status: 'unhealthy',
@@ -90,4 +87,4 @@ export default async function handler(
       timestamp: new Date().toISOString(),
     });
   }
-} 
+}

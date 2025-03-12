@@ -15,12 +15,12 @@ export function WebAuthnLogin() {
 
       // 1. Get authentication options from the server
       const optionsResponse = await fetch('/api/auth/webauthn/login-options');
-      
+
       if (!optionsResponse.ok) {
         const error = await optionsResponse.json();
         throw new Error(error.message || 'Failed to get authentication options');
       }
-      
+
       const { options, requestId } = await optionsResponse.json();
 
       // 2. Start the authentication process in the browser
@@ -43,14 +43,13 @@ export function WebAuthnLogin() {
 
       // Authentication was successful, now handle the response
       await verificationResponse.json();
-      
+
       // 4. Show success message and redirect
       toast.success('Signed in successfully!');
-      
+
       // Redirect to dashboard or home page
       router.push('/dashboard');
       router.refresh();
-      
     } catch (error) {
       console.error('WebAuthn authentication error:', error);
       toast.error('Failed to sign in with passkey', {
@@ -62,12 +61,7 @@ export function WebAuthnLogin() {
   };
 
   return (
-    <Button
-      onClick={handleLogin}
-      disabled={isAuthenticating}
-      variant="outline"
-      className="w-full"
-    >
+    <Button onClick={handleLogin} disabled={isAuthenticating} variant="outline" className="w-full">
       {isAuthenticating ? (
         <>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -81,4 +75,4 @@ export function WebAuthnLogin() {
       )}
     </Button>
   );
-} 
+}

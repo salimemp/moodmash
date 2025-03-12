@@ -29,6 +29,7 @@ All branch names should follow a consistent format:
 ```
 
 Examples:
+
 - `feature/auth-login-form`
 - `bugfix/123-like-button-state`
 - `hotfix/456-security-vulnerability`
@@ -37,6 +38,7 @@ Examples:
 - `refactor/mood-card-component`
 
 Branch names should:
+
 - Use lowercase letters and hyphens (kebab-case)
 - Be concise but descriptive
 - Include ticket/issue number when applicable
@@ -46,6 +48,7 @@ Branch names should:
 ### Starting a New Feature
 
 1. Create a new feature branch from `develop`:
+
    ```
    git checkout develop
    git pull origin develop
@@ -55,6 +58,7 @@ Branch names should:
 2. Work on your feature, committing changes following the commit convention.
 
 3. Push your branch to the remote repository:
+
    ```
    git push -u origin feature/your-feature-name
    ```
@@ -64,6 +68,7 @@ Branch names should:
 ### Fixing a Bug
 
 1. Create a bugfix branch from `develop`:
+
    ```
    git checkout develop
    git pull origin develop
@@ -79,6 +84,7 @@ Branch names should:
 For critical bugs in production:
 
 1. Create a hotfix branch from `main`:
+
    ```
    git checkout main
    git pull origin main
@@ -92,6 +98,7 @@ For critical bugs in production:
 ### Preparing a Release
 
 1. Create a release branch from `develop`:
+
    ```
    git checkout develop
    git pull origin develop
@@ -155,6 +162,7 @@ See [COMMIT_CONVENTION.md](./COMMIT_CONVENTION.md) for detailed commit guideline
 When encountering merge conflicts:
 
 1. Pull the latest changes from the target branch:
+
    ```
    git checkout your-branch
    git pull origin target-branch
@@ -165,6 +173,7 @@ When encountering merge conflicts:
 3. Test thoroughly after resolving conflicts.
 
 4. Commit the resolved conflicts:
+
    ```
    git add .
    git commit -m "resolve merge conflicts with target-branch"
@@ -179,4 +188,4 @@ When encountering merge conflicts:
 - Squash trivial or "fix typo" commits before merging
 - Write clear, comprehensive commit messages
 - Never force push to shared branches (main, develop)
-- Delete branches after they've been merged 
+- Delete branches after they've been merged

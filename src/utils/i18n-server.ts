@@ -14,9 +14,9 @@ export async function getI18nStaticProps(
   extraProps = {}
 ) {
   const locale = context.locale || context.defaultLocale || 'en';
-  
+
   const translations = await serverSideTranslations(locale, namespaces);
-  
+
   return {
     props: {
       ...translations,
@@ -38,9 +38,9 @@ export async function getI18nServerSideProps(
   extraProps = {}
 ) {
   const locale = context.locale || context.defaultLocale || 'en';
-  
+
   const translations = await serverSideTranslations(locale, namespaces);
-  
+
   return {
     props: {
       ...translations,
@@ -58,4 +58,4 @@ export function getLocaleFromContext(
   context: GetStaticPropsContext | GetServerSidePropsContext
 ): string {
   return context.locale || context.defaultLocale || 'en';
-} 
+}

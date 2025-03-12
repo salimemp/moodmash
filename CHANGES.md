@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Project initialization with Next.js 14.2.24 and Page Router
 - Tailwind CSS and shadcn/ui component integration
 - Clean Architecture directory structure (entities, useCases, controllers, frameworks)
@@ -26,13 +27,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Storybook configuration for component documentation
 
 ### Changed
+
 - Updated index page to use MainLayout and MoodFeed components
 - Replaced default Next.js starter page with custom MoodMash UI
 
 ### Fixed
+
 - None
 
 ## [0.1.0] - 2024-03-09
 
 ### Added
-- Initial project setup 
+
+- Initial project setup

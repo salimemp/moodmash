@@ -12,7 +12,7 @@ interface ExtendedUser extends User {
 }
 
 // Extend the session user type to include id and MFA fields
-declare module "next-auth" {
+declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
@@ -20,9 +20,9 @@ declare module "next-auth" {
       email?: string | null;
       image?: string | null;
       mfaEnabled?: boolean;
-    }
+    };
   }
-  
+
   interface JWT {
     id: string;
     mfaEnabled?: boolean;
@@ -97,12 +97,12 @@ export const authConfig: NextAuthOptions = {
           token.mfaEnabled = (user as ExtendedUser).mfaEnabled;
         }
       }
-      
+
       // If user has MFA enabled, check if they've completed MFA verification
       if (token.mfaEnabled) {
         // You can add additional checks here if needed
       }
-      
+
       return token;
     },
     async session({ session, token }) {

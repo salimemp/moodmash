@@ -1,24 +1,18 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
 import { db } from '@/lib/db/prisma';
+import type { NextApiRequest, NextApiResponse } from 'next';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(_req: NextApiRequest, res: NextApiResponse) {
   try {
     // Get counts of various entities
-    const [
-      userCount,
-      moodCount,
-      likeCount,
-      commentCount,
-      achievementCount,
-      moodMashCount,
-    ] = await Promise.all([
-      db.user.count(),
-      db.mood.count(),
-      db.moodLike.count(),
-      db.moodComment.count(),
-      db.achievement.count(),
-      db.moodMash.count(),
-    ]);
+    const [userCount, moodCount, likeCount, commentCount, achievementCount, moodMashCount] =
+      await Promise.all([
+        db.user.count(),
+        db.mood.count(),
+        db.moodLike.count(),
+        db.moodComment.count(),
+        db.achievement.count(),
+        db.moodMash.count(),
+      ]);
 
     // Get a sample user with their moods
     const sampleUser = await db.user.findFirst({
@@ -51,15 +45,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         moodCount: sampleUser?.moods.length,
         likeCount: sampleUser?.moodLikes.length,
         commentCount: sampleUser?.moodComments.length,
-        achievements: sampleUser?.achievements.map((a: { achievement: { name: string; description: string; icon: string } }) => ({
-          name: a.achievement.name,
-          description: a.achievement.description,
-          icon: a.achievement.icon,
-        })),
+        achievements: sampleUser?.achievements.map(
+          (a: { achievement: { name: string; description: string; icon: string } }) => ({
+            name: a.achievement.name,
+            description: a.achievement.description,
+            icon: a.achievement.icon,
+          })
+        ),
       },
     });
   } catch (error) {
     console.error('Database test error:', error);
     res.status(500).json({ status: 'error', message: 'Database connection error', error });
   }
-} 
+}

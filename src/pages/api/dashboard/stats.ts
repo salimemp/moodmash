@@ -1,4 +1,4 @@
-import { createApiHandler, ApiError } from '@/lib/api/handlers';
+import { ApiError, createApiHandler } from '@/lib/api/handlers';
 import { db } from '@/lib/db/prisma';
 import { z } from 'zod';
 
@@ -112,9 +112,24 @@ const statsResponseSchema = z.object({
 type StatsResponse = z.infer<typeof statsResponseSchema>;
 
 /**
+ * Interface for the mood activity data from the database
+ */
+interface MoodActivityData {
+  id: string;
+  emoji: string | null;
+  text: string | null;
+  gradientColors: string[];
+  createdAt: Date;
+  _count: {
+    moodLikes: number;
+    moodComments: number;
+  };
+}
+
+/**
  * Format recent activity data from database to a consistent structure
  */
-function formatActivity(activity: any[]): StatsResponse['recentActivity'] {
+function formatActivity(activity: MoodActivityData[]): StatsResponse['recentActivity'] {
   return activity.map(mood => ({
     id: mood.id,
     emoji: mood.emoji,
@@ -132,20 +147,20 @@ export default createApiHandler(
     requireAuth: true,
     rateLimitType: 'general',
   },
-  async (req, res, { userId }) => {
+  async (_req, res, { userId }) => {
     try {
       // Ensure userId is a string
       if (!userId) {
         throw ApiError.unauthorized('User ID is required');
       }
-      
+
       // Use a transaction to ensure data consistency across queries
       const [moodCount, likesReceived, commentsReceived, recentActivity] = await db.$transaction([
         // Get mood count
         db.mood.count({
           where: { userId },
         }),
-        
+
         // Get likes received
         db.moodLike.count({
           where: {
@@ -154,7 +169,7 @@ export default createApiHandler(
             },
           },
         }),
-        
+
         // Get comments received
         db.moodComment.count({
           where: {
@@ -163,7 +178,7 @@ export default createApiHandler(
             },
           },
         }),
-        
+
         // Get recent activity with a single query
         db.mood.findMany({
           where: { userId },
@@ -184,10 +199,10 @@ export default createApiHandler(
           },
         }),
       ]);
-      
+
       // Format the data
       const formattedActivity = formatActivity(recentActivity);
-      
+
       // Create the response object
       const statsData: StatsResponse = {
         moodCount,
@@ -196,7 +211,7 @@ export default createApiHandler(
         recentActivity: formattedActivity,
         lastUpdated: new Date().toISOString(),
       };
-      
+
       // Validate the response against our schema
       try {
         statsResponseSchema.parse(statsData);
@@ -205,27 +220,31 @@ export default createApiHandler(
         // If validation fails, we still return the data but log the error
         // This helps catch bugs in our formatting logic
       }
-      
+
       // Return all stats
       return res.status(200).json(statsData);
     } catch (error: unknown) {
       console.error('Error fetching dashboard stats:', error);
-      
+
       if (error instanceof ApiError) {
         return res.status(error.statusCode).json({ message: error.message });
       }
-      
+
       // Handle database errors - check for Prisma-specific error structure
       const prismaError = error as { code?: string };
-      if (prismaError.code && typeof prismaError.code === 'string' && prismaError.code.startsWith('P')) {
+      if (
+        prismaError.code &&
+        typeof prismaError.code === 'string' &&
+        prismaError.code.startsWith('P')
+      ) {
         // Prisma error codes start with P
-        return res.status(500).json({ 
+        return res.status(500).json({
           message: 'Database error',
-          code: prismaError.code 
+          code: prismaError.code,
         });
       }
-      
+
       return res.status(500).json({ message: 'Internal server error' });
     }
   }
-); 
+);

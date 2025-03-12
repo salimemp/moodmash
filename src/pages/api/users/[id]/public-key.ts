@@ -1,13 +1,6 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { createApiHandler } from '@/lib/api/handlers';
 import { prisma } from '@/lib/prisma';
-import { Session } from 'next-auth';
-
-// Define interface to match ApiContext
-interface ApiContext {
-  session: Session | null;
-  userId: string | null;
-}
+import { NextApiRequest, NextApiResponse } from 'next';
 
 /**
  * @swagger
@@ -48,27 +41,27 @@ interface ApiContext {
  *         description: Server error
  */
 
-const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiContext) => {  
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   // Extract user ID from the URL params
   const { id } = req.query;
 
   if (!id || typeof id !== 'string') {
     return res.status(400).json({
       error: 'Bad Request',
-      message: 'User ID is required'
+      message: 'User ID is required',
     });
   }
 
   try {
     // Check if user exists
     const user = await prisma.user.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!user) {
       return res.status(404).json({
         error: 'Not Found',
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -78,32 +71,35 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
       select: {
         publicKey: true,
         userId: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
 
     if (!encryptionKey) {
       return res.status(404).json({
         error: 'Not Found',
-        message: 'Public key not found for this user'
+        message: 'Public key not found for this user',
       });
     }
-    
+
     return res.status(200).json({
       publicKey: encryptionKey.publicKey,
       userId: encryptionKey.userId,
-      createdAt: encryptionKey.createdAt
+      createdAt: encryptionKey.createdAt,
     });
   } catch (error) {
     console.error('Error fetching user public key:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to fetch user public key'
+      message: 'Failed to fetch user public key',
     });
   }
 };
 
-export default createApiHandler({
-  methods: ['GET'],
-  requireAuth: true
-}, handler); 
+export default createApiHandler(
+  {
+    methods: ['GET'],
+    requireAuth: true,
+  },
+  handler
+);

@@ -1,57 +1,52 @@
 import '@testing-library/jest-dom';
-import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
 import React from 'react';
+import { vi } from 'vitest';
 
 // Mock Next.js router
 vi.mock('next/router', () => ({
   useRouter: () => ({
+    route: '/',
+    pathname: '',
+    query: {},
+    asPath: '',
     push: vi.fn(),
     replace: vi.fn(),
-    prefetch: vi.fn(),
+    reload: vi.fn(),
     back: vi.fn(),
-    pathname: '/',
-    query: {},
-    asPath: '/',
-    basePath: '',
-    locale: 'en',
-    locales: ['en'],
-    defaultLocale: 'en',
-    isReady: true,
-    isLocaleDomain: false,
-    isPreview: false,
+    prefetch: vi.fn(),
+    beforePopState: vi.fn(),
     events: {
       on: vi.fn(),
       off: vi.fn(),
       emit: vi.fn(),
     },
+    isFallback: false,
   }),
 }));
 
-// Mock next/image
+// Mock Next.js image
 vi.mock('next/image', () => ({
-  // eslint-disable-next-line react/display-name
   default: (props: any) => {
+    const { src, alt, ...rest } = props;
     // eslint-disable-next-line @next/next/no-img-element
-    return React.createElement('img', { ...props });
+    return React.createElement('img', { src, alt, ...rest });
   },
 }));
 
-// Mock next-auth
-vi.mock('next-auth/react', () => {
-  const originalModule = vi.importActual('next-auth/react');
+// Mock Next.js head
+vi.mock('next/head', () => {
   return {
     __esModule: true,
-    ...originalModule,
-    useSession: vi.fn(() => {
-      return { data: null, status: 'unauthenticated' };
-    }),
-    signIn: vi.fn(),
-    signOut: vi.fn(),
+    default: (props: { children: React.ReactNode }) => {
+      return React.createElement(React.Fragment, null, props.children);
+    },
   };
 });
 
-// Clean up after each test
-afterEach(() => {
-  cleanup();
-}); 
+// Set up global fetch mock
+global.fetch = vi.fn();
+
+// Clean up mocks between tests
+beforeEach(() => {
+  vi.clearAllMocks();
+});

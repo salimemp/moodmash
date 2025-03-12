@@ -29,7 +29,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     // You can log the error to an error reporting service
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Call the onError callback if provided
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -39,20 +39,22 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   render(): ReactNode {
     if (this.state.hasError) {
       // You can render any custom fallback UI
-      return this.props.fallback || (
-        <div className="error-boundary-fallback">
-          <h2>Something went wrong.</h2>
-          <details className="error-details">
-            <summary>Error details</summary>
-            <pre>{this.state.error?.toString()}</pre>
-          </details>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="reset-button"
-          >
-            Try again
-          </button>
-        </div>
+      return (
+        this.props.fallback || (
+          <div className="error-boundary-fallback">
+            <h2>Something went wrong.</h2>
+            <details className="error-details">
+              <summary>Error details</summary>
+              <pre>{this.state.error?.toString()}</pre>
+            </details>
+            <button
+              onClick={() => this.setState({ hasError: false, error: null })}
+              className="reset-button"
+            >
+              Try again
+            </button>
+          </div>
+        )
       );
     }
 
@@ -60,4 +62,4 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-export default ErrorBoundary; 
+export default ErrorBoundary;

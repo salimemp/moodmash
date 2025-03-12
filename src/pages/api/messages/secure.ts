@@ -1,12 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth/auth-options';
 import { createApiHandler } from '@/lib/api/handlers';
 import { prisma } from '@/lib/prisma';
-import { EncryptedMessage } from '@/lib/encryption/crypto';
-import { Session } from 'next-auth';
 import { Prisma } from '@prisma/client';
-import { EncryptedData } from '@/lib/encryption/crypto';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Session } from 'next-auth';
 
 // Define interface to match ApiContext
 interface ApiContext {
@@ -97,7 +93,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
   if (!userId) {
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'You must be logged in to perform this action'
+      message: 'You must be logged in to perform this action',
     });
   }
 
@@ -108,32 +104,32 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
     if (!recipientId || !ciphertext || !nonce || !senderPublicKey) {
       return res.status(400).json({
         error: 'Bad Request',
-        message: 'Missing required fields'
+        message: 'Missing required fields',
       });
     }
 
     try {
       // Verify recipient exists
       const recipient = await prisma.user.findUnique({
-        where: { id: recipientId }
+        where: { id: recipientId },
       });
 
       if (!recipient) {
         return res.status(404).json({
           error: 'Not Found',
-          message: 'Recipient not found'
+          message: 'Recipient not found',
         });
       }
 
       // Get recipient public key to verify they have encryption set up
       const recipientPublicKey = await prisma.encryptionKey.findFirst({
-        where: { userId: recipientId }
+        where: { userId: recipientId },
       });
 
       if (!recipientPublicKey) {
         return res.status(400).json({
           error: 'Bad Request',
-          message: 'Recipient has not set up encryption'
+          message: 'Recipient has not set up encryption',
         });
       }
 
@@ -147,8 +143,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
           senderPublicKey,
           timestamp: new Date(),
           metadata: metadata || null,
-          read: false
-        }
+          read: false,
+        },
       });
 
       return res.status(201).json({
@@ -156,13 +152,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
         senderId: userId,
         recipientId,
         timestamp: message.timestamp,
-        message: 'Message sent successfully'
+        message: 'Message sent successfully',
       });
     } catch (error) {
       console.error('Error sending encrypted message:', error);
       return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to send encrypted message'
+        message: 'Failed to send encrypted message',
       });
     }
   } else if (req.method === 'GET') {
@@ -173,24 +169,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
       const partnerId = req.query.partnerId as string | undefined;
 
       // Build where conditions
-      const whereCondition: any = {
-        OR: [
-          { senderId: userId },
-          { recipientId: userId }
-        ]
+      const whereCondition: Prisma.EncryptedMessageWhereInput = {
+        OR: [{ senderId: userId }, { recipientId: userId }],
       };
 
       // If partnerId is provided, filter messages to/from that user
       if (partnerId) {
         whereCondition.OR = [
-          { 
+          {
             senderId: userId,
-            recipientId: partnerId
+            recipientId: partnerId,
           },
           {
             senderId: partnerId,
-            recipientId: userId
-          }
+            recipientId: userId,
+          },
         ];
       }
 
@@ -202,27 +195,27 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
             select: {
               id: true,
               name: true,
-              image: true
-            }
+              image: true,
+            },
           },
           recipient: {
             select: {
               id: true,
               name: true,
-              image: true
-            }
-          }
+              image: true,
+            },
+          },
         },
         orderBy: {
-          timestamp: 'desc'
+          timestamp: 'desc',
         },
         take: limit,
-        skip: offset
+        skip: offset,
       });
 
       // Get total count for pagination
       const totalCount = await prisma.encryptedMessage.count({
-        where: whereCondition
+        where: whereCondition,
       });
 
       return res.status(200).json({
@@ -233,21 +226,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
             total: totalCount,
             limit,
             offset,
-            hasMore: offset + messages.length < totalCount
-          }
-        }
+            hasMore: offset + messages.length < totalCount,
+          },
+        },
       });
     } catch (error) {
       console.error('Error getting encrypted messages:', error);
       return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to get encrypted messages'
+        message: 'Failed to get encrypted messages',
       });
     }
   }
 };
 
-export default createApiHandler({
-  methods: ['GET', 'POST'],
-  requireAuth: true
-}, handler); 
+export default createApiHandler(
+  {
+    methods: ['GET', 'POST'],
+    requireAuth: true,
+  },
+  handler
+);

@@ -11,9 +11,7 @@ interface RootProviderProps {
 export function RootProvider({ children }: RootProviderProps) {
   return (
     <ThemeProvider defaultTheme="system" storageKey="mood-mash-theme">
-      <QueryProvider>
-        {children}
-      </QueryProvider>
+      <QueryProvider>{children}</QueryProvider>
     </ThemeProvider>
   );
-} 
+}

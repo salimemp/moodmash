@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { cn } from './utils';
+import { describe, expect, it } from 'vitest';
+import { cn, safeParseJSON } from './utils';
 
 describe('cn utility', () => {
   it('should merge class names', () => {
@@ -23,4 +23,19 @@ describe('cn utility', () => {
     // tailwind-merge should override the pt-2 and pt-4 with pt-6
     expect(result).toBe('pt-6');
   });
-}); 
+});
+
+describe('safeParseJSON utility', () => {
+  it('should parse valid JSON correctly', () => {
+    const json = '{"name":"test","value":123}';
+    const result = safeParseJSON(json, {});
+    expect(result).toEqual({ name: 'test', value: 123 });
+  });
+
+  it('should return fallback for invalid JSON', () => {
+    const invalidJson = '{name:test}';
+    const fallback = { name: 'fallback' };
+    const result = safeParseJSON(invalidJson, fallback);
+    expect(result).toBe(fallback);
+  });
+});

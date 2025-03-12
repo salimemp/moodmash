@@ -1,4 +1,4 @@
-import { createSwaggerSpec } from 'next-swagger-doc';
+// import { createSwaggerSpec } from 'next-swagger-doc';
 
 const apiVersion = process.env.npm_package_version || '0.1.0';
 
@@ -58,15 +58,13 @@ export const swaggerOptions = {
       },
     ],
   },
-  apis: [
-    './src/pages/api/**/*.ts',
-    './src/pages/api/**/*.js',
-  ],
+  apis: ['./src/pages/api/**/*.ts', './src/pages/api/**/*.js'],
 };
 
 /**
  * Generate Swagger specification
  */
 export function getSwaggerSpec() {
-  return createSwaggerSpec(swaggerOptions);
-} 
+  // Return the options directly instead of using createSwaggerSpec
+  return swaggerOptions.definition;
+}

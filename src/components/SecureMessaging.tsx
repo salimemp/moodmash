@@ -1,14 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
-import { keyManager } from '@/lib/encryption/keyManager';
-import { 
-  createEncryptedMessage, 
-  decryptMessage,
-  EncryptedMessage
-} from '@/lib/encryption/crypto';
-import { api } from '@/lib/api/client';
 import { Button } from '@/components/ui/button/button';
-import { Loader2, Send, Lock, AlertCircle, User } from 'lucide-react';
+import { api } from '@/lib/api/client';
+import { createEncryptedMessage, decryptMessage, EncryptedMessage } from '@/lib/encryption/crypto';
+import { keyManager } from '@/lib/encryption/keyManager';
+import { AlertCircle, Loader2, Lock, Send, User } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface SecureMessagingProps {
@@ -36,10 +32,10 @@ interface ExtendedEncryptedMessage extends EncryptedMessage {
   };
 }
 
-const SecureMessaging: React.FC<SecureMessagingProps> = ({ 
-  recipientId, 
+const SecureMessaging: React.FC<SecureMessagingProps> = ({
+  recipientId,
   recipientName = 'Recipient',
-  onMessageSent 
+  onMessageSent,
 }) => {
   const { data: session } = useSession();
   const [messages, setMessages] = useState<MessageDisplay[]>([]);
@@ -50,14 +46,14 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
   const [encryptionReady, setEncryptionReady] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [password, setPassword] = useState('');
-  
+
   // Fetch recipient's public key
   const fetchRecipientKey = useCallback(async () => {
     try {
       const response = await api.get<{ publicKey: string }>(`/users/${recipientId}/public-key`);
       if (response.publicKey) {
         setRecipientPublicKey(response.publicKey);
-        
+
         // Store it locally for future use
         keyManager?.storePublicKeyForUser(recipientId, response.publicKey);
         return response.publicKey;
@@ -69,28 +65,28 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       return null;
     }
   }, [recipientId]);
-  
+
   // Check encryption readiness
   const checkEncryptionStatus = useCallback(async () => {
     if (!session?.user?.id) return false;
-    
+
     // Initialize key manager if needed
     keyManager?.initialize(session.user.id as string);
-    
+
     // Check if we have keys
     if (!keyManager?.hasKeys()) {
       setNeedsPassword(true);
       setEncryptionReady(false);
       return false;
     }
-    
+
     // Check if we have encryption key in memory or session storage
     if (!keyManager.getEncryptionKey()) {
       setNeedsPassword(true);
       setEncryptionReady(false);
       return false;
     }
-    
+
     // Check if we have recipient's public key
     let pubKey = keyManager.getPublicKeyForUser(recipientId);
     if (!pubKey) {
@@ -98,76 +94,79 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       pubKey = await fetchRecipientKey();
       if (!pubKey) {
         toast.error('Encryption not available', {
-          description: 'Recipient has not set up encryption'
+          description: 'Recipient has not set up encryption',
         });
         return false;
       }
     }
-    
+
     setRecipientPublicKey(pubKey);
     setEncryptionReady(true);
     setNeedsPassword(false);
     return true;
   }, [session, recipientId, fetchRecipientKey]);
-  
+
   // Decrypt incoming messages
-  const decryptMessages = useCallback((encryptedMessages: ExtendedEncryptedMessage[]) => {
-    if (!keyManager?.hasKeys() || !keyManager.getSecretKey()) {
-      return encryptedMessages.map(msg => ({
-        id: msg.id || `temp-${Date.now()}`,
-        content: null, // Can't decrypt without keys
-        sender: msg.sender,
-        timestamp: new Date(msg.timestamp),
-        isOutgoing: msg.sender === session?.user?.id,
-        isEncrypted: true,
-        isFailed: false
-      }));
-    }
-    
-    const secretKey = keyManager.getSecretKey()!;
-    
-    return encryptedMessages.map(msg => {
-      let decrypted = null;
-      let failed = false;
-      
-      try {
-        decrypted = decryptMessage(msg, secretKey);
-      } catch (error) {
-        console.error('Failed to decrypt message:', error);
-        failed = true;
+  const decryptMessages = useCallback(
+    (encryptedMessages: ExtendedEncryptedMessage[]) => {
+      if (!keyManager?.hasKeys() || !keyManager.getSecretKey()) {
+        return encryptedMessages.map(msg => ({
+          id: msg.id || `temp-${Date.now()}`,
+          content: null, // Can't decrypt without keys
+          sender: msg.sender,
+          timestamp: new Date(msg.timestamp),
+          isOutgoing: msg.sender === session?.user?.id,
+          isEncrypted: true,
+          isFailed: false,
+        }));
       }
-      
-      return {
-        id: msg.id || `temp-${Date.now()}`,
-        content: decrypted,
-        sender: msg.sender,
-        senderName: msg.senderProfile?.name,
-        timestamp: new Date(msg.timestamp),
-        isOutgoing: msg.sender === session?.user?.id,
-        isEncrypted: true,
-        isFailed: failed
-      };
-    });
-  }, [session]);
-  
+
+      const secretKey = keyManager.getSecretKey()!;
+
+      return encryptedMessages.map(msg => {
+        let decrypted = null;
+        let failed = false;
+
+        try {
+          decrypted = decryptMessage(msg, secretKey);
+        } catch (error) {
+          console.error('Failed to decrypt message:', error);
+          failed = true;
+        }
+
+        return {
+          id: msg.id || `temp-${Date.now()}`,
+          content: decrypted,
+          sender: msg.sender,
+          senderName: msg.senderProfile?.name,
+          timestamp: new Date(msg.timestamp),
+          isOutgoing: msg.sender === session?.user?.id,
+          isEncrypted: true,
+          isFailed: failed,
+        };
+      });
+    },
+    [session]
+  );
+
   // Fetch messages
   const fetchMessages = useCallback(async () => {
     if (!session?.user?.id) return;
-    
+
     try {
       setIsLoading(true);
-      const response = await api.get<{ messages: any[] }>('/api/messages/secure', {
-        cache: 'no-store'
+      const response = await api.get<{ messages: ExtendedEncryptedMessage[] }>('/api/messages/secure', {
+        cache: 'no-store',
       });
-      
+
       // Filter messages to/from current recipient
       const relevantMessages = response.messages.filter(
         msg => msg.sender === recipientId || msg.recipient === recipientId
       );
-      
+
       // Decrypt and format messages
       const displayMessages = decryptMessages(relevantMessages);
-      setMessages(displayMessages);
+      setMessages(displayMessages as MessageDisplay[]);
     } catch (error) {
       console.error('Failed to fetch messages:', error);
       toast.error('Failed to load messages');
@@ -175,7 +174,7 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       setIsLoading(false);
     }
   }, [session, recipientId, decryptMessages]);
-  
+
   // Initialize encryption and fetch messages
   useEffect(() => {
     if (session?.user?.id) {
@@ -186,19 +185,19 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       });
     }
   }, [session, checkEncryptionStatus, fetchMessages]);
-  
+
   // Handle password submission for key derivation
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!password || !session?.user?.id) return;
-    
+
     try {
       setIsLoading(true);
-      
+
       // Set encryption key from password
       await keyManager?.setEncryptionKeyFromPassword(password);
-      
+
       // Check encryption status again
       const ready = await checkEncryptionStatus();
       if (ready) {
@@ -212,20 +211,20 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       setPassword('');
     }
   };
-  
+
   // Send encrypted message
   const sendMessage = async () => {
     if (!newMessage.trim() || !recipientPublicKey || !session?.user?.id) return;
-    
+
     try {
       setIsSending(true);
-      
+
       // Get sender keys
       const keys = keyManager?.getKeys();
       if (!keys || !keys.secretKey || !keys.publicKey) {
         throw new Error('Encryption keys not available');
       }
-      
+
       // Create encrypted message
       const encMsg = createEncryptedMessage(
         newMessage,
@@ -235,7 +234,7 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
         recipientId,
         { type: 'text' }
       );
-      
+
       // Add optimistic message to UI
       const optimisticMsg: MessageDisplay = {
         id: `temp-${Date.now()}`,
@@ -243,38 +242,33 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
         sender: session.user.id as string,
         timestamp: new Date(),
         isOutgoing: true,
-        isEncrypted: true
+        isEncrypted: true,
       };
-      
+
       setMessages(prev => [optimisticMsg, ...prev]);
       setNewMessage('');
-      
+
       // Send to server
       await api.post('/api/messages/secure', {
         recipient: recipientId,
-        encryptedMessage: encMsg
+        encryptedMessage: encMsg,
       });
-      
+
       // Notify parent component
       if (onMessageSent) onMessageSent();
-      
     } catch (error) {
       console.error('Failed to send encrypted message:', error);
       toast.error('Failed to send encrypted message');
-      
+
       // Update the optimistic message to show failure
-      setMessages(prevMsgs => 
-        prevMsgs.map(msg => 
-          msg.id.startsWith('temp-') 
-            ? { ...msg, isFailed: true } 
-            : msg
-        )
+      setMessages(prevMsgs =>
+        prevMsgs.map(msg => (msg.id.startsWith('temp-') ? { ...msg, isFailed: true } : msg))
       );
     } finally {
       setIsSending(false);
     }
   };
-  
+
   // Render password form if needed
   if (needsPassword) {
     return (
@@ -283,11 +277,11 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
           <Lock className="h-5 w-5" />
           <h3 className="font-semibold">Encryption Setup Required</h3>
         </div>
-        
+
         <p className="text-sm mb-4">
           Please enter your password to enable end-to-end encrypted messaging.
         </p>
-        
+
         <form onSubmit={handlePasswordSubmit} className="space-y-4">
           <div>
             <label htmlFor="password" className="text-sm font-medium block mb-1">
@@ -302,7 +296,7 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
               required
             />
           </div>
-          
+
           <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? (
               <>
@@ -317,7 +311,7 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
       </div>
     );
   }
-  
+
   return (
     <div className="flex flex-col h-[500px] border rounded-lg overflow-hidden">
       {/* Header */}
@@ -326,13 +320,13 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
           <User className="h-5 w-5 text-gray-500" />
           <span className="font-medium">{recipientName}</span>
         </div>
-        
+
         <div className="flex items-center text-sm text-green-600 gap-1">
           <Lock className="h-4 w-4" />
           <span>End-to-End Encrypted</span>
         </div>
       </div>
-      
+
       {/* Messages */}
       <div className="flex-1 p-4 overflow-y-auto flex flex-col-reverse">
         {isLoading ? (
@@ -341,15 +335,13 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
           </div>
         ) : messages.length > 0 ? (
           messages.map(message => (
-            <div 
+            <div
               key={message.id}
               className={`mb-3 max-w-[80%] ${message.isOutgoing ? 'ml-auto' : 'mr-auto'}`}
             >
-              <div 
+              <div
                 className={`p-3 rounded-lg ${
-                  message.isOutgoing 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-gray-200 dark:bg-gray-700'
+                  message.isOutgoing ? 'bg-blue-600 text-white' : 'bg-gray-200 dark:bg-gray-700'
                 }`}
               >
                 {message.content ? (
@@ -363,12 +355,12 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
                   </div>
                 )}
               </div>
-              
-              <div className={`text-xs mt-1 flex gap-2 ${message.isOutgoing ? 'text-right' : 'text-left'}`}>
+
+              <div
+                className={`text-xs mt-1 flex gap-2 ${message.isOutgoing ? 'text-right' : 'text-left'}`}
+              >
                 <time>{message.timestamp.toLocaleTimeString()}</time>
-                {message.isEncrypted && (
-                  <Lock className="h-3 w-3 text-green-600" />
-                )}
+                {message.isEncrypted && <Lock className="h-3 w-3 text-green-600" />}
               </div>
             </div>
           ))
@@ -382,7 +374,7 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
           </div>
         )}
       </div>
-      
+
       {/* Composer */}
       <div className="p-3 border-t">
         <div className="flex gap-2">
@@ -394,9 +386,9 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
             className="flex-1 p-2 border rounded-lg"
             disabled={!encryptionReady || isSending}
           />
-          
-          <Button 
-            onClick={sendMessage} 
+
+          <Button
+            onClick={sendMessage}
             disabled={!newMessage.trim() || !encryptionReady || isSending}
           >
             {isSending ? (
@@ -406,13 +398,11 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
             )}
           </Button>
         </div>
-        
+
         {!encryptionReady && !needsPassword && (
           <div className="text-xs text-amber-600 mt-2 flex items-center gap-1">
             <AlertCircle className="h-3 w-3" />
-            <span>
-              Cannot send encrypted messages. {recipientName} has not set up encryption.
-            </span>
+            <span>Cannot send encrypted messages. {recipientName} has not set up encryption.</span>
           </div>
         )}
       </div>
@@ -420,4 +410,4 @@ const SecureMessaging: React.FC<SecureMessagingProps> = ({
   );
 };
 
-export default SecureMessaging; 
+export default SecureMessaging;

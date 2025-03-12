@@ -26,11 +26,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Find user by email
     const user = await db.user.findUnique({
       where: { email },
-      select: { 
+      select: {
         id: true,
         mfaEnabled: true,
         mfaSecret: true,
-        mfaBackupCodes: true
+        mfaBackupCodes: true,
       },
     });
 
@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Verify the code based on type
     let isValid = false;
-    
+
     if (isBackupCode) {
       // Verify backup code
       isValid = await verifyBackupCode(user.id, code);
@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       if (!user.mfaSecret) {
         return res.status(400).json({ message: 'MFA configuration is invalid' });
       }
-      
+
       isValid = verifyTOTP(user.mfaSecret, code);
     }
 
@@ -74,4 +74,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('MFA challenge error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

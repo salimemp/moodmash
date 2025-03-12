@@ -15,14 +15,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     // Get the current user session
     const session = await getSessionFromReq(req, res);
-    
+
     if (!session?.user?.id) {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
     // Get the notification settings from the request body
     const notificationSettings = req.body;
-    
+
     // Validate notification settings
     if (typeof notificationSettings !== 'object') {
       return res.status(400).json({ message: 'Invalid notification settings' });
@@ -53,9 +53,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     if (user.settings) {
       try {
-        currentSettings = typeof user.settings === 'string' 
-          ? JSON.parse(user.settings) 
-          : user.settings;
+        currentSettings =
+          typeof user.settings === 'string' ? JSON.parse(user.settings) : user.settings;
       } catch (e) {
         console.error('Error parsing user settings:', e);
       }
@@ -87,4 +86,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error updating notification settings:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

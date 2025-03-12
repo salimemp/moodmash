@@ -18,17 +18,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Generate authentication options
     // We don't pass a userId because we want to allow any passkey to sign in
     const options = await generateWebAuthnAuthenticationOptions();
-    
+
     // Generate a request ID to associate with this authentication attempt
     const requestId = Buffer.from(crypto.randomUUID()).toString('base64url');
-    
+
     // Store the challenge to verify later
     authenticationChallengeStore[requestId] = options.challenge;
 
     // Set challenge expiry (15 minutes)
-    setTimeout(() => {
-      delete authenticationChallengeStore[requestId];
-    }, 15 * 60 * 1000);
+    setTimeout(
+      () => {
+        delete authenticationChallengeStore[requestId];
+      },
+      15 * 60 * 1000
+    );
 
     // Send authentication options to client with the request ID
     return res.status(200).json({
@@ -42,4 +45,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 }
 
 // Export the challenge store for use in the verification endpoint
-export { authenticationChallengeStore }; 
+export { authenticationChallengeStore };

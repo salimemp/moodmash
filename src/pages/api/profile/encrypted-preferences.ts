@@ -1,8 +1,8 @@
-import { NextApiRequest, NextApiResponse } from 'next';
 import { createApiHandler } from '@/lib/api/handlers';
-import { prisma } from '@/lib/prisma';
-import { Session } from 'next-auth';
 import { EncryptedData } from '@/lib/encryption/crypto';
+import { prisma } from '@/lib/prisma';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { Session } from 'next-auth';
 
 // Define interface to match ApiContext
 interface ApiContext {
@@ -65,7 +65,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
   if (!userId) {
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'You must be logged in to access this resource'
+      message: 'You must be logged in to access this resource',
     });
   }
 
@@ -74,25 +74,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
     try {
       // Check if user has encryption set up
       const encryptionKey = await prisma.encryptionKey.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       if (!encryptionKey) {
         return res.status(404).json({
           error: 'Not Found',
-          message: 'Encryption not set up for this user'
+          message: 'Encryption not set up for this user',
         });
       }
 
       // Get user's encrypted preferences
       const encryptedPrefs = await prisma.encryptedPreferences.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       if (!encryptedPrefs) {
         return res.status(404).json({
           error: 'Not Found',
-          message: 'No encrypted preferences found'
+          message: 'No encrypted preferences found',
         });
       }
 
@@ -101,14 +101,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
         data: {
           ciphertext: encryptedPrefs.ciphertext,
           nonce: encryptedPrefs.nonce,
-          updatedAt: encryptedPrefs.updatedAt
-        }
+          updatedAt: encryptedPrefs.updatedAt,
+        },
       });
     } catch (error) {
       console.error('Error retrieving encrypted preferences:', error);
       return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to retrieve encrypted preferences'
+        message: 'Failed to retrieve encrypted preferences',
       });
     }
   }
@@ -120,25 +120,25 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
       if (!ciphertext || !nonce) {
         return res.status(400).json({
           error: 'Bad Request',
-          message: 'Ciphertext and nonce are required'
+          message: 'Ciphertext and nonce are required',
         });
       }
 
       // Verify user has encryption set up
       const encryptionKey = await prisma.encryptionKey.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       if (!encryptionKey) {
         return res.status(400).json({
           error: 'Bad Request',
-          message: 'You must set up encryption before saving preferences'
+          message: 'You must set up encryption before saving preferences',
         });
       }
 
       // Check if preferences already exist
       const existingPrefs = await prisma.encryptedPreferences.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       let updatedPrefs;
@@ -150,8 +150,8 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
           data: {
             ciphertext,
             nonce,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
       } else {
         // Create new preferences
@@ -160,8 +160,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
             userId,
             ciphertext,
             nonce,
-            user: { connect: { id: userId } }
-          }
+          },
         });
       }
 
@@ -169,25 +168,28 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
         success: true,
         message: 'Preferences updated successfully',
         data: {
-          updatedAt: updatedPrefs.updatedAt
-        }
+          updatedAt: updatedPrefs.updatedAt,
+        },
       });
     } catch (error) {
       console.error('Error updating encrypted preferences:', error);
       return res.status(500).json({
         error: 'Internal Server Error',
-        message: 'Failed to update encrypted preferences'
+        message: 'Failed to update encrypted preferences',
       });
     }
   } else {
     return res.status(405).json({
       error: 'Method Not Allowed',
-      message: `The ${req.method} method is not allowed for this endpoint`
+      message: `The ${req.method} method is not allowed for this endpoint`,
     });
   }
 };
 
-export default createApiHandler({
-  methods: ['GET', 'PUT'],
-  requireAuth: true
-}, handler); 
+export default createApiHandler(
+  {
+    methods: ['GET', 'PUT'],
+    requireAuth: true,
+  },
+  handler
+);

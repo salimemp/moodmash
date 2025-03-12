@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
-import { db } from '@/lib/db/prisma';
 import { createToken } from '@/lib/auth/token';
+import { db } from '@/lib/db/prisma';
+import nodemailer from 'nodemailer';
 
 interface SendVerificationEmailParams {
   email: string;
@@ -75,9 +75,10 @@ export async function sendVerificationEmail({
 
   // Send email
   const info = await transporter.sendMail(mailOptions);
-  
+
   if (process.env.NODE_ENV !== 'production') {
     // Log preview URL for development environments
+    // eslint-disable-next-line no-console
     console.log('Verification email preview:', nodemailer.getTestMessageUrl(info));
   }
-} 
+}

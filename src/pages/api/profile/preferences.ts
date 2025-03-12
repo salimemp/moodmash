@@ -1,5 +1,4 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import { createApiHandler, ApiError } from '@/lib/api/handlers';
+import { ApiError, createApiHandler } from '@/lib/api/handlers';
 import { db } from '@/lib/db/prisma';
 import { z } from 'zod';
 
@@ -204,7 +203,7 @@ function parsePreferences(jsonString: string | null | undefined): Preferences {
   if (!jsonString) {
     return { ...defaultPreferences };
   }
-  
+
   try {
     const parsed = JSON.parse(jsonString);
     // Validate the parsed data against our schema
@@ -233,52 +232,53 @@ export default createApiHandler(
       if (req.method === 'GET') {
         const user = await db.user.findUnique({
           where: { id: userId },
-          select: { 
+          select: {
             settings: true,
           },
         });
-        
+
         if (!user) {
           throw ApiError.notFound('User not found');
         }
-        
+
         // Parse stored settings or return defaults
         const preferences = parsePreferences(user.settings);
-        
+
         return res.status(200).json(preferences);
       }
-      
+
       // PUT/PATCH: Update user preferences
       if (req.method === 'PUT' || req.method === 'PATCH') {
         try {
           // Validate incoming data
           const validatedData = preferencesSchema.parse(req.body);
-          
+
           // Check if there's anything to update
           if (Object.keys(validatedData).length === 0) {
-            return res.status(400).json({ 
-              message: 'No valid preferences provided to update' 
+            return res.status(400).json({
+              message: 'No valid preferences provided to update',
             });
           }
-          
+
           // Get current settings
           const user = await db.user.findUnique({
             where: { id: userId },
             select: { settings: true },
           });
-          
+
           if (!user) {
             throw ApiError.notFound('User not found');
           }
-          
+
           // Get current settings or defaults
           const currentSettings = parsePreferences(user.settings);
-              
+
           // Determine updated settings based on request method
-          const updatedSettings = req.method === 'PUT' 
-            ? { ...validatedData } // Replace all settings (PUT)
-            : { ...currentSettings, ...validatedData }; // Merge with existing (PATCH)
-          
+          const updatedSettings =
+            req.method === 'PUT'
+              ? { ...validatedData } // Replace all settings (PUT)
+              : { ...currentSettings, ...validatedData }; // Merge with existing (PATCH)
+
           // Save to database
           await db.user.update({
             where: { id: userId },
@@ -286,7 +286,7 @@ export default createApiHandler(
               settings: JSON.stringify(updatedSettings),
             },
           });
-          
+
           return res.status(200).json({
             message: 'Preferences updated successfully',
             preferences: updatedSettings,
@@ -298,10 +298,9 @@ export default createApiHandler(
           throw error; // Re-throw other errors
         }
       }
-      
+
       // This should never happen due to method validation in createApiHandler
       throw ApiError.methodNotAllowed();
-      
     } catch (error) {
       // Handle all other errors not caught in nested try-catch blocks
       if (error instanceof z.ZodError) {
@@ -315,4 +314,4 @@ export default createApiHandler(
       throw ApiError.serverError('An unexpected error occurred');
     }
   }
-); 
+);

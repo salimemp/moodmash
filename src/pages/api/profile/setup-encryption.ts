@@ -59,14 +59,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
   if (!userId) {
     return res.status(401).json({
       error: 'Unauthorized',
-      message: 'You must be logged in to perform this action'
+      message: 'You must be logged in to perform this action',
     });
   }
 
   if (req.method !== 'POST') {
     return res.status(405).json({
       error: 'Method Not Allowed',
-      message: `The ${req.method} method is not allowed for this endpoint`
+      message: `The ${req.method} method is not allowed for this endpoint`,
     });
   }
 
@@ -76,16 +76,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
   if (!publicKey || !salt) {
     return res.status(400).json({
       error: 'Bad Request',
-      message: 'Public key and salt are required'
+      message: 'Public key and salt are required',
     });
   }
 
   try {
     // Using a transaction to ensure all operations succeed or fail together
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async tx => {
       // Check if user already has encryption key
       const existingKey = await tx.encryptionKey.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       if (existingKey) {
@@ -95,16 +95,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
           data: {
             publicKey,
             salt,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         });
 
         // If preferences are provided, update them too
         if (preferences) {
           const { ciphertext, nonce } = preferences as EncryptedData;
-          
+
           const existingPrefs = await tx.encryptedPreferences.findUnique({
-            where: { userId }
+            where: { userId },
           });
 
           if (existingPrefs) {
@@ -113,16 +113,16 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
               data: {
                 ciphertext,
                 nonce,
-                updatedAt: new Date()
-              }
+                updatedAt: new Date(),
+              },
             });
           } else {
             await tx.encryptedPreferences.create({
               data: {
                 userId,
                 ciphertext,
-                nonce
-              }
+                nonce,
+              },
             });
           }
         }
@@ -135,21 +135,21 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
             userId,
             publicKey,
             salt,
-            user: { connect: { id: userId } }
-          }
+            user: { connect: { id: userId } },
+          },
         });
 
         // If preferences are provided, create them
         if (preferences) {
           const { ciphertext, nonce } = preferences as EncryptedData;
-          
+
           await tx.encryptedPreferences.create({
             data: {
               userId,
               ciphertext,
               nonce,
-              user: { connect: { id: userId } }
-            }
+              user: { connect: { id: userId } },
+            },
           });
         }
 
@@ -159,26 +159,29 @@ const handler = async (req: NextApiRequest, res: NextApiResponse, context: ApiCo
 
     return res.status(200).json({
       success: true,
-      message: result.updated 
-        ? 'Encryption settings updated successfully' 
+      message: result.updated
+        ? 'Encryption settings updated successfully'
         : 'Encryption set up successfully',
       data: {
         userId,
         publicKey,
         created: !result.updated,
-        updated: result.updated
-      }
+        updated: result.updated,
+      },
     });
   } catch (error) {
     console.error('Error setting up encryption:', error);
     return res.status(500).json({
       error: 'Internal Server Error',
-      message: 'Failed to set up encryption'
+      message: 'Failed to set up encryption',
     });
   }
 };
 
-export default createApiHandler({
-  methods: ['POST'],
-  requireAuth: true
-}, handler); 
+export default createApiHandler(
+  {
+    methods: ['POST'],
+    requireAuth: true,
+  },
+  handler
+);

@@ -7,7 +7,7 @@ export async function createToken(type: TokenType, userId: string): Promise<stri
   const randomBytes = crypto.randomBytes(32).toString('hex');
   const timestamp = Date.now().toString();
   const rawToken = `${userId}:${randomBytes}:${timestamp}:${type}`;
-  
+
   // Hash the token for security
   return crypto.createHash('sha256').update(rawToken).digest('hex');
 }
@@ -15,4 +15,4 @@ export async function createToken(type: TokenType, userId: string): Promise<stri
 export async function generateOTP(): Promise<string> {
   // Generate a 6-digit OTP for MFA
   return Math.floor(100000 + Math.random() * 900000).toString();
-} 
+}

@@ -16,7 +16,7 @@ interface PageMetaProps {
     name: string;
     url?: string;
   };
-  structuredData?: Record<string, any> | Array<Record<string, any>>;
+  structuredData?: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 const SITE_NAME = 'MoodMash';
@@ -42,19 +42,19 @@ export function PageMeta({
   structuredData,
 }: PageMetaProps) {
   const router = useRouter();
-  
+
   // Format the full page title
   const pageTitle = title ? `${title} | ${SITE_NAME}` : SITE_NAME;
-  
+
   // Build the canonical URL
   const canonicalUrl = canonical || `${BASE_URL}${router.asPath}`;
-  
+
   // Build robots meta content
   const robotsContent = `${noIndex ? 'noindex' : 'index'},${noFollow ? 'nofollow' : 'follow'}`;
-  
+
   // Ensure image is an absolute URL
   const ogImage = image.startsWith('http') ? image : `${BASE_URL}${image}`;
-  
+
   return (
     <Head>
       {/* Basic Metadata */}
@@ -62,7 +62,7 @@ export function PageMeta({
       <meta name="description" content={description} />
       <link rel="canonical" href={canonicalUrl} />
       <meta name="robots" content={robotsContent} />
-      
+
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={type} />
       <meta property="og:url" content={canonicalUrl} />
@@ -70,14 +70,14 @@ export function PageMeta({
       <meta property="og:description" content={description} />
       <meta property="og:image" content={ogImage} />
       <meta property="og:site_name" content={SITE_NAME} />
-      
+
       {/* Twitter */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:url" content={canonicalUrl} />
       <meta name="twitter:title" content={pageTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={ogImage} />
-      
+
       {/* Article Specific Metadata */}
       {type === 'article' && publishedAt && (
         <meta property="article:published_time" content={publishedAt} />
@@ -85,17 +85,15 @@ export function PageMeta({
       {type === 'article' && updatedAt && (
         <meta property="article:modified_time" content={updatedAt} />
       )}
-      {type === 'article' && author && (
-        <meta property="article:author" content={author.name} />
-      )}
+      {type === 'article' && author && <meta property="article:author" content={author.name} />}
       {type === 'article' && tags && tags.length > 0 && (
         <>
-          {tags.map((tag) => (
+          {tags.map(tag => (
             <meta key={tag} property="article:tag" content={tag} />
           ))}
         </>
       )}
-      
+
       {/* JSON-LD Structured Data */}
       {structuredData && (
         <script
@@ -105,7 +103,7 @@ export function PageMeta({
           }}
         />
       )}
-      
+
       {/* Default website structured data if none provided */}
       {!structuredData && (
         <script
@@ -128,4 +126,4 @@ export function PageMeta({
       )}
     </Head>
   );
-} 
+}

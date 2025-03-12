@@ -6,7 +6,7 @@ import { useDirection } from '@/context/DirectionContext';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Layout from '@/components/Layout';
 
-export const getStaticProps: GetStaticProps = async (context) => {
+export const getStaticProps: GetStaticProps = async context => {
   return getI18nStaticProps(context, ['common', 'auth', 'messages']);
 };
 
@@ -22,7 +22,7 @@ const LanguageDemo: React.FC = () => {
         <h1 className="text-3xl font-bold mb-6 text-start">
           {t('app.name')} - {t('language.select')}
         </h1>
-        
+
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-start">{t('language.select')}</h2>
           <div className="space-y-4">
@@ -66,26 +66,28 @@ const LanguageDemo: React.FC = () => {
             <form className="space-y-4">
               <div>
                 <label className="block text-start mb-1">{t('auth:signin.email')}</label>
-                <input 
-                  type="email" 
-                  className="w-full p-2 border rounded" 
+                <input
+                  type="email"
+                  className="w-full p-2 border rounded"
                   placeholder={t('auth:signin.email')}
                 />
               </div>
               <div>
                 <label className="block text-start mb-1">{t('auth:signin.password')}</label>
-                <input 
-                  type="password" 
-                  className="w-full p-2 border rounded" 
+                <input
+                  type="password"
+                  className="w-full p-2 border rounded"
                   placeholder={t('auth:signin.password')}
                 />
               </div>
               <div className="flex items-center">
                 <input type="checkbox" id="remember" className="me-2" />
-                <label htmlFor="remember" className="text-start">{t('auth:signin.remember')}</label>
+                <label htmlFor="remember" className="text-start">
+                  {t('auth:signin.remember')}
+                </label>
               </div>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
               >
                 {t('auth:signin.button')}
@@ -98,21 +100,22 @@ const LanguageDemo: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4 text-start">{t('messages:messages.title')}</h2>
           <div className="border rounded p-4 mb-4">
             <div className="flex justify-between mb-2">
-              <span className="font-medium">{t('messages:conversation.with', { name: 'John Doe' })}</span>
-              <span className="text-sm text-gray-500">{formatDate(currentDate, { dateStyle: 'medium', timeStyle: 'short' })}</span>
+              <span className="font-medium">
+                {t('messages:conversation.with', { name: 'John Doe' })}
+              </span>
+              <span className="text-sm text-gray-500">
+                {formatDate(currentDate, { dateStyle: 'medium', timeStyle: 'short' })}
+              </span>
             </div>
             <p className="text-start">{t('messages:secure.encryption_active')}</p>
           </div>
           <div className="flex items-center">
-            <input 
-              type="text" 
-              className="flex-1 p-2 border rounded-s" 
+            <input
+              type="text"
+              className="flex-1 p-2 border rounded-s"
               placeholder={t('messages:conversation.message_placeholder')}
             />
-            <button 
-              type="button" 
-              className="bg-blue-600 text-white py-2 px-4 rounded-e"
-            >
+            <button type="button" className="bg-blue-600 text-white py-2 px-4 rounded-e">
               {t('messages:conversation.send')}
             </button>
           </div>
@@ -123,9 +126,7 @@ const LanguageDemo: React.FC = () => {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium text-start">Date Formatting:</h3>
-              <p className="text-start">
-                {formatDate(currentDate, { dateStyle: 'full' })}
-              </p>
+              <p className="text-start">{formatDate(currentDate, { dateStyle: 'full' })}</p>
             </div>
             <div>
               <h3 className="font-medium text-start">Number Formatting:</h3>
@@ -150,4 +151,4 @@ const LanguageDemo: React.FC = () => {
   );
 };
 
-export default LanguageDemo; 
+export default LanguageDemo;

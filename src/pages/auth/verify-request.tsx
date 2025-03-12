@@ -1,7 +1,14 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { MailIcon } from 'lucide-react';
 
@@ -21,9 +28,7 @@ export default function VerifyRequest() {
                   <MailIcon className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-center">
-                Check your email
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">Check your email</CardTitle>
               <CardDescription className="text-center">
                 A sign in link has been sent to your email address.
               </CardDescription>
@@ -38,9 +43,7 @@ export default function VerifyRequest() {
             </CardContent>
             <CardFooter className="flex justify-center">
               <Button asChild variant="outline">
-                <Link href="/auth/signin">
-                  Back to sign in
-                </Link>
+                <Link href="/auth/signin">Back to sign in</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -48,4 +51,4 @@ export default function VerifyRequest() {
       </MainLayout>
     </>
   );
-} 
+}

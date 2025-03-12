@@ -3,10 +3,10 @@ import { useRouter } from 'next/router';
 
 /**
  * Extended useTranslation hook with additional internationalization functionality
- * 
+ *
  * This hook extends the base next-i18next useTranslation hook with additional features
  * for handling locale changes, RTL detection, and locale-specific formatting.
- * 
+ *
  * @hook
  * @category Internationalization
  * @example
@@ -14,7 +14,7 @@ import { useRouter } from 'next/router';
  * // Basic usage
  * const { t } = useTranslation('common');
  * return <p>{t('greeting')}</p>;
- * 
+ *
  * // Using multiple namespaces
  * const { t } = useTranslation(['common', 'auth']);
  * return (
@@ -23,7 +23,7 @@ import { useRouter } from 'next/router';
  *     <p>{t('auth:login')}</p>
  *   </div>
  * );
- * 
+ *
  * // Changing locale
  * const { changeLocale } = useTranslation();
  * return (
@@ -31,7 +31,7 @@ import { useRouter } from 'next/router';
  *     Switch to French
  *   </button>
  * );
- * 
+ *
  * // Formatting dates and numbers
  * const { formatDate, formatNumber } = useTranslation();
  * return (
@@ -41,7 +41,7 @@ import { useRouter } from 'next/router';
  *   </div>
  * );
  * ```
- * 
+ *
  * @param {string | string[]} [namespace] - The translation namespace(s) to use
  * @returns {Object} Enhanced translation utilities and helpers
  * @returns {Function} return.t - Translation function
@@ -62,10 +62,10 @@ export const useTranslation = (namespace?: string | string[]) => {
 
   /**
    * Change the current locale
-   * 
+   *
    * Changes the application's locale by navigating to the same page
    * with a different locale setting. Also updates the HTML lang attribute.
-   * 
+   *
    * @async
    * @function changeLocale
    * @param {string} newLocale - The new locale to switch to (e.g., 'en', 'fr', 'ar')
@@ -77,10 +77,10 @@ export const useTranslation = (namespace?: string | string[]) => {
     if (newLocale !== locale && locales?.includes(newLocale)) {
       // Get the current URL path without the locale
       const path = router.asPath;
-      
+
       // Push the same path but with the new locale
       await router.push(path, path, { locale: newLocale });
-      
+
       // This is needed to properly change the HTML lang attribute
       document.documentElement.lang = newLocale;
     }
@@ -88,7 +88,7 @@ export const useTranslation = (namespace?: string | string[]) => {
 
   /**
    * Check if current language is RTL (Right-to-Left)
-   * 
+   *
    * @function isRTL
    * @returns {boolean} True if the current language uses RTL script
    */
@@ -99,10 +99,10 @@ export const useTranslation = (namespace?: string | string[]) => {
 
   /**
    * Format a date according to the current locale
-   * 
+   *
    * Uses the browser's Intl.DateTimeFormat API to format dates
    * based on the current locale settings.
-   * 
+   *
    * @function formatDate
    * @param {Date|number} date - The date to format
    * @param {Intl.DateTimeFormatOptions} [options] - Formatting options
@@ -110,7 +110,7 @@ export const useTranslation = (namespace?: string | string[]) => {
    * @example
    * // Basic usage
    * formatDate(new Date()) // "5/10/2025"
-   * 
+   *
    * // With options
    * formatDate(new Date(), { dateStyle: 'full' }) // "Saturday, May 10, 2025"
    * formatDate(new Date(), { dateStyle: 'medium', timeStyle: 'short' }) // "May 10, 2025, 3:30 PM"
@@ -121,10 +121,10 @@ export const useTranslation = (namespace?: string | string[]) => {
 
   /**
    * Format a number according to the current locale
-   * 
+   *
    * Uses the browser's Intl.NumberFormat API to format numbers
    * based on the current locale settings.
-   * 
+   *
    * @function formatNumber
    * @param {number} number - The number to format
    * @param {Intl.NumberFormatOptions} [options] - Formatting options
@@ -132,11 +132,11 @@ export const useTranslation = (namespace?: string | string[]) => {
    * @example
    * // Basic usage
    * formatNumber(1234.56) // "1,234.56" in en-US, "1 234,56" in fr-FR
-   * 
+   *
    * // Currency formatting
    * formatNumber(1234.56, { style: 'currency', currency: 'USD' }) // "$1,234.56"
    * formatNumber(1234.56, { style: 'currency', currency: 'EUR' }) // "€1,234.56"
-   * 
+   *
    * // Percentage formatting
    * formatNumber(0.1234, { style: 'percent' }) // "12.34%"
    */
@@ -153,6 +153,6 @@ export const useTranslation = (namespace?: string | string[]) => {
     changeLocale,
     isRTL,
     formatDate,
-    formatNumber
+    formatNumber,
   };
-}; 
+};

@@ -21,6 +21,7 @@ Each commit message consists of a **header**, an optional **body**, and an optio
 The header is mandatory and must conform to the following format:
 
 - **type**: Describes the kind of change that this commit is providing. Allowed types are:
+
   - `feat`: A new feature
   - `fix`: A bug fix
   - `docs`: Documentation only changes
@@ -43,6 +44,7 @@ The header is mandatory and must conform to the following format:
 ### Body
 
 The body is optional but highly encouraged for explaining the motivation behind the change, and should include:
+
 - Why the change was necessary
 - How it addresses the issue
 - Any potential side effects or additional information
@@ -115,4 +117,4 @@ git commit -t commit-template.txt
 2. **Automatically determining a semantic version bump.**
 3. **Communicating the nature of changes to teammates and stakeholders.**
 4. **Making it easier for people to contribute to the project.**
-5. **Making development and maintenance more sustainable over time.** 
+5. **Making development and maintenance more sustainable over time.**

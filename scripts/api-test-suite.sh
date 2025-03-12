@@ -21,16 +21,31 @@ if [ $? -ne 0 ]; then
 fi
 echo -e "${GREEN}Server is running!${NC}"
 
-# Step 1: Run Jest tests
-echo -e "\n${GREEN}Running Unit and Integration Tests...${NC}"
-npx jest --config=jest.config.js
-TEST_RESULT=$?
+# Set environment variables for testing
+export NODE_ENV=test
+export DATABASE_URL="file:./test.db"
+export REDIS_URL="redis://localhost:6379"
+export NEXTAUTH_URL="http://localhost:3000"
+export NEXTAUTH_SECRET="test-secret-do-not-use-in-production"
+export ENCRYPTION_KEY="test-key-32-chars-do-not-use-prod"
+export SMTP_HOST="localhost"
+export SMTP_PORT="1025"
+export SMTP_USER="test"
+export SMTP_PASSWORD="test"
+export SMTP_FROM="test@example.com"
+export OPENAI_API_KEY="sk-test"
+export NEXT_PUBLIC_POSTHOG_KEY="phc_test"
+export NEXT_PUBLIC_POSTHOG_HOST="https://app.posthog.com"
+export NEXT_PUBLIC_ENABLE_ANALYTICS="false"
+export NEXT_PUBLIC_SENTRY_DSN=""
+export NEXT_PUBLIC_ENVIRONMENT="test"
 
-if [ $TEST_RESULT -ne 0 ]; then
-  echo -e "${RED}Some tests failed. Please check the output above.${NC}"
-else
-  echo -e "${GREEN}All tests passed!${NC}"
-fi
+# Run the API tests
+echo "Running API tests..."
+npx vitest run --config=vitest.config.ts src/__tests__/api/**/*.test.ts
+
+# Return the exit code from the test command
+exit $?
 
 # Step 2: Run manual API tests with curl
 echo -e "\n${GREEN}Running Manual API Tests...${NC}"
@@ -49,9 +64,9 @@ echo -e "\n${BLUE}======================================${NC}"
 echo -e "${BLUE}   Testing Completed                 ${NC}"
 echo -e "${BLUE}======================================${NC}"
 
-if [ $TEST_RESULT -ne 0 ]; then
+if [ $? -ne 0 ]; then
   echo -e "${RED}Some tests failed. Please fix the issues before deploying.${NC}"
-  exit $TEST_RESULT
+  exit $?
 else
   echo -e "${GREEN}All automated tests passed!${NC}"
 fi
@@ -64,4 +79,4 @@ echo -e "3. Go to Application > Cookies > http://localhost:3000"
 echo -e "4. Copy the value of the 'next-auth.session-token' cookie"
 echo -e "5. Update the AUTH_COOKIE variable in scripts/test-api.sh"
 
-exit $TEST_RESULT 
+exit $? 

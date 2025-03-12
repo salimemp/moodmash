@@ -22,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const userId = session.user.id;
-    
+
     // Get user email
     const user = await db.user.findUnique({
       where: { id: userId },
@@ -53,4 +53,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     console.error('Error setting up MFA:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
-} 
+}

@@ -8,13 +8,9 @@ interface LayoutProps {
   description?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ 
-  children, 
-  title,
-  description
-}) => {
+const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
   const { t } = useTranslation('common');
-  
+
   const pageTitle = title || t('app.name');
   const pageDescription = description || t('app.description');
 
@@ -26,11 +22,9 @@ const Layout: React.FC<LayoutProps> = ({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main>
-        {children}
-      </main>
+      <main>{children}</main>
     </>
   );
 };
 
-export default Layout; 
+export default Layout;

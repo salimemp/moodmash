@@ -3,14 +3,21 @@ import { useRouter } from 'next/router';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MainLayout } from '@/components/layout/main-layout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
 import { CheckCircle, XCircle, KeyRound } from 'lucide-react';
 
 export default function ResetPassword() {
   const router = useRouter();
   const { token } = router.query;
-  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +31,7 @@ export default function ResetPassword() {
     const validateToken = async () => {
       try {
         const response = await fetch(`/api/auth/verify-reset-token?token=${token}`);
-        
+
         if (response.ok) {
           setIsValidToken(true);
         } else {
@@ -32,7 +39,7 @@ export default function ResetPassword() {
           const errorMessage = data.message || 'Invalid or expired token';
           setError(errorMessage);
           setIsValidToken(false);
-          
+
           // Display the error message
           console.error('Token validation error:', errorMessage);
         }
@@ -42,7 +49,7 @@ export default function ResetPassword() {
         setIsValidToken(false);
         setError(errorMessage);
       }
-      
+
       setTokenChecked(true);
     };
 
@@ -57,7 +64,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
@@ -69,7 +76,7 @@ export default function ResetPassword() {
           password,
         }),
       });
-      
+
       const data = await response.json();
 
       if (response.ok) {
@@ -77,7 +84,7 @@ export default function ResetPassword() {
       } else {
         const errorMessage = data.message || 'Failed to reset password';
         setError(errorMessage);
-        
+
         // Display the error message
         console.error('Password reset error:', errorMessage);
       }
@@ -105,9 +112,7 @@ export default function ResetPassword() {
                 <div className="flex justify-center mb-4">
                   <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin"></div>
                 </div>
-                <CardTitle className="text-2xl font-bold text-center">
-                  Validating Link
-                </CardTitle>
+                <CardTitle className="text-2xl font-bold text-center">Validating Link</CardTitle>
                 <CardDescription className="text-center">
                   Please wait while we validate your password reset link...
                 </CardDescription>
@@ -148,9 +153,7 @@ export default function ResetPassword() {
               </CardContent>
               <CardFooter className="flex justify-center">
                 <Button asChild>
-                  <Link href="/auth/forgot-password">
-                    Request New Link
-                  </Link>
+                  <Link href="/auth/forgot-password">Request New Link</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -189,9 +192,7 @@ export default function ResetPassword() {
               </CardContent>
               <CardFooter className="flex justify-center">
                 <Button asChild>
-                  <Link href="/auth/signin">
-                    Sign In
-                  </Link>
+                  <Link href="/auth/signin">Sign In</Link>
                 </Button>
               </CardFooter>
             </Card>
@@ -217,9 +218,7 @@ export default function ResetPassword() {
                   <KeyRound className="h-8 w-8 text-primary" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold text-center">
-                Reset Password
-              </CardTitle>
+              <CardTitle className="text-2xl font-bold text-center">Reset Password</CardTitle>
               <CardDescription className="text-center">
                 Enter a new password for your account
               </CardDescription>
@@ -236,7 +235,7 @@ export default function ResetPassword() {
                       type="password"
                       placeholder="••••••••"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={e => setPassword(e.target.value)}
                       required
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     />
@@ -250,23 +249,21 @@ export default function ResetPassword() {
                       type="password"
                       placeholder="••••••••"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={e => setConfirmPassword(e.target.value)}
                       required
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                   </div>
-                  {error && (
-                    <div className="text-sm text-red-500">{error}</div>
-                  )}
+                  {error && <div className="text-sm text-red-500">{error}</div>}
                   <Button type="submit" disabled={isLoading}>
-                    {isLoading ? "Resetting Password..." : "Reset Password"}
+                    {isLoading ? 'Resetting Password...' : 'Reset Password'}
                   </Button>
                 </div>
               </form>
             </CardContent>
             <CardFooter className="flex justify-center">
               <div className="text-sm text-center text-muted-foreground">
-                <Link 
+                <Link
                   href="/auth/signin"
                   className="text-primary underline underline-offset-4 hover:text-primary/90"
                 >
@@ -279,4 +276,4 @@ export default function ResetPassword() {
       </MainLayout>
     </>
   );
-} 
+}

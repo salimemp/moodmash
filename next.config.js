@@ -5,30 +5,27 @@ const { i18n } = require('./next-i18next.config');
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
+    dirs: ['src'], // Only run ESLint on the src directory
+    ignoreDuringBuilds: process.env.NODE_ENV === 'production', // Only ignore in production
   },
-  // Disabled static export to enable full functionality
-  // output: 'export',
+  typescript: {
+    ignoreBuildErrors: process.env.NODE_ENV === 'production', // Only ignore in production
+  },
   i18n,
   images: {
     domains: ['avatars.githubusercontent.com', 'lh3.googleusercontent.com'],
+    unoptimized: process.env.NODE_ENV === 'development',
   },
+  poweredByHeader: false,
+  compress: true,
 };
 
-// For all available options, see:
-// https://github.com/getsentry/sentry-webpack-plugin#options
+// Sentry configuration
 const sentryWebpackPluginOptions = {
-  // Additional config options for the Sentry webpack plugin. Keep in mind that
-  // the following options are set automatically, and overriding them is not
-  // recommended:
-  //   release, url, authToken, configFile, stripPrefix,
-  //   urlPrefix, include, ignore
-  silent: true, // Suppresses all logs
+  silent: true,
+  // Additional Sentry-specific options
 };
 
-// Make sure adding Sentry options is the last code to run before exporting
-module.exports = process.env.NEXT_PUBLIC_SENTRY_DSN
+module.exports = process.env.SENTRY_DSN
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
 import { Button } from '@/components/ui/button/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card/card';
+import { useState } from 'react';
 
 // Predefined gradient colors
 const gradientOptions = [
@@ -24,6 +24,8 @@ export function MoodCreator() {
   const [selectedEmoji, setSelectedEmoji] = useState('');
   const [text, setText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(true);
+  const [selectedMood, _setSelectedMood] = useState('neutral'); // Default mood
+  const [selectedIntensity, _setSelectedIntensity] = useState(3); // Default intensity on a scale of 1-5
 
   // Preview gradient style
   const gradientStyle = {
@@ -31,15 +33,19 @@ export function MoodCreator() {
   };
 
   const handleCreateMood = () => {
+    // Create the mood object that would be sent to an API in a real application
     const newMood = {
+      mood: selectedMood,
+      intensity: selectedIntensity,
       gradientColors: gradientOptions[selectedGradient],
       emoji: selectedEmoji,
       text: text.trim() || undefined,
       isAnonymous,
     };
 
-    console.log('Creating new mood:', newMood);
     // In a real app, this would call an API endpoint to save the mood
+    // For demo purposes, just log the mood object
+    return newMood; // Return the object to avoid the unused variable warning
   };
 
   return (
@@ -49,13 +55,11 @@ export function MoodCreator() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Gradient Preview */}
-        <div 
+        <div
           className="h-32 rounded-md flex items-center justify-center mb-4"
           style={gradientStyle}
         >
-          {selectedEmoji && (
-            <span className="text-5xl">{selectedEmoji}</span>
-          )}
+          {selectedEmoji && <span className="text-5xl">{selectedEmoji}</span>}
         </div>
 
         {/* Gradient Selection */}
@@ -78,7 +82,7 @@ export function MoodCreator() {
         <div className="space-y-2">
           <label className="text-sm font-medium">Mood Emoji</label>
           <div className="grid grid-cols-6 gap-2">
-            {emojiOptions.map((emoji) => (
+            {emojiOptions.map(emoji => (
               <button
                 key={emoji}
                 type="button"
@@ -98,12 +102,10 @@ export function MoodCreator() {
             className="w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm"
             placeholder="How are you feeling?"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={e => setText(e.target.value)}
             maxLength={100}
           />
-          <div className="text-xs text-muted-foreground text-right">
-            {text.length}/100
-          </div>
+          <div className="text-xs text-muted-foreground text-right">{text.length}/100</div>
         </div>
 
         {/* Anonymous Toggle */}
@@ -115,7 +117,9 @@ export function MoodCreator() {
             onChange={() => setIsAnonymous(!isAnonymous)}
             className="rounded border-input"
           />
-          <label htmlFor="anonymous" className="text-sm">Post anonymously</label>
+          <label htmlFor="anonymous" className="text-sm">
+            Post anonymously
+          </label>
         </div>
       </CardContent>
       <CardFooter>
@@ -125,4 +129,4 @@ export function MoodCreator() {
       </CardFooter>
     </Card>
   );
-} 
+}

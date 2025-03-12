@@ -9,4 +9,4 @@ export async function comparePasswords(
   hashedPassword: string
 ): Promise<boolean> {
   return compare(plainPassword, hashedPassword);
-} 
+}

@@ -1,7 +1,7 @@
+import { Crypto } from '@peculiar/webcrypto';
+import SRP from 'secure-remote-password/client';
 import nacl from 'tweetnacl';
 import util from 'tweetnacl-util';
-import SRP from 'secure-remote-password/client';
-import { Crypto } from '@peculiar/webcrypto';
 
 // Polyfill for WebCrypto API in non-browser environments
 if (typeof window === 'undefined' && !global.crypto) {
@@ -13,11 +13,30 @@ if (typeof window === 'undefined' && !global.crypto) {
  */
 
 // Constants for encryption
-const KEY_LENGTH = nacl.box.publicKeyLength;
-const SECRET_LENGTH = nacl.box.secretKeyLength;
 const NONCE_LENGTH = nacl.box.nonceLength;
 const SALT_BYTES = 16;
-const AUTH_KEY_LENGTH = 32;
+
+// Define generic metadata type to replace any
+export type MetadataValue = 
+  | string 
+  | number 
+  | boolean 
+  | null 
+  | { [key: string]: MetadataValue } 
+  | MetadataValue[];
+
+// Define a type for user preferences
+export interface UserPreferences {
+  theme?: string;
+  language?: string;
+  notifications?: boolean;
+  privacy?: {
+    profileVisibility?: 'public' | 'private' | 'friends';
+    messagePrivacy?: 'anyone' | 'friends' | 'none';
+  };
+  // Allow additional properties
+  [key: string]: MetadataValue | undefined;
+}
 
 // Types for encryption
 export interface EncryptedData {
@@ -38,7 +57,7 @@ export interface EncryptedMessage extends EncryptedData {
   timestamp: number; // Creation timestamp
   metadata?: {
     type: string;
-    [key: string]: any;
+    [key: string]: MetadataValue;
   };
 }
 
@@ -98,22 +117,22 @@ export function decodeBase64(str: string): Uint8Array {
  * @returns Promise resolving to the derived key
  */
 export async function deriveKeyFromPassword(
-  password: string, 
+  password: string,
   salt: Uint8Array | string
 ): Promise<Uint8Array> {
   const encoder = new TextEncoder();
   const passwordBuffer = encoder.encode(password);
   const saltBuffer = typeof salt === 'string' ? decodeBase64(salt) : salt;
-  
+
   // Import the password as a key
   const passwordKey = await crypto.subtle.importKey(
-    'raw', 
+    'raw',
     passwordBuffer,
-    { name: 'PBKDF2' }, 
-    false, 
+    { name: 'PBKDF2' },
+    false,
     ['deriveBits']
   );
-  
+
   // Derive bits using PBKDF2
   const derivedBits = await crypto.subtle.deriveBits(
     {
@@ -125,7 +144,7 @@ export async function deriveKeyFromPassword(
     passwordKey,
     256 // 32 bytes for NaCl box
   );
-  
+
   return new Uint8Array(derivedBits);
 }
 
@@ -135,23 +154,20 @@ export async function deriveKeyFromPassword(
  * @param key Secret key (Uint8Array or Base64 string)
  * @returns Encrypted data object with ciphertext and nonce
  */
-export function encryptSymmetric(
-  data: string | object, 
-  key: Uint8Array | string
-): EncryptedData {
+export function encryptSymmetric(data: string | object, key: Uint8Array | string): EncryptedData {
   // Convert key if it's a string
   const keyArray = typeof key === 'string' ? decodeBase64(key) : key;
-  
+
   // Convert data to string if it's an object
   const dataString = typeof data === 'object' ? JSON.stringify(data) : data;
-  
+
   // Generate a random nonce
   const nonce = generateNonce();
-  
+
   // Encrypt the data
   const dataUint8 = stringToUint8Array(dataString);
   const encrypted = nacl.secretbox(dataUint8, nonce, keyArray);
-  
+
   return {
     ciphertext: encodeBase64(encrypted),
     nonce: encodeBase64(nonce),
@@ -170,17 +186,17 @@ export function decryptSymmetric(
 ): string | null {
   // Convert key if it's a string
   const keyArray = typeof key === 'string' ? decodeBase64(key) : key;
-  
+
   // Decode the ciphertext and nonce
   const ciphertext = decodeBase64(encryptedData.ciphertext);
   const nonce = decodeBase64(encryptedData.nonce);
-  
+
   // Decrypt the data
   const decrypted = nacl.secretbox.open(ciphertext, nonce, keyArray);
-  
+
   // Return null if decryption failed
   if (!decrypted) return null;
-  
+
   // Convert the decrypted data to a string
   return uint8ArrayToString(decrypted);
 }
@@ -198,32 +214,25 @@ export function encryptAsymmetric(
   senderSecretKey: Uint8Array | string
 ): EncryptedData {
   // Convert keys if they're strings
-  const publicKeyArray = typeof recipientPublicKey === 'string' 
-    ? decodeBase64(recipientPublicKey) 
-    : recipientPublicKey;
-    
-  const secretKeyArray = typeof senderSecretKey === 'string'
-    ? decodeBase64(senderSecretKey)
-    : senderSecretKey;
-  
+  const publicKeyArray =
+    typeof recipientPublicKey === 'string' ? decodeBase64(recipientPublicKey) : recipientPublicKey;
+
+  const secretKeyArray =
+    typeof senderSecretKey === 'string' ? decodeBase64(senderSecretKey) : senderSecretKey;
+
   // Generate keypair from sender's secret key
   const keyPair = nacl.box.keyPair.fromSecretKey(secretKeyArray);
-  
+
   // Convert data to string if it's an object
   const dataString = typeof data === 'object' ? JSON.stringify(data) : data;
-  
+
   // Generate a random nonce
   const nonce = generateNonce();
-  
+
   // Encrypt the data
   const dataUint8 = stringToUint8Array(dataString);
-  const encrypted = nacl.box(
-    dataUint8,
-    nonce,
-    publicKeyArray,
-    secretKeyArray
-  );
-  
+  const encrypted = nacl.box(dataUint8, nonce, publicKeyArray, secretKeyArray);
+
   return {
     ciphertext: encodeBase64(encrypted),
     nonce: encodeBase64(nonce),
@@ -246,33 +255,26 @@ export function decryptAsymmetric(
   if (!encryptedData.publicKey && !senderPublicKey) {
     throw new Error('Sender public key is required for decryption');
   }
-  
+
   // Convert key if it's a string
-  const secretKeyArray = typeof recipientSecretKey === 'string'
-    ? decodeBase64(recipientSecretKey)
-    : recipientSecretKey;
-    
+  const secretKeyArray =
+    typeof recipientSecretKey === 'string' ? decodeBase64(recipientSecretKey) : recipientSecretKey;
+
   // Use sender's public key from encryptedData or provided parameter
-  const publicKeyString = encryptedData.publicKey || senderPublicKey as string;
-  const publicKeyArray = typeof publicKeyString === 'string'
-    ? decodeBase64(publicKeyString)
-    : publicKeyString;
-  
+  const publicKeyString = encryptedData.publicKey || (senderPublicKey as string);
+  const publicKeyArray =
+    typeof publicKeyString === 'string' ? decodeBase64(publicKeyString) : publicKeyString;
+
   // Decode the ciphertext and nonce
   const ciphertext = decodeBase64(encryptedData.ciphertext);
   const nonce = decodeBase64(encryptedData.nonce);
-  
+
   // Decrypt the data
-  const decrypted = nacl.box.open(
-    ciphertext,
-    nonce,
-    publicKeyArray,
-    secretKeyArray
-  );
-  
+  const decrypted = nacl.box.open(ciphertext, nonce, publicKeyArray, secretKeyArray);
+
   // Return null if decryption failed
   if (!decrypted) return null;
-  
+
   // Convert the decrypted data to a string
   return uint8ArrayToString(decrypted);
 }
@@ -287,7 +289,7 @@ export function generateSrpCredentials(username: string, password: string) {
   const salt = SRP.generateSalt();
   const privateKey = SRP.derivePrivateKey(salt, username, password);
   const verifier = SRP.deriveVerifier(privateKey);
-  
+
   return { salt, verifier };
 }
 
@@ -305,14 +307,10 @@ export function createEncryptedMessage(
   recipientPublicKey: string,
   senderId: string,
   recipientId: string,
-  metadata?: { type: string; [key: string]: any }
+  metadata?: { type: string; [key: string]: MetadataValue }
 ): EncryptedMessage {
-  const encrypted = encryptAsymmetric(
-    message,
-    recipientPublicKey,
-    senderKeys.secretKey
-  );
-  
+  const encrypted = encryptAsymmetric(message, recipientPublicKey, senderKeys.secretKey);
+
   return {
     ...encrypted,
     sender: senderId,
@@ -331,18 +329,15 @@ export function createEncryptedMessage(
 export function decryptMessage(
   encryptedMessage: EncryptedMessage,
   recipientSecretKey: string
-): any {
-  const decrypted = decryptAsymmetric(
-    encryptedMessage,
-    recipientSecretKey
-  );
-  
+): unknown {
+  const decrypted = decryptAsymmetric(encryptedMessage, recipientSecretKey);
+
   if (!decrypted) return null;
-  
+
   try {
     // Try to parse as JSON
     return JSON.parse(decrypted);
-  } catch (e) {
+  } catch {
     // Return as string if not valid JSON
     return decrypted;
   }
@@ -350,23 +345,19 @@ export function decryptMessage(
 
 /**
  * Generate encryption keys from user credentials
- * @param email User's email
  * @param password User's password
  * @returns Promise resolving to user keys
  */
-export async function generateUserKeys(
-  email: string,
-  password: string
-): Promise<UserKeys> {
+export async function generateUserKeys(password: string): Promise<UserKeys> {
   // Generate a salt
   const salt = generateSalt();
-  
+
   // Derive a key from the password
   const derivedKey = await deriveKeyFromPassword(password, salt);
-  
+
   // Generate a key pair from the derived key
   const keyPair = nacl.box.keyPair.fromSecretKey(derivedKey);
-  
+
   return {
     publicKey: encodeBase64(keyPair.publicKey),
     secretKey: encodeBase64(keyPair.secretKey),
@@ -380,10 +371,7 @@ export async function generateUserKeys(
  * @param encryptionKey Encryption key
  * @returns Encrypted data object
  */
-export function encryptPreferences(
-  preferences: any,
-  encryptionKey: string
-): EncryptedData {
+export function encryptPreferences(preferences: UserPreferences, encryptionKey: string): EncryptedData {
   return encryptSymmetric(preferences, encryptionKey);
 }
 
@@ -393,18 +381,14 @@ export function encryptPreferences(
  * @param encryptionKey Encryption key
  * @returns Decrypted preferences object or null
  */
-export function decryptPreferences(
-  encryptedData: EncryptedData,
-  encryptionKey: string
-): any {
+export function decryptPreferences(encryptedData: EncryptedData, encryptionKey: string): UserPreferences | null {
   const decrypted = decryptSymmetric(encryptedData, encryptionKey);
   
   if (!decrypted) return null;
   
   try {
-    return JSON.parse(decrypted);
-  } catch (e) {
-    console.error('Failed to parse decrypted preferences:', e);
+    return JSON.parse(decrypted) as UserPreferences;
+  } catch {
     return null;
   }
-} 
+}

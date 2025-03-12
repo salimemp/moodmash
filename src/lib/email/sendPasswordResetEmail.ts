@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
-import { db } from '@/lib/db/prisma';
 import { createToken } from '@/lib/auth/token';
+import { db } from '@/lib/db/prisma';
+import nodemailer from 'nodemailer';
 
 interface SendPasswordResetEmailParams {
   email: string;
@@ -76,9 +76,10 @@ export async function sendPasswordResetEmail({
 
   // Send email
   const info = await transporter.sendMail(mailOptions);
-  
+
   if (process.env.NODE_ENV !== 'production') {
     // Log preview URL for development
+    // eslint-disable-next-line no-console
     console.log('Password reset email preview:', nodemailer.getTestMessageUrl(info));
   }
-} 
+}
