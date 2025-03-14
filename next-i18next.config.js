@@ -28,8 +28,7 @@ module.exports = {
       'sv', // Swedish
       'pl', // Polish
     ],
-    // List of RTL languages for special handling
-    rtlLocales: ['ar', 'he', 'fa', 'ur'],
+    // RTL languages will be handled internally in the app code
   },
   // Namespaces are used to organize translations
   ns: ['common', 'auth', 'profile', 'messages', 'errors', 'components'],

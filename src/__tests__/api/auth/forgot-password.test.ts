@@ -89,6 +89,9 @@ describe('Forgot Password API', () => {
     const { req, res } = createMocks({
       method: 'POST',
       body: { email: 'user@example.com' },
+      headers: {
+        host: 'localhost:3000'
+      }
     });
 
     const mockUser = {
@@ -118,11 +121,12 @@ describe('Forgot Password API', () => {
       message: 'If a user with that email exists, a password reset link has been sent.',
     });
     
-    expect(emailModule.sendPasswordResetEmail).toHaveBeenCalledWith(
-      mockUser.email,
-      mockUser.name || '',
-      'mock-token'
-    );
+    // Updated expectation to match the actual implementation that uses an object parameter
+    expect(emailModule.sendPasswordResetEmail).toHaveBeenCalledWith({
+      email: mockUser.email,
+      userId: mockUser.id,
+      baseUrl: 'http://localhost:3000'
+    });
   });
 
   // Verifies error handling during email sending

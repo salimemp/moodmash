@@ -19,6 +19,14 @@
     "e2e": "playwright test",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report",
+    "e2e:ci": "playwright test --reporter=html,github",
+    "e2e:ci:mood": "playwright test playwright-tests/mood-pages.spec.ts --reporter=html,github",
+    "e2e:ci:home": "playwright test playwright-tests/homepage.spec.ts --reporter=html,github",
+    "e2e:edge": "playwright test playwright-tests/encryption-edge-cases.spec.ts playwright-tests/browser-storage-limitations.spec.ts playwright-tests/cross-browser-device-tests.spec.ts",
+    "e2e:edge:ci": "playwright test playwright-tests/encryption-edge-cases.spec.ts playwright-tests/browser-storage-limitations.spec.ts playwright-tests/cross-browser-device-tests.spec.ts --reporter=html,github",
+    "e2e:edge:network": "playwright test playwright-tests/encryption-edge-cases.spec.ts",
+    "e2e:edge:storage": "playwright test playwright-tests/browser-storage-limitations.spec.ts",
+    "e2e:edge:devices": "playwright test playwright-tests/cross-browser-device-tests.spec.ts",
     "check-all": "npm run lint && npm run type-check && npm run test",
     "docs": "next dev -p 3001"
   },
@@ -120,7 +128,8 @@
     "tailwindcss": "^3.4.1",
     "ts-node": "^10.9.2",
     "typescript": "^5",
-    "vitest": "^3.0.8"
+    "vitest": "^3.0.8",
+    "wait-on": "^8.0.3"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

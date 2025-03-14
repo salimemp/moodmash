@@ -1,6 +1,11 @@
 import '@testing-library/jest-dom';
+import { config } from 'dotenv';
 import React from 'react';
-import { vi } from 'vitest';
+import { beforeEach, vi } from 'vitest';
+import './jest.mock';
+
+// Load environment variables
+config({ path: '.env.test' });
 
 // Mock Next.js router
 vi.mock('next/router', () => ({
@@ -42,6 +47,10 @@ vi.mock('next/head', () => {
     },
   };
 });
+
+// Set up path mapping for imports with '@/'
+vi.mock('@/pages/api/auth/webauthn/credentials/index');
+vi.mock('@/pages/api/auth/webauthn/credentials/[id]');
 
 // Set up global fetch mock
 global.fetch = vi.fn();

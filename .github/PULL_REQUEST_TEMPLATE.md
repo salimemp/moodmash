@@ -1,0 +1,31 @@
+## Description
+
+<!-- Please include a summary of the changes and the related issue. -->
+
+Fixes # (issue)
+
+## Type of change
+
+- [ ] Bug fix (non-breaking change which fixes an issue)
+- [ ] New feature (non-breaking change which adds functionality)
+- [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
+- [ ] This change requires a documentation update
+
+## Testing Performed
+
+- [ ] I have run the unit tests (`npm run test`)
+- [ ] I have run the mood pages E2E tests (`npm run e2e -- playwright-tests/mood-pages.spec.ts`)
+- [ ] I have run the homepage E2E tests (`npm run e2e -- playwright-tests/homepage.spec.ts`)
+- [ ] I have manually tested the changes in multiple browsers
+
+## Screenshots (if appropriate)
+
+## Checklist
+
+- [ ] My code follows the style guidelines of this project
+- [ ] I have performed a self-review of my code
+- [ ] I have commented my code, particularly in hard-to-understand areas
+- [ ] I have made corresponding changes to the documentation
+- [ ] My changes generate no new warnings
+- [ ] New and existing unit tests pass locally with my changes
+- [ ] Any dependent changes have been merged and published in downstream modules 

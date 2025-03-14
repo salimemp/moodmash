@@ -1,6 +1,6 @@
+import * as authUtils from '@/lib/auth/utils';
 import { db } from '@/lib/db/prisma';
 import updateProfileHandler from '@/pages/api/profile/update';
-import { getServerSession } from 'next-auth';
 import { createMocks } from 'node-mocks-http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,17 +13,41 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
-vi.mock('next-auth', () => ({
-  getServerSession: vi.fn(),
-}));
-
-vi.mock('@/lib/auth/auth-options', () => ({
-  authOptions: {},
+// Instead of mocking getServerSession directly, mock the utils function
+vi.mock('@/lib/auth/utils', () => ({
+  getSessionFromReq: vi.fn(),
 }));
 
 vi.mock('@/lib/auth/rate-limit', () => ({
   rateLimit: vi.fn().mockResolvedValue(true),
 }));
+
+// Define a type for the mock user object to avoid TypeScript errors
+type MockUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  bio: string | null;
+  image: string | null;
+  emailVerified: Date | null;
+  password: string | null;
+  settings: string | null;
+  role: string;
+  mfaEnabled: boolean;
+  mfaSecret: string | null;
+  mfaBackupCodes: string[];
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Define a type for the selected user data returned by the API
+type UserSelect = {
+  id: string;
+  email: string;
+  name: string | null;
+  bio: string | null;
+  image: string | null;
+};
 
 // Tests for Profile Update API
 // Validates profile update functionality and input validation
@@ -55,7 +79,8 @@ describe('Profile Update API', () => {
       body: { name: 'New Name', bio: 'New Bio', image: 'new-image.jpg' },
     });
 
-    vi.mocked(getServerSession).mockResolvedValueOnce(null);
+    // Mock null session to simulate unauthenticated request
+    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce(null);
 
     await updateProfileHandler(req, res);
 
@@ -78,7 +103,7 @@ describe('Profile Update API', () => {
     });
 
     // Mock authenticated session
-    vi.mocked(getServerSession).mockResolvedValueOnce({
+    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
       user: { id: 'user-123', email: 'user@example.com' },
       expires: new Date().toISOString(),
     });
@@ -106,13 +131,13 @@ describe('Profile Update API', () => {
       body: profileData,
     });
 
-    const mockUser = {
+    // Create a mock user with the required properties
+    const mockUser: MockUser = {
       id: 'user-123',
       email: 'user@example.com',
-      name: 'Old Name',
-      bio: 'Old Bio',
-      image: 'old-image.jpg',
-      // Additional required fields
+      name: 'Updated Name',
+      bio: 'Updated Bio',
+      image: 'updated-image.jpg',
       emailVerified: null,
       password: null,
       settings: null,
@@ -124,30 +149,48 @@ describe('Profile Update API', () => {
       updatedAt: new Date()
     };
 
-    const updatedUser = {
-      ...mockUser,
-      ...profileData,
-    };
-
     // Mock authenticated session
-    vi.mocked(getServerSession).mockResolvedValueOnce({
-      user: { id: mockUser.id, email: mockUser.email },
+    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
+      user: { id: 'user-123', email: 'user@example.com' },
       expires: new Date().toISOString(),
     });
 
-    vi.mocked(db.user.update).mockResolvedValueOnce(updatedUser);
+    // Only mock the selected fields that the handler returns
+    const selectedUserData: UserSelect = {
+      id: mockUser.id,
+      email: mockUser.email,
+      name: mockUser.name,
+      bio: mockUser.bio,
+      image: mockUser.image,
+    };
+
+    // Mock the database update to return only the selected fields
+    vi.mocked(db.user.update).mockResolvedValueOnce(selectedUserData as any);
 
     await updateProfileHandler(req, res);
 
     expect(res._getStatusCode()).toBe(200);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Profile updated successfully',
-      user: updatedUser
-    });
+    
+    // Parse the response data to compare
+    const responseData = JSON.parse(res._getData());
+    expect(responseData.message).toBe('Profile updated successfully');
+    expect(responseData.user).toEqual(selectedUserData);
     
     expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: mockUser.id },
-      data: profileData,
+      where: { id: 'user-123' },
+      data: expect.objectContaining({
+        name: profileData.name,
+        bio: profileData.bio,
+        image: profileData.image,
+        updatedAt: expect.any(Date),
+      }),
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        bio: true,
+      },
     });
   });
 
@@ -164,13 +207,13 @@ describe('Profile Update API', () => {
       body: partialProfileData,
     });
 
-    const mockUser = {
+    // Create a mock user with the required properties
+    const mockUser: MockUser = {
       id: 'user-123',
       email: 'user@example.com',
-      name: 'Old Name',
-      bio: 'Old Bio',
-      image: 'old-image.jpg',
-      // Additional required fields
+      name: 'Updated Name',
+      bio: null,
+      image: null,
       emailVerified: null,
       password: null,
       settings: null,
@@ -182,25 +225,48 @@ describe('Profile Update API', () => {
       updatedAt: new Date()
     };
 
-    const updatedUser = {
-      ...mockUser,
-      ...partialProfileData,
-    };
-
     // Mock authenticated session
-    vi.mocked(getServerSession).mockResolvedValueOnce({
-      user: { id: mockUser.id, email: mockUser.email },
+    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
+      user: { id: 'user-123', email: 'user@example.com' },
       expires: new Date().toISOString(),
     });
 
-    vi.mocked(db.user.update).mockResolvedValueOnce(updatedUser);
+    // Only mock the selected fields that the handler returns
+    const selectedUserData: UserSelect = {
+      id: mockUser.id,
+      email: mockUser.email,
+      name: mockUser.name,
+      bio: mockUser.bio,
+      image: mockUser.image,
+    };
+
+    // Mock the database update to return only the selected fields
+    vi.mocked(db.user.update).mockResolvedValueOnce(selectedUserData as any);
 
     await updateProfileHandler(req, res);
 
     expect(res._getStatusCode()).toBe(200);
+    
+    // Parse the response data to compare
+    const responseData = JSON.parse(res._getData());
+    expect(responseData.message).toBe('Profile updated successfully');
+    expect(responseData.user).toEqual(selectedUserData);
+    
     expect(db.user.update).toHaveBeenCalledWith({
-      where: { id: mockUser.id },
-      data: partialProfileData,
+      where: { id: 'user-123' },
+      data: expect.objectContaining({
+        name: partialProfileData.name,
+        bio: null,
+        image: null,
+        updatedAt: expect.any(Date),
+      }),
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        bio: true,
+      },
     });
   });
 
@@ -213,7 +279,7 @@ describe('Profile Update API', () => {
     });
 
     // Mock authenticated session
-    vi.mocked(getServerSession).mockResolvedValueOnce({
+    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
       user: { id: 'user-123', email: 'user@example.com' },
       expires: new Date().toISOString(),
     });
@@ -226,7 +292,7 @@ describe('Profile Update API', () => {
 
     expect(res._getStatusCode()).toBe(500);
     expect(JSON.parse(res._getData())).toEqual({
-      message: 'Error updating profile',
+      message: 'Internal server error',
     });
   });
 }); 

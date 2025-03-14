@@ -24,6 +24,68 @@ The `pages/api` directory is mapped to `/api/*`. Files in this directory are tre
 
 This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
 
+## Testing
+
+### Unit Tests
+
+Run unit tests with Vitest:
+
+```bash
+npm run test        # Run all tests once with coverage
+npm run test:watch  # Run tests in watch mode
+npm run test:api    # Run only API tests
+```
+
+### End-to-End Tests
+
+The project includes comprehensive end-to-end tests using Playwright:
+
+```bash
+npm run e2e                                              # Run all E2E tests
+npm run e2e -- playwright-tests/mood-pages.spec.ts       # Run specific test file
+npm run e2e -- --grep "should load the homepage"         # Run tests matching description
+npm run e2e:ui                                           # Run tests with UI mode
+```
+
+#### Edge Case Tests
+
+We also have specialized tests for edge cases:
+
+```bash
+npm run e2e:edge                # Run all edge case tests
+npm run e2e:edge:network        # Test network errors
+npm run e2e:edge:storage        # Test browser storage limitations
+npm run e2e:edge:devices        # Test different device/browser conditions
+```
+
+For more information about the E2E tests, see [playwright-tests/README.md](playwright-tests/README.md).
+
+## Continuous Integration
+
+This project uses GitHub Actions for continuous integration. On every push to main and pull request, the CI pipeline:
+
+1. Runs linting and type checks
+2. Runs unit tests
+3. Runs E2E tests with Playwright
+4. Runs edge case tests for resilience testing
+
+The CI configuration is located in `.github/workflows/ci.yml`. You can manually trigger the workflow from the Actions tab in GitHub.
+
+### CI-specific Configuration
+
+For CI environments, we use a specialized Playwright configuration:
+
+- Runs tests on Chromium and Firefox only (for speed)
+- Generates HTML and GitHub-compatible reports
+- Records videos and traces for all tests
+- Takes screenshots for easier debugging
+
+To run tests locally with CI settings:
+
+```bash
+npx playwright test --config=playwright.ci.config.ts
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

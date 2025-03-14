@@ -1,80 +1,77 @@
-import { describe, expect, it, vi } from 'vitest';
+import { comparePasswords, hashPassword } from '@/lib/auth/password';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock bcryptjs for password hashing and comparison
-// This allows us to test password functions without actual cryptography
+// Mock bcryptjs without importing it directly
 vi.mock('bcryptjs', () => ({
-  hash: vi.fn(),
-  compare: vi.fn(),
+  hash: vi.fn().mockImplementation(() => Promise.resolve('hashed_password')),
+  compare: vi.fn().mockImplementation(() => Promise.resolve(true))
 }));
 
-// Import after mocking to ensure mocks are applied
-import { comparePasswords, hashPassword } from '@/lib/auth/password';
-import { compare, hash } from 'bcryptjs';
+// Import bcryptjs after mocking
+import * as bcryptjs from 'bcryptjs';
 
-// Tests for password utility functions
-// Validates secure password hashing and comparison
 describe('Password Utilities', () => {
-  // Tests for password hashing functionality
-  // Ensures passwords are securely hashed with proper error handling
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('hashPassword', () => {
-    // Verifies successful password hashing
-    // Ensures hashing uses correct salt rounds (12) and returns expected result
-    it('should hash a password successfully', async () => {
-      // Mock successful hashing
-      (hash as any).mockResolvedValue('hashed-password-123');
+    it('should hash a password correctly', async () => {
+      // Mock implementation for this test
+      (bcryptjs.hash as any).mockResolvedValueOnce('hashed_password');
       
-      const result = await hashPassword('password123');
+      const password = 'test_password';
+      const result = await hashPassword(password);
       
-      expect(hash).toHaveBeenCalledWith('password123', 12);
-      expect(result).toBe('hashed-password-123');
+      expect(result).toBe('hashed_password');
+      expect(bcryptjs.hash).toHaveBeenCalledWith(password, 12);
     });
 
-    // Verifies error handling during password hashing
-    // Ensures failures are caught and wrapped with meaningful error messages
-    it('should throw an error when hashing fails', async () => {
-      // Mock hash function to throw an error
-      (hash as any).mockRejectedValue(new Error('Hashing failed'));
+    it('should throw an error if hashing fails', async () => {
+      // Mock implementation for this test
+      (bcryptjs.hash as any).mockRejectedValueOnce(new Error('Hashing failed'));
       
-      await expect(hashPassword('password123')).rejects.toThrow('Error hashing password');
-      expect(hash).toHaveBeenCalledWith('password123', 12);
+      const password = 'test_password';
+      
+      await expect(hashPassword(password)).rejects.toThrow('Error hashing password');
     });
   });
 
-  // Tests for password comparison functionality
-  // Ensures secure password validation with proper error handling
   describe('comparePasswords', () => {
-    // Verifies successful password matching
-    // Confirms correct behavior when passwords match
-    it('should return true when passwords match', async () => {
-      // Mock successful comparison with matching passwords
-      (compare as any).mockResolvedValue(true);
+    it('should return true for matching passwords', async () => {
+      // Mock implementation for this test
+      (bcryptjs.compare as any).mockResolvedValueOnce(true);
       
-      const result = await comparePasswords('password123', 'hashed-password-123');
+      const plainPassword = 'test_password';
+      const hashedPassword = 'hashed_password';
       
-      expect(compare).toHaveBeenCalledWith('password123', 'hashed-password-123');
+      const result = await comparePasswords(plainPassword, hashedPassword);
+      
       expect(result).toBe(true);
+      expect(bcryptjs.compare).toHaveBeenCalledWith(plainPassword, hashedPassword);
     });
 
-    // Verifies successful password non-matching
-    // Confirms correct behavior when passwords don't match
-    it('should return false when passwords do not match', async () => {
-      // Mock successful comparison with non-matching passwords
-      (compare as any).mockResolvedValue(false);
+    it('should return false for non-matching passwords', async () => {
+      // Mock implementation for this test
+      (bcryptjs.compare as any).mockResolvedValueOnce(false);
       
-      const result = await comparePasswords('wrong-password', 'hashed-password-123');
+      const plainPassword = 'wrong_password';
+      const hashedPassword = 'hashed_password';
       
-      expect(compare).toHaveBeenCalledWith('wrong-password', 'hashed-password-123');
+      const result = await comparePasswords(plainPassword, hashedPassword);
+      
       expect(result).toBe(false);
+      expect(bcryptjs.compare).toHaveBeenCalledWith(plainPassword, hashedPassword);
     });
 
-    // Verifies error handling during password comparison
-    // Ensures failures are caught and wrapped with meaningful error messages
-    it('should throw an error when comparison fails', async () => {
-      // Mock compare function to throw an error
-      (compare as any).mockRejectedValue(new Error('Comparison failed'));
+    it('should handle errors during comparison', async () => {
+      // Mock implementation for this test
+      (bcryptjs.compare as any).mockRejectedValueOnce(new Error('Comparison failed'));
       
-      await expect(comparePasswords('password123', 'hashed-password-123')).rejects.toThrow('Error comparing passwords');
-      expect(compare).toHaveBeenCalledWith('password123', 'hashed-password-123');
+      const plainPassword = 'test_password';
+      const hashedPassword = 'hashed_password';
+      
+      await expect(comparePasswords(plainPassword, hashedPassword)).rejects.toThrow('Error comparing passwords');
     });
   });
 }); 

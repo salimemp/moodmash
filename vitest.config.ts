@@ -8,17 +8,16 @@ import { defineConfig } from 'vitest/config';
  * This configuration file sets up the test environment and coverage thresholds
  * for the MoodMash project.
  * 
- * Coverage thresholds have been adjusted to accommodate the current state of
- * test coverage in the project. The thresholds are set as follows:
+ * Coverage thresholds have been adjusted to reflect current achievements and goals:
  * 
- * - Global: 0.5% (very low baseline to allow for incremental improvement)
- * - Auth module: 0% (temporarily disabled to allow for incremental improvement)
- * - Encryption module: 0% (temporarily disabled to allow for incremental improvement)
- * - API routes: 1% (adjusted to match current coverage level)
+ * - Global: 1% (baseline to allow for incremental improvement across the codebase)
+ * - Auth module: 96% for lines, 85% for branches, 100% for functions
+ * - Encryption module: 5% (adjusted to allow for incremental improvement)
+ * - API routes: 2% (adjusted to match current coverage level)
  * 
- * These thresholds are intentionally set very low to allow the test suite to pass
- * while the team works on improving coverage. They should be gradually increased
- * as more tests are added to each module.
+ * The auth module has excellent coverage (96% lines, 85% branches, 100% functions), 
+ * which we want to maintain. Other modules are still being developed with tests, 
+ * so their thresholds are set lower to allow for incremental improvement.
  */
 export default defineConfig({
   plugins: [react()],
@@ -45,38 +44,42 @@ export default defineConfig({
         'docs/**'
       ],
       thresholds: {
-        // Global baseline thresholds - set very low to allow for incremental improvement
+        // Global baseline thresholds - set to allow for incremental improvement
         global: {
-          statements: 0.5,  
-          branches: 0.5,    
-          functions: 0.5,   
-          lines: 0.5,       
+          statements: 1,  
+          branches: 1,    
+          functions: 1,   
+          lines: 1,       
         },
-        // Auth module - temporarily disabled to allow for incremental improvement
+        // Auth module - set high to maintain our excellent coverage
         './src/lib/auth/**/*.{ts,tsx}': {
-          statements: 0,  
-          branches: 0,    
-          functions: 0,   
-          lines: 0,       
+          statements: 96,  
+          branches: 85,    
+          functions: 100,   
+          lines: 96,       
         },
-        // Encryption module - temporarily disabled to allow for incremental improvement
+        // Encryption module - set low to allow for incremental improvement
         './src/lib/encryption/**/*.{ts,tsx}': {
-          statements: 0,  
-          branches: 0,    
-          functions: 0,   
-          lines: 0,       
+          statements: 5,  
+          branches: 5,    
+          functions: 5,   
+          lines: 5,       
         },
         // API routes - adjusted to match current coverage level
         './src/pages/api/**/*.{ts,tsx}': {
-          statements: 1,   
-          branches: 1,    
-          functions: 1,   
-          lines: 1,        
+          statements: 2,   
+          branches: 2,    
+          functions: 2,   
+          lines: 2,        
         },
       },
     },
     include: ['**/__tests__/**/*.(spec|test).[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
     exclude: ['**/node_modules/**', '**/playwright-tests/**', '**/e2e/**'],
+    typecheck: {
+      enabled: true,
+      tsconfig: './tsconfig.vitest.json'
+    }
   },
   resolve: {
     alias: {

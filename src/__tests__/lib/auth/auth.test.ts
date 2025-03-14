@@ -3,18 +3,24 @@ import { describe, expect, it, vi } from 'vitest';
 // Mock NextAuth and auth.config for controlled testing environment
 // This prevents actual auth operations during tests
 vi.mock('next-auth', () => {
-  const mockNextAuth = vi.fn().mockReturnValue({ handlers: 'mocked handlers' });
+  const mockHandlers = {
+    GET: vi.fn(),
+    POST: vi.fn(),
+  };
   return {
-    default: mockNextAuth,
+    default: vi.fn().mockReturnValue(mockHandlers),
   };
 });
 
 // Mock auth config to provide a simple test configuration
 vi.mock('@/lib/auth/auth.config', () => ({
   authConfig: {
-    providers: [],
-    session: { strategy: 'jwt' },
-  }
+    providers: ['mock-provider'],
+    callbacks: {
+      session: vi.fn(),
+      jwt: vi.fn(),
+    },
+  },
 }));
 
 // Import after mocking to ensure mocks are applied
@@ -25,38 +31,42 @@ import { auth, handlers, signIn, signOut } from '@/lib/auth/auth';
 describe('Auth Module', () => {
   // Tests for NextAuth handlers integration
   // Ensures we correctly set up and export NextAuth handlers
-  describe('NextAuth Handlers', () => {
+  describe('NextAuth handlers', () => {
     // Verifies that our exported handlers come from NextAuth
     // This confirms proper integration with NextAuth
-    it('should export handlers created with NextAuth', () => {
-      // Instead of checking if NextAuth was called (which happens during import),
-      // we just check that handlers equals the mocked return value
-      expect(handlers).toEqual({ handlers: 'mocked handlers' });
+    it('should export NextAuth handlers', () => {
+      expect(handlers).toBeDefined();
+      expect(handlers).toHaveProperty('GET');
+      expect(handlers).toHaveProperty('POST');
     });
   });
 
   // Tests for placeholder authentication functions
   // These are temporary implementations until actual auth is implemented
-  describe('Placeholder Functions', () => {
+  describe('auth function', () => {
     // Verifies that auth() returns expected placeholder values
     // This ensures consistent behavior during development
-    it('should return placeholder auth object with unauthenticated status', async () => {
-      const authResult = await auth();
-      expect(authResult).toEqual({
+    it('should return placeholder unauthenticated state', async () => {
+      const session = await auth();
+      expect(session).toEqual({
         user: null,
         status: 'unauthenticated',
       });
     });
+  });
 
+  describe('signIn function', () => {
     // Verifies that signIn() throws an informative error
     // This prevents incorrect usage in the codebase
-    it('should throw error when calling signIn', () => {
+    it('should throw error instructing to use next-auth/react', () => {
       expect(() => signIn()).toThrow('Use next-auth/react signIn instead');
     });
+  });
 
+  describe('signOut function', () => {
     // Verifies that signOut() throws an informative error
     // This prevents incorrect usage in the codebase
-    it('should throw error when calling signOut', () => {
+    it('should throw error instructing to use next-auth/react', () => {
       expect(() => signOut()).toThrow('Use next-auth/react signOut instead');
     });
   });

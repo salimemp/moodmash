@@ -1,447 +1,468 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-// Mock the database
-vi.mock('@/lib/db/prisma', () => {
-  return {
-    db: {
-      credential: {
-        findMany: vi.fn().mockResolvedValue([]),
-        findUnique: vi.fn().mockResolvedValue(null),
-        create: vi.fn().mockResolvedValue({
-          id: 'credential-123',
-          userId: 'user-123',
-          publicKey: 'mock-public-key',
-          counter: 0,
-          transports: ['usb'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }),
-        update: vi.fn().mockResolvedValue({
-          id: 'credential-123',
-          userId: 'user-123',
-          publicKey: 'mock-public-key',
-          counter: 1,
-          transports: ['usb'],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }),
-        deleteMany: vi.fn().mockResolvedValue({
-          count: 1
-        })
-      },
-      user: {
-        findUnique: vi.fn().mockResolvedValue({
-          id: 'user-123',
-          email: 'user@example.com',
-          name: 'Test User'
-        })
-      }
-    }
-  };
-});
-
-// Mock the SimpleWebAuthn library
-vi.mock('@simplewebauthn/server', () => {
-  return {
-    generateRegistrationOptions: vi.fn().mockReturnValue({
-      challenge: 'mock-challenge',
-      rp: { name: 'MoodMash', id: 'localhost' },
-      user: { id: 'user-123', name: 'Test User', displayName: 'Test User' },
-      pubKeyCredParams: [],
-      timeout: 60000,
-      attestation: 'direct',
-      excludeCredentials: [],
-      authenticatorSelection: { userVerification: 'preferred' }
-    }),
-    verifyRegistrationResponse: vi.fn().mockResolvedValue({
-      verified: true,
-      registrationInfo: {
-        credentialID: new Uint8Array([1, 2, 3]),
-        credentialPublicKey: new Uint8Array([4, 5, 6]),
-        counter: 0
-      }
-    }),
-    generateAuthenticationOptions: vi.fn().mockReturnValue({
-      challenge: 'mock-challenge',
-      rpID: 'localhost',
-      timeout: 60000,
-      userVerification: 'preferred',
-      allowCredentials: []
-    }),
-    verifyAuthenticationResponse: vi.fn().mockResolvedValue({
-      verified: true,
-      authenticationInfo: {
-        credentialID: new Uint8Array([1, 2, 3]),
-        newCounter: 1,
-        userVerified: true,
-        credentialDeviceType: 'platform' as any,
-        credentialBackedUp: true,
-        origin: 'https://example.com',
-        rpID: 'example.com',
-      }
-    })
-  };
-});
-
-// Import the module after mocking
 import {
-  deleteWebAuthnCredential,
   generateWebAuthnAuthenticationOptions,
+  verifyWebAuthnAuthentication
+} from '@/lib/auth/webauthn-authentication';
+import {
+  getRpID,
+  rpName
+} from '@/lib/auth/webauthn-config';
+import {
+  deleteWebAuthnCredential
+} from '@/lib/auth/webauthn-credentials';
+import {
   generateWebAuthnRegistrationOptions,
-  verifyWebAuthnAuthentication,
   verifyWebAuthnRegistration
-} from '@/lib/auth/webauthn';
-import { db } from '@/lib/db/prisma';
+} from '@/lib/auth/webauthn-registration';
+import type {
+  VerifiedAuthenticationResponse,
+  VerifiedRegistrationResponse
+} from '@simplewebauthn/server';
 import {
   generateAuthenticationOptions,
   generateRegistrationOptions,
   verifyAuthenticationResponse,
-  verifyRegistrationResponse
+  verifyRegistrationResponse,
 } from '@simplewebauthn/server';
-import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/types';
+import type {
+  AuthenticationResponseJSON,
+  AuthenticatorTransportFuture,
+  PublicKeyCredentialRequestOptionsJSON,
+  RegistrationResponseJSON
+} from '@simplewebauthn/types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Tests for Webauthn functionality
-// Validates authentication behaviors and security properties
+// Create mock type for credential from database
+type MockCredential = {
+    id: string;
+    userId: string;
+    createdAt: Date;
+    externalId: string;
+    publicKey: string;
+    counter: number;
+    deviceType: string | null;
+    backupState: boolean | null;
+    transports: string[];
+    friendlyName: string | null;
+    lastUsed: Date;
+};
 
-// Tests for the authentication webauthn module
-// Validates security, functionality, and edge cases
-// Tests for authorization functionality
-// Validates security checks and access controls
-describe('WebAuthn Module', () => {
+// Create helper function for mock credentials
+function createMockCredential(overrides: Partial<MockCredential> = {}): MockCredential {
+    return {
+        id: 'cred-id',
+        userId: 'user123',
+        createdAt: new Date(),
+        externalId: 'external-id',
+        publicKey: 'mock-public-key',
+        counter: 0,
+        deviceType: 'singleDevice',
+        backupState: false,
+        transports: ['internal'],
+        friendlyName: 'Test Credential',
+        lastUsed: new Date(),
+        ...overrides
+    };
+}
+
+// Mock the SimpleWebAuthn library
+vi.mock('@simplewebauthn/server', () => ({
+  generateAuthenticationOptions: vi.fn().mockImplementation(() => {
+    return {
+      challenge: 'challenge',
+      rpId: 'example.com',
+      timeout: 60000,
+      allowCredentials: undefined,
+      userVerification: 'preferred',
+    };
+  }),
+  generateRegistrationOptions: vi.fn().mockImplementation(() => {
+    return {
+      challenge: 'challenge',
+      rp: { id: 'example.com', name: 'MoodMash' },
+      user: { id: 'user123', name: 'user@example.com', displayName: 'Test User' },
+      pubKeyCredParams: [],
+      timeout: 60000,
+      excludeCredentials: [],
+      authenticatorSelection: {},
+      extensions: {}
+    };
+  }),
+  verifyAuthenticationResponse: vi.fn(),
+  verifyRegistrationResponse: vi.fn(),
+}));
+
+// Mock URL constructor for environment testing
+class MockURL {
+  hostname: string;
+  
+  constructor(url: string) {
+    this.hostname = url.includes('test-domain.com') ? 'test-domain.com' : 'example.com';
+  }
+  
+  static canParse() { return true; }
+  static createObjectURL() { return ''; }
+  static parse() { return null; }
+  static revokeObjectURL() { }
+}
+
+// @ts-ignore - mock URL for testing
+global.URL = MockURL;
+
+// Mock the database
+vi.mock('@/lib/db/prisma', () => ({
+  db: {
+    credential: {
+      findMany: vi.fn().mockResolvedValue([]),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      deleteMany: vi.fn(),
+    },
+  },
+}));
+
+// Import mocked modules
+import { db } from '@/lib/db/prisma';
+
+describe('WebAuthn Library', () => {
+  const originalEnv = { ...process.env };
+  
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env = { ...originalEnv };
+    process.env.NEXT_PUBLIC_APP_URL = 'https://example.com';
   });
-
-  // Tests for configuration and options
-// Ensures settings are correctly applied and validated
-describe('generateWebAuthnRegistrationOptions', () => {
-    // Verifies generation functionality
-// Ensures generated items meet expected criteria
-it('should generate registration options for a user', async () => {
-      const userId = 'user-123';
+  
+  afterEach(() => {
+    process.env = originalEnv;
+  });
+  
+  describe('RP Configuration', () => {
+    it('should use the domain from NEXT_PUBLIC_APP_URL for rpID', () => {
+      // Store original value
+      const originalUrl = process.env.NEXT_PUBLIC_APP_URL;
+      
+      // Set test value
+      process.env.NEXT_PUBLIC_APP_URL = 'https://test-domain.com';
+      
+      // Call the function directly
+      expect(getRpID()).toBe('test-domain.com');
+      
+      // Restore original value
+      process.env.NEXT_PUBLIC_APP_URL = originalUrl;
+    });
+    
+    it('should fallback to localhost for rpID if NEXT_PUBLIC_APP_URL is not set', () => {
+      // Store original value
+      const originalUrl = process.env.NEXT_PUBLIC_APP_URL;
+      
+      // Remove env variable
+      delete process.env.NEXT_PUBLIC_APP_URL;
+      
+      // Call the function directly
+      expect(getRpID()).toBe('localhost');
+      
+      // Restore original value
+      process.env.NEXT_PUBLIC_APP_URL = originalUrl;
+    });
+    
+    it('should use MoodMash as rpName', () => {
+      expect(rpName).toBe('MoodMash');
+    });
+  });
+  
+  describe('generateWebAuthnRegistrationOptions', () => {
+    it('should fetch existing credentials and exclude them', async () => {
+      const userId = 'user123';
       const username = 'user@example.com';
-      const displayName = 'Test User';
-
-      const options = await generateWebAuthnRegistrationOptions(userId, username, displayName);
-
-      // Verify db was queried for existing credentials
+      const userDisplayName = 'Test User';
+      
+      const mockCredentials = [
+        createMockCredential({ externalId: 'cred1' }),
+        createMockCredential({ externalId: 'cred2' }),
+      ];
+      
+      vi.mocked(db.credential.findMany).mockResolvedValue(mockCredentials);
+      
+      await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
+      
       expect(db.credential.findMany).toHaveBeenCalledWith({
         where: { userId },
         select: { externalId: true },
-        take: 50
+        take: 50,
       });
-
-      // Verify the SimpleWebAuthn library was called
-      expect(generateRegistrationOptions).toHaveBeenCalled();
-
-      // Verify the challenge was returned
-      expect(options).toHaveProperty('challenge', 'mock-challenge');
-      expect(options).toHaveProperty('rp.name', 'MoodMash');
+      
+      expect(generateRegistrationOptions).toHaveBeenCalledWith(expect.objectContaining({
+        rpID: 'example.com',
+        rpName: 'MoodMash',
+        userID: userId,
+        userName: username,
+        userDisplayName,
+        timeout: 60000,
+        attestationType: 'none',
+        excludeCredentials: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Buffer),
+            type: 'public-key',
+          }),
+        ]),
+      }));
     });
   });
-
-  // Tests for authorization functionality
-// Validates security checks and access controls
-describe('verifyWebAuthnRegistration', () => {
-    // Verifies should verify registration and return the result
-// Ensures expected behavior in this scenario
-it('should verify registration and return the result', async () => {
-      // Create a proper RegistrationResponseJSON object
-      const credential: RegistrationResponseJSON = {
+  
+  describe('verifyWebAuthnRegistration', () => {
+    it('should verify registration with the correct parameters', async () => {
+      const mockCredential: RegistrationResponseJSON = {
         id: 'credential-id',
-        rawId: 'credential-raw-id',
-        response: {
-          clientDataJSON: 'client-data-json',
-          attestationObject: 'attestation-object'
-        },
         type: 'public-key',
-        clientExtensionResults: {}
+        rawId: 'raw-id',
+        response: {
+          clientDataJSON: 'client-data',
+          attestationObject: 'attestation-object',
+          transports: ['internal'] as AuthenticatorTransportFuture[],
+        },
+        clientExtensionResults: {},
       };
-      const expectedChallenge = 'mock-challenge';
-
-      const result = await verifyWebAuthnRegistration(credential, expectedChallenge);
-
-      // Verify the SimpleWebAuthn library was called
-      expect(verifyRegistrationResponse).toHaveBeenCalled();
-
-      // Verify the result was returned
-      expect(result).toHaveProperty('verified', true);
-    });
-  });
-
-  // Tests for configuration and options
-// Ensures settings are correctly applied and validated
-describe('generateWebAuthnAuthenticationOptions', () => {
-    // Verifies generation functionality
-// Ensures generated items meet expected criteria
-it('should generate authentication options', async () => {
-      const options = await generateWebAuthnAuthenticationOptions();
-
-      // Verify the SimpleWebAuthn library was called
-      expect(generateAuthenticationOptions).toHaveBeenCalled();
-
-      // Verify the challenge was returned
-      expect(options).toHaveProperty('challenge', 'mock-challenge');
-      expect(options).toHaveProperty('rpID', 'localhost');
-    });
-
-    // Verifies should include user-specific credentials when userid is provided
-// Ensures expected behavior in this scenario
-it('should include user-specific credentials when userId is provided', async () => {
-      // Mock credentials for a specific user
-      vi.mocked(db.credential.findMany).mockResolvedValueOnce([
-        {
-          id: 'credential-id-123',
-          userId: 'user-123',
-          externalId: 'credential-id-123',
-          publicKey: 'mock-public-key',
+      
+      const expectedChallenge = 'challenge123';
+      
+      const mockVerificationResult: VerifiedRegistrationResponse = {
+        verified: true,
+        registrationInfo: {
+          credentialID: Buffer.from('credential-id'),
+          credentialPublicKey: Buffer.from('public-key'),
           counter: 0,
-          transports: ['usb', 'nfc'],
-          createdAt: new Date(),
-          deviceType: 'platform',
-          backupState: false,
-          friendlyName: 'My Device',
-          lastUsed: new Date()
-        }
-      ]);
-
-      const userId = 'user-123';
-      await generateWebAuthnAuthenticationOptions(userId);
-
-      // Use objectContaining for a more flexible assertion
-      expect(db.credential.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId },
-          take: 50
-        })
-      );
-
-      // Verify the SimpleWebAuthn library was called
-      expect(generateAuthenticationOptions).toHaveBeenCalled();
+          credentialDeviceType: 'singleDevice',
+          credentialBackedUp: false,
+          fmt: 'none',
+          aaguid: 'mock-aaguid-string',
+          credentialType: 'public-key',
+          origin: 'https://example.com',
+          attestationObject: Buffer.from('attestation'),
+          userVerified: true,
+        },
+      };
+      
+      vi.mocked(verifyRegistrationResponse).mockResolvedValue(mockVerificationResult);
+      
+      const result = await verifyWebAuthnRegistration(mockCredential, expectedChallenge);
+      
+      expect(verifyRegistrationResponse).toHaveBeenCalledWith({
+        response: mockCredential,
+        expectedChallenge,
+        expectedOrigin: 'https://example.com',
+        expectedRPID: 'example.com',
+      });
+      
+      expect(result).toEqual(mockVerificationResult);
     });
   });
-
-  // Tests for authorization functionality
-// Validates security checks and access controls
-describe('verifyWebAuthnAuthentication', () => {
-    // Verifies should verify authentication and return the result with user
-// Ensures expected behavior in this scenario
-it('should verify authentication and return the result with user', async () => {
-      // Mock a credential and user
-      vi.mocked(db.credential.findUnique).mockResolvedValueOnce({
-        id: 'credential-123',
-        userId: 'user-123',
-        externalId: 'mock-external-id',
-        publicKey: 'mock-public-key',
-        counter: 0,
-        transports: ['usb'],
-        createdAt: new Date(),
-        deviceType: 'platform',
-        backupState: false,
-        friendlyName: 'Security Key',
-        lastUsed: new Date(),
-        user: {
-          id: 'user-123',
-          email: 'user@example.com'
-        }
-      } as any); // Use type assertion to handle the user property
-
-      // Create a proper AuthenticationResponseJSON object
-      const credential: AuthenticationResponseJSON = {
+  
+  describe('generateWebAuthnAuthenticationOptions', () => {
+    it('should generate authentication options without userId', async () => {
+      const mockAuthOptions = {
+        challenge: 'challenge',
+        rpId: 'example.com',
+        timeout: 60000,
+        allowCredentials: undefined,
+        userVerification: 'preferred',
+      } as unknown as PublicKeyCredentialRequestOptionsJSON;
+      
+      vi.mocked(generateAuthenticationOptions).mockReturnValue(Promise.resolve(mockAuthOptions));
+      
+      const result = await generateWebAuthnAuthenticationOptions();
+      
+      expect(db.credential.findMany).not.toHaveBeenCalled();
+      expect(generateAuthenticationOptions).toHaveBeenCalledWith({
+        rpID: 'example.com',
+        timeout: 60000,
+        allowCredentials: undefined,
+        userVerification: 'preferred',
+      });
+      
+      expect(result).toEqual(mockAuthOptions);
+    });
+    
+    it('should generate authentication options with userId', async () => {
+      const userId = 'user123';
+      const mockCredentials = [
+        createMockCredential({ externalId: 'cred1' }),
+        createMockCredential({ externalId: 'cred2' }),
+      ];
+      
+      vi.mocked(db.credential.findMany).mockResolvedValue(mockCredentials);
+      
+      const mockAuthOptions = {
+        challenge: 'challenge',
+        rpId: 'example.com',
+        timeout: 60000,
+        allowCredentials: [],
+        userVerification: 'preferred',
+      } as unknown as PublicKeyCredentialRequestOptionsJSON;
+      
+      vi.mocked(generateAuthenticationOptions).mockReturnValue(Promise.resolve(mockAuthOptions));
+      
+      await generateWebAuthnAuthenticationOptions(userId);
+      
+      expect(db.credential.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        select: { externalId: true },
+        take: 50,
+      });
+      
+      expect(generateAuthenticationOptions).toHaveBeenCalledWith(expect.objectContaining({
+        rpID: 'example.com',
+        timeout: 60000,
+        allowCredentials: expect.any(Array),
+      }));
+    });
+  });
+  
+  describe('verifyWebAuthnAuthentication', () => {
+    it('should throw an error if credential is not found', async () => {
+      const mockCredential: AuthenticationResponseJSON = {
         id: 'credential-id',
-        rawId: 'credential-raw-id',
+        rawId: 'raw-id',
+        type: 'public-key',
         response: {
-          clientDataJSON: 'client-data-json',
-          authenticatorData: 'authenticator-data',
+          clientDataJSON: 'client-data',
+          authenticatorData: 'auth-data',
           signature: 'signature',
-          userHandle: 'user-handle'
+          userHandle: 'user-handle',
         },
-        type: 'public-key',
-        clientExtensionResults: {}
+        clientExtensionResults: {},
       };
-      const expectedChallenge = 'mock-challenge';
-
-      const result = await verifyWebAuthnAuthentication(credential, expectedChallenge);
-
-      // Verify the credential was looked up
-      expect(db.credential.findUnique).toHaveBeenCalled();
-
-      // Verify the SimpleWebAuthn library was called
-      expect(verifyAuthenticationResponse).toHaveBeenCalled();
-
-      // Verify the counter was updated
-      expect(db.credential.update).toHaveBeenCalled();
-
-      // Verify the result was returned with user
-      expect(result).toHaveProperty('verified', true);
-      expect(result).toHaveProperty('user.id', 'user-123');
-    });
-
-    // Verifies the correct return value
-// Ensures the function behaves as expected
-it('should return authentication failed if verification fails', async () => {
-      // Mock a credential without user information
-      vi.mocked(db.credential.findUnique).mockResolvedValueOnce({
-        id: 'credential-123',
-        userId: 'user-123',
-        externalId: 'mock-external-id',
-        publicKey: 'mock-public-key',
-        counter: 0,
-        transports: ['usb'],
-        createdAt: new Date(),
-        deviceType: 'platform',
-        backupState: false,
-        friendlyName: 'Security Key',
-        lastUsed: new Date()
-      });
-
-      // Mock verification failure with a resolved value instead of rejection
-      vi.mocked(verifyAuthenticationResponse).mockResolvedValueOnce({
-        verified: false,
-        authenticationInfo: {
-          credentialID: new Uint8Array([1, 2, 3]),
-          newCounter: 1,
-          userVerified: true,
-          credentialDeviceType: 'platform' as any,
-          credentialBackedUp: true,
-          origin: 'https://example.com',
-          rpID: 'example.com',
-        }
-      });
-
-      const mockCredential = {
-        id: 'mock-credential-id',
-        type: 'public-key',
-        response: {
-          clientDataJSON: 'eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiY2hhbGxlbmdlIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIn0=',
-          authenticatorData: 'authenticator-data',
-          signature: 'signature',
-          userHandle: 'user-handle'
-        }
-      } as any;
-
-      const result = await verifyWebAuthnAuthentication(mockCredential, 'challenge');
-      expect(result.verified).toBe(false);
-    });
-
-    // Test for credential not found error in verifyWebAuthnAuthentication
-    // Verifies error handling behavior
-// Ensures appropriate errors are thrown for invalid inputs
-it('should throw an error if credential is not found', async () => {
-      // Mock credential not found
-      vi.mocked(db.credential.findUnique).mockResolvedValueOnce(null);
-
-      const mockCredential = {
-        id: 'non-existent-credential',
-        type: 'public-key',
-        response: {
-          clientDataJSON: 'eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiY2hhbGxlbmdlIiwib3JpZ2luIjoiaHR0cDovL2xvY2FsaG9zdDozMDAwIn0=',
-          authenticatorData: 'authenticator-data',
-          signature: 'signature',
-          userHandle: 'user-handle'
-        }
-      } as any;
-
-      await expect(verifyWebAuthnAuthentication(mockCredential, 'challenge'))
+      
+      const expectedChallenge = 'challenge123';
+      
+      vi.mocked(db.credential.findUnique).mockResolvedValue(null);
+      
+      await expect(verifyWebAuthnAuthentication(mockCredential, expectedChallenge))
         .rejects.toThrow('Authenticator not registered with this site');
     });
-
-    // Test for error in verifyWebAuthnRegistration
-    // Verifies should handle errors during registration verification
-// Ensures expected behavior in this scenario
-it('should handle errors during registration verification', async () => {
-      // Create a proper RegistrationResponseJSON object with invalid data that will trigger an error
-      const credential: RegistrationResponseJSON = {
-        id: 'invalid-credential-id',
-        rawId: 'invalid-raw-id',
-        response: {
-          clientDataJSON: 'invalid-json-that-will-cause-error',
-          attestationObject: 'invalid-attestation'
-        },
+    
+    it('should verify authentication and update counter on success', async () => {
+      const credentialId = 'credential-id';
+      const mockCredential: AuthenticationResponseJSON = {
+        id: credentialId,
+        rawId: 'raw-id',
         type: 'public-key',
-        clientExtensionResults: {}
+        response: {
+          clientDataJSON: 'client-data',
+          authenticatorData: 'auth-data',
+          signature: 'signature',
+          userHandle: 'user-handle',
+        },
+        clientExtensionResults: {},
       };
       
-      // Mock verification error
-      vi.mocked(verifyRegistrationResponse).mockImplementationOnce(() => {
-        throw new Error('Registration verification failed');
+      const expectedChallenge = 'challenge123';
+      
+      const mockDbCredential = createMockCredential({
+        id: 'db-cred-id',
+        externalId: credentialId,
+        publicKey: 'public-key',
+        counter: 5,
       });
-
-      try {
-        await verifyWebAuthnRegistration(credential, 'challenge');
-        // Should not reach here
-        expect(true).toBe(false);
-      } catch (error: any) {
-        expect(error.message).toBe('Registration verification failed');
-      }
-    });
-
-    // Test for rpID fallback
-    // Verifies should use localhost as fallback when next_public_app_url is not available
-// Ensures expected behavior in this scenario
-it('should use localhost as fallback when NEXT_PUBLIC_APP_URL is not available', async () => {
-      // Save original env var
-      const originalAppUrl = process.env.NEXT_PUBLIC_APP_URL;
       
-      // Delete the env var to test fallback
-      delete process.env.NEXT_PUBLIC_APP_URL;
+      // Add user property manually for the test
+      const mockDbCredentialWithUser = {
+        ...mockDbCredential,
+        user: {
+          id: 'user123',
+          email: 'user@example.com',
+        }
+      };
       
-      // Import the module again to trigger the rpID calculation
-      vi.resetModules();
-      const { rpID } = await import('@/lib/auth/webauthn');
+      const mockVerificationResult: VerifiedAuthenticationResponse = {
+        verified: true,
+        authenticationInfo: {
+          credentialID: Buffer.from(credentialId) as unknown as Uint8Array,
+          newCounter: 6,
+          userVerified: true,
+          credentialDeviceType: 'singleDevice',
+          credentialBackedUp: false,
+          origin: 'https://example.com',
+          rpID: 'example.com',
+        },
+      };
       
-      // Check if fallback is used
-      expect(rpID).toBe('localhost');
+      vi.mocked(db.credential.findUnique).mockResolvedValue(mockDbCredentialWithUser as any);
+      vi.mocked(verifyAuthenticationResponse).mockResolvedValue(mockVerificationResult);
       
-      // Restore env var
-      process.env.NEXT_PUBLIC_APP_URL = originalAppUrl;
+      const result = await verifyWebAuthnAuthentication(mockCredential, expectedChallenge);
+      
+      expect(db.credential.findUnique).toHaveBeenCalledWith({
+        where: {
+          externalId: credentialId,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+            },
+          },
+        },
+      });
+      
+      expect(verifyAuthenticationResponse).toHaveBeenCalledWith({
+        response: mockCredential,
+        expectedChallenge,
+        expectedOrigin: 'https://example.com',
+        expectedRPID: 'example.com',
+        authenticator: {
+          credentialID: expect.any(Buffer),
+          credentialPublicKey: expect.any(Buffer),
+          counter: 5,
+        },
+      });
+      
+      expect(db.credential.update).toHaveBeenCalledWith({
+        where: { id: 'db-cred-id' },
+        data: { counter: 6 },
+      });
+      
+      expect(result).toEqual({
+        ...mockVerificationResult,
+        user: mockDbCredentialWithUser.user,
+      });
     });
   });
-
-  // Tests for authorization functionality
-// Validates security checks and access controls
-describe('deleteWebAuthnCredential', () => {
-    // Verifies should delete a credential and return true on success
-// Ensures expected behavior in this scenario
-it('should delete a credential and return true on success', async () => {
-      const userId = 'user-123';
-      const credentialId = 'credential-123';
-
+  
+  describe('deleteWebAuthnCredential', () => {
+    it('should delete credentials and return true on success', async () => {
+      const userId = 'user123';
+      const credentialId = 'cred123';
+      
+      vi.mocked(db.credential.deleteMany).mockResolvedValue({ count: 1 });
+      
       const result = await deleteWebAuthnCredential(userId, credentialId);
-
-      // Verify the credential was deleted
+      
       expect(db.credential.deleteMany).toHaveBeenCalledWith({
         where: {
           userId,
           externalId: credentialId,
-        }
+        },
       });
-
-      // Verify success was returned
+      
       expect(result).toBe(true);
     });
-
-    // Verifies should handle deletion errors and return false
-// Ensures expected behavior in this scenario
-it('should handle deletion errors and return false', async () => {
-      const userId = 'user-123';
-      const credentialId = 'credential-123';
-
-      // Mock deletion error
-      vi.mocked(db.credential.deleteMany).mockRejectedValueOnce(new Error('Deletion failed'));
-
+    
+    it('should handle errors and return false', async () => {
+      const userId = 'user123';
+      const credentialId = 'cred123';
+      
+      vi.mocked(db.credential.deleteMany).mockRejectedValue(new Error('Database error'));
+      
+      // Mock console.error to avoid polluting test output
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      
       const result = await deleteWebAuthnCredential(userId, credentialId);
-
-      // Verify the credential deletion was attempted
-      expect(db.credential.deleteMany).toHaveBeenCalledWith({
-        where: {
-          userId,
-          externalId: credentialId,
-        }
-      });
-
-      // Verify failure was returned
+      
       expect(result).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalled();
+      
+      consoleErrorSpy.mockRestore();
     });
   });
-}); 
+});

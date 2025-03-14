@@ -3,3 +3,62 @@ Author: salimemp <salimemp@yahoo.in>
 Date:   Tue Mar 11 21:12:54 2025 +0300
 
     Fix TypeScript and linting issues: Improve type safety in mood components, fix ESLint errors, resolve debounce function type compatibility, update tailwind config
+[33mcommit f851a84455e6ffe9a49f98912e041230711bd3df[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmaster[m[33m)[m
+Author: salimemp <salimemp@yahoo.in>
+Date:   Wed Mar 12 21:10:08 2025 +0300
+
+    Improve test coverage and fix auth-flow integration tests
+
+ .github/workflows/test-coverage.yml                |   73 [32m+[m
+ .lintstagedrc.js                                   |    2 [32m+[m[31m-[m
+ README.md                                          |    8 [32m+[m
+ docs/test-documentation.md                         |  101 [32m+[m
+ package-lock.json                                  | 9705 [32m++++++[m[31m--------------[m
+ package.json                                       |    2 [32m+[m
+ scripts/document-tests.js                          |  400 [32m+[m
+ src/__tests__/README.md                            |  193 [32m+[m
+ src/__tests__/api/auth/forgot-password.test.ts     |  165 [32m+[m
+ src/__tests__/api/dashboard-stats.test.ts          |   12 [32m+[m[31m-[m
+ src/__tests__/api/notifications.test.ts            |  287 [32m+[m[31m-[m
+ src/__tests__/api/preferences.test.ts              |   12 [32m+[m[31m-[m
+ src/__tests__/api/profile/update.test.ts           |  232 [32m+[m
+ src/__tests__/integration/auth-flow.test.ts        |  386 [32m+[m
+ .../integration/profile-update-flow.test.ts        |  337 [32m+[m
+ src/__tests__/lib/auth/auth-options.test.ts        |  318 [32m+[m
+ src/__tests__/lib/auth/auth.test.ts                |   63 [32m+[m
+ src/__tests__/lib/auth/mfa.test.ts                 |  277 [32m+[m
+ src/__tests__/lib/auth/password.test.ts            |   80 [32m+[m
+ src/__tests__/lib/auth/rate-limit.test.ts          |   98 [32m+[m
+ src/__tests__/lib/auth/token-create.test.ts        |   67 [32m+[m
+ src/__tests__/lib/auth/token-otp.test.ts           |   73 [32m+[m
+ src/__tests__/lib/auth/token.test.ts               |  144 [32m+[m
+ src/__tests__/lib/auth/utils.test.ts               |   86 [32m+[m
+ src/__tests__/lib/auth/webauthn.test.ts            |  447 [32m+[m
+ src/__tests__/lib/encryption/crypto.test.ts        |  809 [32m++[m
+ .../lib/encryption/crypto/asymmetric.test.ts       |  382 [32m+[m
+ src/__tests__/lib/encryption/crypto/index.test.ts  |   81 [32m+[m
+ .../lib/encryption/crypto/messages.test.ts         |  310 [32m+[m
+ .../lib/encryption/crypto/preferences.test.ts      |  287 [32m+[m
+ .../lib/encryption/crypto/symmetric.test.ts        |  255 [32m+[m
+ .../lib/encryption/crypto/user-keys.test.ts        |  202 [32m+[m
+ src/__tests__/lib/encryption/crypto/utils.test.ts  |  360 [32m+[m
+ src/__tests__/lib/encryption/keyManager.test.ts    |  478 [32m+[m
+ src/__tests__/lib/utils.test.ts                    |  266 [32m+[m[31m-[m
+ src/__tests__/pages/api/health.test.ts             |  104 [32m+[m
+ src/__tests__/pages/api/hello.test.ts              |   41 [32m+[m
+ src/__tests__/pages/api/profile/update.test.ts     |  181 [32m+[m
+ src/__tests__/test-utils/mock-session.ts           |   32 [32m+[m
+ src/lib/auth/password.ts                           |   12 [32m+[m[31m-[m
+ src/lib/encryption/crypto.ts                       |  393 [32m+[m[31m-[m
+ src/lib/encryption/crypto/asymmetric.ts            |   94 [32m+[m
+ src/lib/encryption/crypto/index.ts                 |   25 [32m+[m
+ src/lib/encryption/crypto/messages.ts              |   52 [32m+[m
+ src/lib/encryption/crypto/preferences.ts           |   30 [32m+[m
+ src/lib/encryption/crypto/symmetric.ts             |   62 [32m+[m
+ src/lib/encryption/crypto/types.ts                 |   48 [32m+[m
+ src/lib/encryption/crypto/user-keys.ts             |   40 [32m+[m
+ src/lib/encryption/crypto/utils.ts                 |   92 [32m+[m
+ src/lib/utils.test.ts                              |   34 [32m+[m[31m-[m
+ vitest.config.ts                                   |   65 [32m+[m[31m-[m
+ vitest.setup.ts                                    |    2 [32m+[m[31m-[m
+ 52 files changed, 11117 insertions(+), 7188 deletions(-)
