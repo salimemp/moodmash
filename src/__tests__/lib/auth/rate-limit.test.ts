@@ -1,130 +1,69 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+// Import vitest testing utilities
+import { describe, expect, it, vi } from 'vitest';
 
-// Mock Redis client
-const mockRedisMethods = {
-  get: vi.fn().mockResolvedValue(0),
-  incr: vi.fn().mockResolvedValue(1),
-  expire: vi.fn().mockResolvedValue('OK'),
-  del: vi.fn().mockResolvedValue(1)
-};
+// First, mock all necessary modules properly
+vi.mock('@/lib/auth/rate-limit-config');
+vi.mock('@/lib/auth/rate-limit-storage');
+vi.mock('@/lib/auth/rate-limit-middleware');
+vi.mock('@/lib/auth/rate-limit-client');
 
-// Mock the Redis module
-vi.mock('@upstash/redis', () => {
-  return {
-    Redis: vi.fn().mockImplementation(() => mockRedisMethods)
-  };
+// Important: unmock the module we're testing to get the real exports
+vi.mock('@/lib/auth/rate-limit', async (importOriginal) => {
+  const actual = await importOriginal();
+  return actual;
 });
 
-// Define mock functions for rate-limit
-const mockRateLimit = vi.fn();
-const mockIncrementFailedLoginAttempts = vi.fn();
-const mockResetRateLimit = vi.fn();
+// Import the modules after mocking
+import * as rateLimitModule from '@/lib/auth/rate-limit';
+import * as rateLimitClientModule from '@/lib/auth/rate-limit-client';
+import * as rateLimitConfigModule from '@/lib/auth/rate-limit-config';
+import * as rateLimitMiddlewareModule from '@/lib/auth/rate-limit-middleware';
+import * as rateLimitStorageModule from '@/lib/auth/rate-limit-storage';
 
-// Mock the rate-limit module
-vi.mock('@/lib/auth/rate-limit', () => {
-  return {
-    rateLimit: mockRateLimit,
-    incrementFailedLoginAttempts: mockIncrementFailedLoginAttempts,
-    resetRateLimit: mockResetRateLimit
-  };
-});
-
-// Tests for Rate Limit functionality
-// Validates authentication behaviors and security properties
-
-// Tests for the authentication rate limit module
-// Validates security, functionality, and edge cases
-// Tests for rate limiting functionality
-// Validates expected behavior in various scenarios
-describe('Rate Limit', () => {
-  let mockReq: NextApiRequest;
-  let mockRes: NextApiResponse;
-  
-  beforeEach(() => {
-    // Reset all mocks
-    vi.resetAllMocks();
-    
-    // Setup mock request and response
-    mockReq = {
-      headers: {
-        'x-forwarded-for': '192.168.1.1',
-      },
-      socket: {
-        remoteAddress: '192.168.1.1'
-      }
-    } as unknown as NextApiRequest;
-    
-    mockRes = {
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-      setHeader: vi.fn()
-    } as unknown as NextApiResponse;
-    
-    // Setup default implementations
-    mockRateLimit.mockImplementation(async (_req, res, _type) => {
-      // Use mockRedisMethods for consistent test behavior
-      const requests = await mockRedisMethods.get();
-      
-      // Check if we should simulate rate limiting
-      if (requests >= 10) {
-        res.status(429).json({ error: "Too many requests" });
-        return false;
-      }
-      
-      res.setHeader('X-RateLimit-Remaining', '5');
-      return true;
-    });
-    
-    mockIncrementFailedLoginAttempts.mockImplementation(async (_identifier) => {
-      await mockRedisMethods.incr();
-      await mockRedisMethods.expire();
-      return 1;
-    });
-    
-    mockResetRateLimit.mockImplementation(async (_type, _identifier) => {
-      await mockRedisMethods.del();
-      return Promise.resolve();
-    });
+// Tests for Rate Limit module
+describe('Rate Limit Module', () => {
+  // Test for module existence
+  it('should be properly defined', () => {
+    expect(rateLimitModule).toBeDefined();
+    expect(typeof rateLimitModule.rateLimit).toBe('function');
   });
 
-  describe('rateLimit', () => {
-    it('should allow requests under the rate limit', async () => {
-      mockRedisMethods.get.mockResolvedValueOnce(4); // Below the limit
-      
-      const result = await mockRateLimit(mockReq, mockRes, 'login');
-      
-      expect(result).toBe(true);
-      expect(mockRedisMethods.get).toHaveBeenCalled();
-      expect(mockRes.setHeader).toHaveBeenCalledWith('X-RateLimit-Remaining', '5');
-    });
-    
-    it('should block requests over the rate limit', async () => {
-      mockRedisMethods.get.mockResolvedValueOnce(10); // Above the limit
-      
-      const result = await mockRateLimit(mockReq, mockRes, 'login');
-      
-      expect(result).toBe(false);
-      expect(mockRedisMethods.get).toHaveBeenCalled();
-      expect(mockRes.status).toHaveBeenCalledWith(429);
-      expect(mockRes.json).toHaveBeenCalledWith({ error: "Too many requests" });
-    });
+  // Test that the module exists and re-exports functions
+  it('should re-export rate limiting functions', () => {
+    // Verify that main rate-limit module exports include the expected functions
+    expect(typeof rateLimitModule.generateRateLimitKey).toBe('function');
+    expect(typeof rateLimitModule.generateIPRateLimitKey).toBe('function');
+    expect(typeof rateLimitModule.rateLimit).toBe('function');
+    expect(typeof rateLimitModule.throttle).toBe('function');
+    expect(typeof rateLimitModule.withBackoff).toBe('function');
+    expect(typeof rateLimitModule.resetRateLimit).toBe('function');
+    expect(typeof rateLimitModule.incrementFailedLoginAttempts).toBe('function');
+    expect(rateLimitModule.rateLimits).toBeDefined();
+    expect(rateLimitModule.rateLimitStorage).toBeDefined();
   });
 
-  describe('incrementFailedLoginAttempts', () => {
-    it('should increment the counter and set expiry', async () => {
-      await mockIncrementFailedLoginAttempts('test@example.com');
-      
-      expect(mockRedisMethods.incr).toHaveBeenCalled();
-      expect(mockRedisMethods.expire).toHaveBeenCalled();
-    });
+  // Test for config exports
+  it('should re-export functions from rate-limit-config', () => {
+    expect(rateLimitModule.generateIPRateLimitKey).toBe(rateLimitConfigModule.generateIPRateLimitKey);
+    expect(rateLimitModule.generateRateLimitKey).toBe(rateLimitConfigModule.generateRateLimitKey);
+    expect(rateLimitModule.rateLimits).toBe(rateLimitConfigModule.rateLimits);
   });
 
-  describe('resetRateLimit', () => {
-    it('should delete the rate limit key', async () => {
-      await mockResetRateLimit('login', 'test@example.com');
-      
-      expect(mockRedisMethods.del).toHaveBeenCalled();
-    });
+  // Test for storage exports
+  it('should re-export functions from rate-limit-storage', () => {
+    expect(rateLimitModule.incrementFailedLoginAttempts).toBe(rateLimitStorageModule.incrementFailedLoginAttempts);
+    expect(rateLimitModule.rateLimitStorage).toBe(rateLimitStorageModule.rateLimitStorage);
+    expect(rateLimitModule.resetRateLimit).toBe(rateLimitStorageModule.resetRateLimit);
+  });
+
+  // Test for middleware exports
+  it('should re-export functions from rate-limit-middleware', () => {
+    expect(rateLimitModule.rateLimit).toBe(rateLimitMiddlewareModule.rateLimit);
+  });
+
+  // Test for client exports
+  it('should re-export functions from rate-limit-client', () => {
+    expect(rateLimitModule.throttle).toBe(rateLimitClientModule.throttle);
+    expect(rateLimitModule.withBackoff).toBe(rateLimitClientModule.withBackoff);
   });
 }); 
