@@ -200,8 +200,8 @@ Based on the documentation and test coverage reports, this is a comprehensive ch
 ## API Routes
 
 ### Authentication API Routes
-- [ ] `/api/auth/[...nextauth].ts`: Authentication flow and provider handling
-- [ ] `/api/auth/register/index.ts`: Registration logic and user creation
+- [x] `/api/auth/[...nextauth].ts`: Authentication flow and provider handling (100% coverage)
+- [x] `/api/auth/register/index.ts`: Registration logic and user creation (100% coverage)
 - [x] `/api/auth/forgot-password.ts`: Email sending and token creation (100% coverage)
 - [x] `/api/auth/reset-password.ts`: Password resetting and token validation (100% coverage)
 - [x] `/api/auth/verify-email.ts`: Email verification and account activation (100% coverage)
