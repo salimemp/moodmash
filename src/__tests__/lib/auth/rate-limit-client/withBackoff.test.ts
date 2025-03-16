@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    AnyFunction,
-    BackoffOptions,
-    DEFAULT_BACKOFF_FACTOR,
-    DEFAULT_RETRY_COUNT,
-    DEFAULT_THROTTLE_INTERVAL,
-    setupMocks
+  AnyFunction,
+  BackoffOptions,
+  DEFAULT_BACKOFF_FACTOR,
+  DEFAULT_RETRY_COUNT,
+  DEFAULT_THROTTLE_INTERVAL,
+  setupMocks
 } from './test-utils';
 
 // Setup module mocks

@@ -51,6 +51,9 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <Link href="/dashboard" className="text-sm font-medium hover:text-primary">
                     Dashboard
                   </Link>
+                  <Link href="/camera-mood" className="text-sm font-medium hover:text-primary">
+                    Camera Mood
+                  </Link>
                   <Link href="/profile" className="text-sm font-medium hover:text-primary">
                     Profile
                   </Link>
@@ -164,6 +167,13 @@ export function MainLayout({ children }: MainLayoutProps) {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       Dashboard
+                    </Link>
+                    <Link
+                      href="/camera-mood"
+                      className="text-sm font-medium hover:text-primary"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Camera Mood
                     </Link>
                     <Link
                       href="/profile"

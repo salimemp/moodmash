@@ -13,9 +13,9 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   // Apply rate limiting
-  const rateLimitResult = await rateLimit(req, res, 'general');
-  if (!rateLimitResult) {
-    return;
+  const rateLimitPassed = await rateLimit(req, res, 'general');
+  if (!rateLimitPassed) {
+    return res.status(429).json({ error: 'Too many requests' });
   }
 
   try {

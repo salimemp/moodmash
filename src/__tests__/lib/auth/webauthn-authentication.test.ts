@@ -35,110 +35,169 @@ import {
 
 describe('WebAuthn Authentication Module', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    vi.clearAllMocks();
     
     // Mock the configuration values
-    vi.spyOn(webauthnConfig, 'getRpID').mockReturnValue('example.com');
-    vi.spyOn(webauthnConfig, 'getExpectedOrigin').mockReturnValue('https://example.com');
+    vi.spyOn(webauthnConfig, 'getRpID').mockReturnValue('localhost');
+    vi.spyOn(webauthnConfig, 'getExpectedOrigin').mockReturnValue('http://localhost:3000');
     vi.spyOn(webauthnConfig, 'timeoutDuration', 'get').mockReturnValue(60000);
   });
   
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
   
   describe('generateWebAuthnAuthenticationOptions', () => {
-    it('should generate authentication options with credentials when userId is provided', async () => {
+    const userId = 'user-123';
+    
+    const mockUserCredentials = [
+      { externalId: 'credential-1' },
+      { externalId: 'credential-2' }
+    ];
+    
+    const mockAuthenticationOptions = {
+      challenge: 'challenge-123',
+      timeout: 60000,
+      rpID: 'localhost',
+      allowCredentials: [
+        { id: Buffer.from('credential-1', 'base64url'), type: 'public-key', transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid'] },
+        { id: Buffer.from('credential-2', 'base64url'), type: 'public-key', transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid'] }
+      ],
+      userVerification: 'preferred'
+    };
+
+    it('should call db.credential.findMany with the correct parameters when userId is provided', async () => {
       // Setup
-      const userId = 'user123';
-      
-      // Mock the database call to return user credentials
-      const mockCredentials = [
-        { externalId: 'credential1' },
-        { externalId: 'credential2' }
-      ];
-      (db.credential.findMany as any).mockResolvedValue(mockCredentials);
-      
-      // Mock the SimpleWebAuthn function
-      const mockOptions = { publicKey: { challenge: 'challenge' } };
-      (generateAuthenticationOptions as any).mockResolvedValue(mockOptions);
-      
-      // Test
-      const result = await generateWebAuthnAuthenticationOptions(userId);
-      
-      // Assert
+      (db.credential.findMany as any).mockResolvedValue(mockUserCredentials);
+      (generateAuthenticationOptions as any).mockReturnValue(mockAuthenticationOptions);
+
+      // Execute
+      await generateWebAuthnAuthenticationOptions(userId);
+
+      // Verify
       expect(db.credential.findMany).toHaveBeenCalledWith({
         where: { userId },
         select: { externalId: true },
         take: 50,
       });
-      
-      expect(generateAuthenticationOptions).toHaveBeenCalledWith(expect.objectContaining({
-        rpID: 'example.com',
-        timeout: 60000,
-        allowCredentials: expect.any(Array),
-        userVerification: 'preferred',
-      }));
-      
-      expect(result).toBe(mockOptions);
     });
-    
-    it('should generate authentication options without credentials when userId is not provided', async () => {
-      // Mock the SimpleWebAuthn function
-      const mockOptions = { publicKey: { challenge: 'challenge' } };
-      (generateAuthenticationOptions as any).mockResolvedValue(mockOptions);
-      
-      // Test
-      const result = await generateWebAuthnAuthenticationOptions();
-      
-      // Assert
+
+    it('should call generateAuthenticationOptions with the correct parameters when userId is provided', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue(mockUserCredentials);
+      (generateAuthenticationOptions as any).mockReturnValue(mockAuthenticationOptions);
+
+      // Execute
+      await generateWebAuthnAuthenticationOptions(userId);
+
+      // Verify
+      expect(generateAuthenticationOptions).toHaveBeenCalledWith({
+        rpID: 'localhost',
+        timeout: 60000,
+        allowCredentials: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Buffer),
+            type: 'public-key',
+            transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid']
+          })
+        ]),
+        userVerification: 'preferred'
+      });
+    });
+
+    it('should call generateAuthenticationOptions without allowCredentials when userId is not provided', async () => {
+      // Setup
+      (generateAuthenticationOptions as any).mockReturnValue(mockAuthenticationOptions);
+
+      // Execute
+      await generateWebAuthnAuthenticationOptions();
+
+      // Verify
       expect(db.credential.findMany).not.toHaveBeenCalled();
-      
-      expect(generateAuthenticationOptions).toHaveBeenCalledWith(expect.objectContaining({
-        rpID: 'example.com',
+      expect(generateAuthenticationOptions).toHaveBeenCalledWith({
+        rpID: 'localhost',
         timeout: 60000,
         allowCredentials: undefined,
-        userVerification: 'preferred',
-      }));
-      
-      expect(result).toBe(mockOptions);
+        userVerification: 'preferred'
+      });
+    });
+
+    it('should return the authentication options from generateAuthenticationOptions', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue(mockUserCredentials);
+      (generateAuthenticationOptions as any).mockReturnValue(mockAuthenticationOptions);
+
+      // Execute
+      const result = await generateWebAuthnAuthenticationOptions(userId);
+
+      // Verify
+      expect(result).toEqual(mockAuthenticationOptions);
+    });
+
+    it('should handle empty credentials array', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue([]);
+      (generateAuthenticationOptions as any).mockReturnValue(mockAuthenticationOptions);
+
+      // Execute
+      await generateWebAuthnAuthenticationOptions(userId);
+
+      // Verify
+      expect(generateAuthenticationOptions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          allowCredentials: []
+        })
+      );
     });
   });
   
   describe('verifyWebAuthnAuthentication', () => {
-    it('should verify authentication and update counter when successful', async () => {
+    const mockCredential = {
+      id: 'credential-id',
+      rawId: 'raw-id',
+      response: {
+        clientDataJSON: 'client-data',
+        authenticatorData: 'authenticator-data',
+        signature: 'signature',
+        userHandle: 'user-handle'
+      },
+      type: 'public-key',
+      clientExtensionResults: {}
+    };
+    
+    const expectedChallenge = 'challenge-123';
+    
+    const mockDbCredential = {
+      id: 'db-credential-id',
+      externalId: 'credential-id',
+      publicKey: 'public-key-base64url',
+      counter: 0,
+      user: {
+        id: 'user-123',
+        email: 'user@example.com'
+      }
+    };
+    
+    const mockVerificationResult = {
+      verified: true,
+      authenticationInfo: {
+        credentialID: Buffer.from('credential-id'),
+        newCounter: 1
+      }
+    };
+
+    it('should call db.credential.findUnique with the correct parameters', async () => {
       // Setup
-      const mockCredential = { id: 'cred123', type: 'public-key' };
-      const expectedChallenge = 'challenge123';
-      
-      // Mock the database calls
-      const mockDbCredential = {
-        id: 'db-cred-id',
-        externalId: 'cred123',
-        publicKey: 'public-key-data',
-        counter: 5,
-        user: {
-          id: 'user123',
-          email: 'user@example.com',
-        },
-      };
       (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
-      (db.credential.update as any).mockResolvedValue({ ...mockDbCredential, counter: 6 });
-      
-      // Mock the SimpleWebAuthn function
-      const mockVerificationResult = { 
-        verified: true, 
-        authenticationInfo: { newCounter: 6 } 
-      };
       (verifyAuthenticationResponse as any).mockResolvedValue(mockVerificationResult);
-      
-      // Test
-      const result = await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
-      
-      // Assert
+
+      // Execute
+      await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
+
+      // Verify
       expect(db.credential.findUnique).toHaveBeenCalledWith({
         where: {
-          externalId: 'cred123',
+          externalId: 'credential-id',
         },
         include: {
           user: {
@@ -149,55 +208,90 @@ describe('WebAuthn Authentication Module', () => {
           },
         },
       });
-      
+    });
+
+    it('should throw an error if the credential is not found', async () => {
+      // Setup
+      (db.credential.findUnique as any).mockResolvedValue(null);
+
+      // Execute & Verify
+      await expect(verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge))
+        .rejects.toThrow('Authenticator not registered with this site');
+    });
+
+    it('should call verifyAuthenticationResponse with the correct parameters', async () => {
+      // Setup
+      (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
+      (verifyAuthenticationResponse as any).mockResolvedValue(mockVerificationResult);
+
+      // Execute
+      await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
+
+      // Verify
       expect(verifyAuthenticationResponse).toHaveBeenCalledWith({
         response: mockCredential,
         expectedChallenge,
-        expectedOrigin: 'https://example.com',
-        expectedRPID: 'example.com',
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost',
         authenticator: {
           credentialID: expect.any(Buffer),
           credentialPublicKey: expect.any(Buffer),
-          counter: 5,
+          counter: 0,
         },
       });
-      
+    });
+
+    it('should update the counter if verification is successful', async () => {
+      // Setup
+      (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
+      (verifyAuthenticationResponse as any).mockResolvedValue(mockVerificationResult);
+
+      // Execute
+      await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
+
+      // Verify
       expect(db.credential.update).toHaveBeenCalledWith({
-        where: { id: 'db-cred-id' },
-        data: { counter: 6 },
+        where: { id: 'db-credential-id' },
+        data: { counter: 1 },
       });
-      
+    });
+
+    it('should not update the counter if verification fails', async () => {
+      // Setup
+      (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
+      (verifyAuthenticationResponse as any).mockResolvedValue({ verified: false });
+
+      // Execute
+      await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
+
+      // Verify
+      expect(db.credential.update).not.toHaveBeenCalled();
+    });
+
+    it('should return the verification result with user information', async () => {
+      // Setup
+      (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
+      (verifyAuthenticationResponse as any).mockResolvedValue(mockVerificationResult);
+
+      // Execute
+      const result = await verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge);
+
+      // Verify
       expect(result).toEqual({
         ...mockVerificationResult,
         user: mockDbCredential.user,
       });
     });
-    
-    it('should throw an error when credential is not found', async () => {
+
+    it('should throw an error if verification fails with an error', async () => {
       // Setup
-      const mockCredential = { id: 'cred123', type: 'public-key' };
-      const expectedChallenge = 'challenge123';
-      
-      // Mock the database call to return no credential
-      (db.credential.findUnique as any).mockResolvedValue(null);
-      
-      // Test & Assert
+      (db.credential.findUnique as any).mockResolvedValue(mockDbCredential);
+      const error = new Error('Verification failed');
+      (verifyAuthenticationResponse as any).mockRejectedValue(error);
+
+      // Execute & Verify
       await expect(verifyWebAuthnAuthentication(mockCredential as any, expectedChallenge))
-        .rejects.toThrow('Authenticator not registered with this site');
-      
-      expect(db.credential.findUnique).toHaveBeenCalledWith({
-        where: {
-          externalId: 'cred123',
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-            },
-          },
-        },
-      });
+        .rejects.toThrow('Verification failed');
     });
   });
 }); 

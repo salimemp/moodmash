@@ -78,9 +78,9 @@ vi.mock('tweetnacl', () => {
 
 // Import the module to test
 import {
-    decryptAsymmetric,
-    encryptAsymmetric,
-    generateKeyPair
+  decryptAsymmetric,
+  encryptAsymmetric,
+  generateKeyPair
 } from '@/lib/encryption/crypto/asymmetric';
 import * as utils from '@/lib/encryption/crypto/utils';
 
@@ -375,7 +375,7 @@ it('should handle edge cases in encrypted data', () => {
         
         // Add more edge cases as needed
       } catch (error) {
-        fail('Should not throw an error for valid inputs');
+        expect.fail('Should not throw an error for valid inputs');
       }
     });
   });

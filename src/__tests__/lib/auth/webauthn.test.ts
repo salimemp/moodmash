@@ -1,14 +1,19 @@
+import * as webauthn from '@/lib/auth/webauthn';
+import * as webauthnAuthentication from '@/lib/auth/webauthn-authentication';
 import {
   generateWebAuthnAuthenticationOptions,
   verifyWebAuthnAuthentication
 } from '@/lib/auth/webauthn-authentication';
+import * as webauthnConfig from '@/lib/auth/webauthn-config';
 import {
   getRpID,
   rpName
 } from '@/lib/auth/webauthn-config';
+import * as webauthnCredentials from '@/lib/auth/webauthn-credentials';
 import {
   deleteWebAuthnCredential
 } from '@/lib/auth/webauthn-credentials';
+import * as webauthnRegistration from '@/lib/auth/webauthn-registration';
 import {
   generateWebAuthnRegistrationOptions,
   verifyWebAuthnRegistration
@@ -123,7 +128,63 @@ vi.mock('@/lib/db/prisma', () => ({
 // Import mocked modules
 import { db } from '@/lib/db/prisma';
 
-describe('WebAuthn Library', () => {
+describe('WebAuthn Module', () => {
+  describe('Configuration exports', () => {
+    it('should export getExpectedOrigin from webauthn-config', () => {
+      expect(webauthn.getExpectedOrigin).toBe(webauthnConfig.getExpectedOrigin);
+    });
+
+    it('should export getRpID from webauthn-config', () => {
+      expect(webauthn.getRpID).toBe(webauthnConfig.getRpID);
+    });
+
+    it('should export rpName from webauthn-config', () => {
+      expect(webauthn.rpName).toBe(webauthnConfig.rpName);
+    });
+
+    it('should export supportedAlgorithmIDs from webauthn-config', () => {
+      expect(webauthn.supportedAlgorithmIDs).toBe(webauthnConfig.supportedAlgorithmIDs);
+    });
+
+    it('should export timeoutDuration from webauthn-config', () => {
+      expect(webauthn.timeoutDuration).toBe(webauthnConfig.timeoutDuration);
+    });
+  });
+
+  describe('Registration exports', () => {
+    it('should export generateWebAuthnRegistrationOptions from webauthn-registration', () => {
+      expect(webauthn.generateWebAuthnRegistrationOptions).toBe(webauthnRegistration.generateWebAuthnRegistrationOptions);
+    });
+
+    it('should export verifyWebAuthnRegistration from webauthn-registration', () => {
+      expect(webauthn.verifyWebAuthnRegistration).toBe(webauthnRegistration.verifyWebAuthnRegistration);
+    });
+  });
+
+  describe('Authentication exports', () => {
+    it('should export generateWebAuthnAuthenticationOptions from webauthn-authentication', () => {
+      expect(webauthn.generateWebAuthnAuthenticationOptions).toBe(webauthnAuthentication.generateWebAuthnAuthenticationOptions);
+    });
+
+    it('should export verifyWebAuthnAuthentication from webauthn-authentication', () => {
+      expect(webauthn.verifyWebAuthnAuthentication).toBe(webauthnAuthentication.verifyWebAuthnAuthentication);
+    });
+  });
+
+  describe('Credential management exports', () => {
+    it('should export deleteWebAuthnCredential from webauthn-credentials', () => {
+      expect(webauthn.deleteWebAuthnCredential).toBe(webauthnCredentials.deleteWebAuthnCredential);
+    });
+
+    it('should export getUserCredentials from webauthn-credentials', () => {
+      expect(webauthn.getUserCredentials).toBe(webauthnCredentials.getUserCredentials);
+    });
+
+    it('should export updateCredentialFriendlyName from webauthn-credentials', () => {
+      expect(webauthn.updateCredentialFriendlyName).toBe(webauthnCredentials.updateCredentialFriendlyName);
+    });
+  });
+
   const originalEnv = { ...process.env };
   
   beforeEach(() => {

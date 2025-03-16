@@ -1,73 +1,72 @@
 import { describe, expect, it, vi } from 'vitest';
 
-// Mock NextAuth and auth.config for controlled testing environment
-// This prevents actual auth operations during tests
-vi.mock('next-auth', () => {
-  const mockHandlers = {
-    GET: vi.fn(),
-    POST: vi.fn(),
-  };
-  return {
-    default: vi.fn().mockReturnValue(mockHandlers),
-  };
-});
+// Mock NextAuth
+vi.mock('next-auth', () => ({
+  default: vi.fn().mockReturnValue('mockHandlers'),
+}));
 
-// Mock auth config to provide a simple test configuration
+// Mock auth.config
 vi.mock('@/lib/auth/auth.config', () => ({
-  authConfig: {
-    providers: ['mock-provider'],
-    callbacks: {
-      session: vi.fn(),
-      jwt: vi.fn(),
-    },
-  },
+  authConfig: { mockConfig: true },
 }));
 
 // Import after mocking to ensure mocks are applied
 import { auth, handlers, signIn, signOut } from '@/lib/auth/auth';
 
-// Tests for the auth module functionality
-// Validates handlers and placeholder functions
 describe('Auth Module', () => {
-  // Tests for NextAuth handlers integration
-  // Ensures we correctly set up and export NextAuth handlers
-  describe('NextAuth handlers', () => {
-    // Verifies that our exported handlers come from NextAuth
-    // This confirms proper integration with NextAuth
-    it('should export NextAuth handlers', () => {
-      expect(handlers).toBeDefined();
-      expect(handlers).toHaveProperty('GET');
-      expect(handlers).toHaveProperty('POST');
+  describe('handlers', () => {
+    it('should return NextAuth result with authConfig', () => {
+      // Already mocked before the import
+      expect(handlers).toBe('mockHandlers');
+      // The NextAuth function is mocked but not called in the test environment
+      // so we don't check if it was called
     });
   });
 
-  // Tests for placeholder authentication functions
-  // These are temporary implementations until actual auth is implemented
   describe('auth function', () => {
-    // Verifies that auth() returns expected placeholder values
-    // This ensures consistent behavior during development
-    it('should return placeholder unauthenticated state', async () => {
-      const session = await auth();
-      expect(session).toEqual({
+    it('should return unauthenticated state by default', async () => {
+      const result = await auth();
+      expect(result).toEqual({
         user: null,
         status: 'unauthenticated',
       });
     });
+
+    it('should be an async function', () => {
+      expect(auth).toBeInstanceOf(Function);
+      expect(auth.constructor.name).toBe('AsyncFunction');
+    });
   });
 
   describe('signIn function', () => {
-    // Verifies that signIn() throws an informative error
-    // This prevents incorrect usage in the codebase
-    it('should throw error instructing to use next-auth/react', () => {
+    it('should throw error directing to use next-auth/react signIn', () => {
       expect(() => signIn()).toThrow('Use next-auth/react signIn instead');
+    });
+
+    it('should throw the exact error message', () => {
+      try {
+        signIn();
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (error: any) {
+        expect(error.message).toBe('Use next-auth/react signIn instead');
+      }
     });
   });
 
   describe('signOut function', () => {
-    // Verifies that signOut() throws an informative error
-    // This prevents incorrect usage in the codebase
-    it('should throw error instructing to use next-auth/react', () => {
+    it('should throw error directing to use next-auth/react signOut', () => {
       expect(() => signOut()).toThrow('Use next-auth/react signOut instead');
+    });
+
+    it('should throw the exact error message', () => {
+      try {
+        signOut();
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (error: any) {
+        expect(error.message).toBe('Use next-auth/react signOut instead');
+      }
     });
   });
 }); 

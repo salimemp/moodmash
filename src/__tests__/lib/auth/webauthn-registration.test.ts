@@ -1,19 +1,12 @@
-import * as webauthnConfig from '@/lib/auth/webauthn-config';
+import {
+  generateWebAuthnRegistrationOptions,
+  verifyWebAuthnRegistration
+} from '@/lib/auth/webauthn-registration';
+import { db } from '@/lib/db/prisma';
+import { generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the SimpleWebAuthn server module
-vi.mock('@simplewebauthn/server', () => ({
-  generateRegistrationOptions: vi.fn(),
-  verifyRegistrationResponse: vi.fn(),
-}));
-
-// Import the mocked functions
-import {
-  generateRegistrationOptions,
-  verifyRegistrationResponse
-} from '@simplewebauthn/server';
-
-// Mock the database
+// Mock the dependencies
 vi.mock('@/lib/db/prisma', () => ({
   db: {
     credential: {
@@ -22,98 +15,200 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
-// Import the mocked database
-import { db } from '@/lib/db/prisma';
+vi.mock('@simplewebauthn/server', () => ({
+  generateRegistrationOptions: vi.fn(),
+  verifyRegistrationResponse: vi.fn(),
+}));
 
-// Import the module under test - after all mocks are set up
-import {
-  generateWebAuthnRegistrationOptions,
-  verifyWebAuthnRegistration
-} from '@/lib/auth/webauthn-registration';
+vi.mock('@/lib/auth/webauthn-config', () => ({
+  getRpID: vi.fn(() => 'localhost'),
+  rpName: 'MoodMash Test',
+  timeoutDuration: 60000,
+  supportedAlgorithmIDs: [-7, -257],
+  getExpectedOrigin: vi.fn(() => 'http://localhost:3000'),
+}));
 
 describe('WebAuthn Registration Module', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-    
-    // Mock the configuration values
-    vi.spyOn(webauthnConfig, 'getRpID').mockReturnValue('example.com');
-    vi.spyOn(webauthnConfig, 'getExpectedOrigin').mockReturnValue('https://example.com');
-    vi.spyOn(webauthnConfig, 'supportedAlgorithmIDs', 'get').mockReturnValue([-7, -257]);
+    vi.clearAllMocks();
   });
-  
+
   afterEach(() => {
-    vi.restoreAllMocks();
+    vi.resetAllMocks();
   });
-  
+
   describe('generateWebAuthnRegistrationOptions', () => {
-    it('should generate registration options with the correct parameters', async () => {
+    const userId = 'user-123';
+    const username = 'testuser';
+    const userDisplayName = 'Test User';
+    
+    const mockExistingCredentials = [
+      { externalId: 'credential-1' },
+      { externalId: 'credential-2' }
+    ];
+    
+    const mockRegistrationOptions = {
+      challenge: 'challenge-123',
+      rp: {
+        name: 'MoodMash Test',
+        id: 'localhost'
+      },
+      user: {
+        id: 'user-123',
+        name: 'testuser',
+        displayName: 'Test User'
+      },
+      pubKeyCredParams: [
+        { type: 'public-key', alg: -7 },
+        { type: 'public-key', alg: -257 }
+      ],
+      timeout: 60000,
+      excludeCredentials: [
+        { id: Buffer.from('credential-1', 'base64url'), type: 'public-key', transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid'] },
+        { id: Buffer.from('credential-2', 'base64url'), type: 'public-key', transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid'] }
+      ],
+      authenticatorSelection: {
+        residentKey: 'required',
+        userVerification: 'preferred'
+      },
+      attestation: 'none'
+    };
+
+    it('should call db.credential.findMany with the correct parameters', async () => {
       // Setup
-      const userId = 'user123';
-      const username = 'testuser';
-      const userDisplayName = 'Test User';
-      
-      // Mock the database call to return existing credentials
-      const mockCredentials = [
-        { externalId: 'credential1' },
-        { externalId: 'credential2' }
-      ];
-      (db.credential.findMany as any).mockResolvedValue(mockCredentials);
-      
-      // Mock the SimpleWebAuthn function
-      const mockOptions = { publicKey: { challenge: 'challenge' } };
-      (generateRegistrationOptions as any).mockResolvedValue(mockOptions);
-      
-      // Test
-      const result = await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
-      
-      // Assert
+      (db.credential.findMany as any).mockResolvedValue(mockExistingCredentials);
+      (generateRegistrationOptions as any).mockReturnValue(mockRegistrationOptions);
+
+      // Execute
+      await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
+
+      // Verify
       expect(db.credential.findMany).toHaveBeenCalledWith({
         where: { userId },
         select: { externalId: true },
         take: 50,
       });
-      
-      expect(generateRegistrationOptions).toHaveBeenCalledWith(expect.objectContaining({
-        rpID: 'example.com',
-        rpName: webauthnConfig.rpName,
+    });
+
+    it('should call generateRegistrationOptions with the correct parameters', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue(mockExistingCredentials);
+      (generateRegistrationOptions as any).mockReturnValue(mockRegistrationOptions);
+
+      // Execute
+      await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
+
+      // Verify
+      expect(generateRegistrationOptions).toHaveBeenCalledWith({
+        rpID: 'localhost',
+        rpName: 'MoodMash Test',
         userID: userId,
         userName: username,
         userDisplayName,
-        timeout: webauthnConfig.timeoutDuration,
-        excludeCredentials: expect.any(Array),
-        authenticatorSelection: expect.objectContaining({
+        timeout: 60000,
+        attestationType: 'none',
+        excludeCredentials: expect.arrayContaining([
+          expect.objectContaining({
+            id: expect.any(Buffer),
+            type: 'public-key',
+            transports: ['internal', 'usb', 'ble', 'nfc', 'hybrid']
+          })
+        ]),
+        authenticatorSelection: {
           residentKey: 'required',
-          userVerification: 'preferred',
-        }),
-        supportedAlgorithmIDs: [-7, -257]
-      }));
-      
-      expect(result).toBe(mockOptions);
+          userVerification: 'preferred'
+        },
+        supportedAlgorithmIDs: [-7, -257],
+      });
+    });
+
+    it('should return the registration options from generateRegistrationOptions', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue(mockExistingCredentials);
+      (generateRegistrationOptions as any).mockReturnValue(mockRegistrationOptions);
+
+      // Execute
+      const result = await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
+
+      // Verify
+      expect(result).toEqual(mockRegistrationOptions);
+    });
+
+    it('should handle empty credentials array', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue([]);
+      (generateRegistrationOptions as any).mockReturnValue(mockRegistrationOptions);
+
+      // Execute
+      await generateWebAuthnRegistrationOptions(userId, username, userDisplayName);
+
+      // Verify
+      expect(generateRegistrationOptions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          excludeCredentials: []
+        })
+      );
     });
   });
-  
+
   describe('verifyWebAuthnRegistration', () => {
-    it('should verify registration with the correct parameters', async () => {
+    const mockCredential = {
+      id: 'credential-id',
+      rawId: 'raw-id',
+      response: {
+        clientDataJSON: 'client-data',
+        attestationObject: 'attestation-object'
+      },
+      type: 'public-key',
+      clientExtensionResults: {}
+    };
+    
+    const expectedChallenge = 'challenge-123';
+    
+    const mockVerificationResult = {
+      verified: true,
+      registrationInfo: {
+        credentialID: Buffer.from('credential-id'),
+        credentialPublicKey: Buffer.from('public-key'),
+        counter: 0
+      }
+    };
+
+    it('should call verifyRegistrationResponse with the correct parameters', async () => {
       // Setup
-      const mockCredential = { id: 'cred123', type: 'public-key' };
-      const expectedChallenge = 'challenge123';
-      
-      // Mock the SimpleWebAuthn function
-      const mockVerificationResult = { verified: true, registrationInfo: { credentialID: 'cred123' } };
       (verifyRegistrationResponse as any).mockResolvedValue(mockVerificationResult);
-      
-      // Test
-      const result = await verifyWebAuthnRegistration(mockCredential as any, expectedChallenge);
-      
-      // Assert
+
+      // Execute
+      await verifyWebAuthnRegistration(mockCredential as any, expectedChallenge);
+
+      // Verify
       expect(verifyRegistrationResponse).toHaveBeenCalledWith({
         response: mockCredential,
         expectedChallenge,
-        expectedOrigin: 'https://example.com',
-        expectedRPID: 'example.com',
+        expectedOrigin: 'http://localhost:3000',
+        expectedRPID: 'localhost'
       });
-      
-      expect(result).toBe(mockVerificationResult);
+    });
+
+    it('should return the verification result', async () => {
+      // Setup
+      (verifyRegistrationResponse as any).mockResolvedValue(mockVerificationResult);
+
+      // Execute
+      const result = await verifyWebAuthnRegistration(mockCredential as any, expectedChallenge);
+
+      // Verify
+      expect(result).toEqual(mockVerificationResult);
+    });
+
+    it('should throw an error if verification fails', async () => {
+      // Setup
+      const error = new Error('Verification failed');
+      (verifyRegistrationResponse as any).mockRejectedValue(error);
+
+      // Execute & Verify
+      await expect(verifyWebAuthnRegistration(mockCredential as any, expectedChallenge))
+        .rejects.toThrow('Verification failed');
     });
   });
 }); 

@@ -11,6 +11,10 @@ Tests are organized in the following structure:
   - `components/` - Tests for React components
   - `integration/` - End-to-end and integration tests
   - `lib/` - Tests for utility libraries and core functionality
+    - `auth/` - Authentication related tests
+      - `rate-limit-client/` - Tests for client-side rate limiting functions
+      - `rate-limit-storage/` - Tests for storage implementation
+    - (other lib modules)
   - `pages/` - Tests for page components
 
 ## Running Tests
@@ -133,9 +137,9 @@ describe('Authentication', () => {
 
 The project has the following coverage thresholds:
 
-- Auth module: 60% lines, 70% functions, 60% statements, 60% branches
-- Encryption module: 70% lines, 75% functions, 70% statements, 70% branches
-- API routes: 5% lines, 5% statements
+- Auth module: 72% lines, 85% branches, 62% functions
+- Encryption module: 95% lines, 76% branches, 100% functions
+- API routes: 2% lines, 2% branches, 2% functions
 
 ## Mocking Strategies
 
@@ -190,4 +194,118 @@ If tests are failing, check the following:
 3. Are the test expectations correct?
 4. Has the implementation changed without updating the tests?
 
-For more information, refer to the [Vitest documentation](https://vitest.dev/guide/). 
+For more information, refer to the [Vitest documentation](https://vitest.dev/guide/).
+
+## Test Organization Patterns
+
+### Modular Test Structure
+
+For complex modules, we've adopted a modular test structure pattern to improve maintainability and clarity. For example, the rate limiting module tests are organized as follows:
+
+1. **Parent Test Files**:
+   - Acting as entry points that import and aggregate tests from child files
+   - Maintain backward compatibility for existing test runners
+   - Example: `rate-limit-client.test.ts` imports tests from dedicated files
+
+2. **Specialized Test Files**:
+   - Focus on testing specific functionality
+   - Named according to the module/function they test
+   - Examples:
+     - `rate-limit-client/throttle.test.ts` tests the throttle function
+     - `rate-limit-client/withBackoff.test.ts` tests the retry mechanism
+     - `rate-limit-storage/methods.test.ts` tests Redis operations
+
+3. **Integration Test Files**:
+   - Test interactions between multiple components
+   - Validate end-to-end functionality with more realistic scenarios
+   - Example: `rate-limit-integration.test.ts` tests client-middleware-storage interactions
+
+This pattern:
+- Improves test organization and maintainability
+- Keeps individual test files focused and smaller
+- Makes it easier to locate and fix test failures
+- Provides clear documentation of module functionality through tests
+- Allows running specific test subsets for faster development feedback
+
+## Test Categories
+
+### Unit Tests
+- **Rate Limiting**: Tests for rate limiting functionality including client, middleware, and storage components
+- **Voice Integration**: Tests for voice recording, processing, and analysis features
+  - `voice-client.test.ts`: Tests the client-side voice recording functionality
+  - `process.test.ts`: Tests the AssemblyAI integration and voice processing endpoint
+
+### Integration Tests
+- **Rate Limiting**: End-to-end tests for rate limiting system
+- **Voice Processing**: Tests for the complete voice recording and analysis flow
+
+### API Tests
+Tests for API endpoints under `pages/api/`:
+- Voice processing endpoint (`/api/voice/process`)
+- Rate limiting middleware integration
+
+## Testing Guidelines
+
+### Voice Integration Tests
+1. **Mocking**:
+   - Use `vi.mock()` for external dependencies (MediaRecorder, AssemblyAI API)
+   - Mock browser APIs (navigator.mediaDevices)
+   - Handle file uploads with formidable mocks
+
+2. **Test Coverage**:
+   - Voice recording lifecycle (start, stop, data handling)
+   - Error scenarios (permissions, API failures)
+   - AssemblyAI API integration
+   - Cleanup and resource management
+
+3. **Best Practices**:
+   - Reset mocks between tests
+   - Test both success and error paths
+   - Verify API calls and parameters
+   - Check response formats and error handling
+
+### Rate Limiting Tests
+1. **Storage Tests**:
+   - Mock Redis operations
+   - Test increment, get, expire functions
+   - Verify key generation and cleanup
+
+2. **Client Tests**:
+   - Test retry logic and backoff
+   - Verify error handling
+   - Check rate limit detection
+
+3. **Integration Tests**:
+   - End-to-end flow testing
+   - Multiple request scenarios
+   - Rate limit enforcement
+
+## Running Tests
+```bash
+# Run all tests
+npm test
+
+# Run specific test file
+npm test src/__tests__/lib/voice/voice-client.test.ts
+
+# Run tests with coverage
+npm test -- --coverage
+```
+
+## Coverage Thresholds
+- Statements: 80%
+- Branches: 75%
+- Functions: 90%
+- Lines: 80%
+
+## Adding New Tests
+1. Create test files following the existing structure
+2. Use appropriate mocks for external dependencies
+3. Follow the testing guidelines for your feature
+4. Update this documentation when adding new test categories
+
+## Debugging Tests
+1. Use `console.log()` or the debugger
+2. Check mock implementations
+3. Verify test isolation
+4. Review cleanup in `afterEach` 

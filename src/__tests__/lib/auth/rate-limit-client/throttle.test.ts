@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    AnyFunction,
-    DEFAULT_THROTTLE_INTERVAL,
-    ThrottleOptions,
-    setupMocks
+  AnyFunction,
+  DEFAULT_THROTTLE_INTERVAL,
+  ThrottleOptions,
+  setupMocks
 } from './test-utils';
 
 // Setup module mocks

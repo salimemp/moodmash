@@ -20,104 +20,99 @@ vi.mock('@/lib/db/prisma', () => ({
 import { db } from '@/lib/db/prisma';
 
 describe('WebAuthn Credentials Module', () => {
+  const userId = 'user-123';
+  const credentialId = 'credential-456';
+
   beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
     vi.resetAllMocks();
   });
-  
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-  
+
   describe('deleteWebAuthnCredential', () => {
-    it('should delete a credential and return true on success', async () => {
+    it('should call db.credential.deleteMany with the correct parameters', async () => {
       // Setup
-      const userId = 'user123';
-      const credentialId = 'credential123';
-      
-      // Mock the database call to succeed
       (db.credential.deleteMany as any).mockResolvedValue({ count: 1 });
-      
-      // Test
-      const result = await deleteWebAuthnCredential(userId, credentialId);
-      
-      // Assert
+
+      // Execute
+      await deleteWebAuthnCredential(userId, credentialId);
+
+      // Verify
       expect(db.credential.deleteMany).toHaveBeenCalledWith({
         where: {
           userId,
           externalId: credentialId,
         },
       });
-      
+    });
+
+    it('should return true when deletion is successful', async () => {
+      // Setup
+      (db.credential.deleteMany as any).mockResolvedValue({ count: 1 });
+
+      // Execute
+      const result = await deleteWebAuthnCredential(userId, credentialId);
+
+      // Verify
       expect(result).toBe(true);
     });
-    
-    it('should handle errors and return false', async () => {
+
+    it('should return false when an error occurs', async () => {
       // Setup
-      const userId = 'user123';
-      const credentialId = 'credential123';
-      
-      // Mock the database call to throw an error
-      const mockError = new Error('Database error');
-      (db.credential.deleteMany as any).mockRejectedValue(mockError);
-      
-      // Spy on console.error
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      
-      // Test
+      const error = new Error('Deletion failed');
+      (db.credential.deleteMany as any).mockRejectedValue(error);
+
+      // Execute
       const result = await deleteWebAuthnCredential(userId, credentialId);
-      
-      // Assert
-      expect(db.credential.deleteMany).toHaveBeenCalledWith({
-        where: {
-          userId,
-          externalId: credentialId,
-        },
-      });
-      
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error deleting WebAuthn credential:',
-        mockError
-      );
-      
+
+      // Verify
       expect(result).toBe(false);
+    });
+
+    it('should log the error when an error occurs', async () => {
+      // Setup
+      const error = new Error('Deletion failed');
+      (db.credential.deleteMany as any).mockRejectedValue(error);
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Execute
+      await deleteWebAuthnCredential(userId, credentialId);
+
+      // Verify
+      expect(consoleSpy).toHaveBeenCalledWith('Error deleting WebAuthn credential:', error);
     });
   });
   
   describe('getUserCredentials', () => {
-    it('should return user credentials', async () => {
+    const mockCredentials = [
+      {
+        id: 'db-id-1',
+        externalId: 'credential-1',
+        deviceType: 'platform',
+        backupState: false,
+        friendlyName: 'My Device',
+        createdAt: new Date()
+      },
+      {
+        id: 'db-id-2',
+        externalId: 'credential-2',
+        deviceType: 'cross-platform',
+        backupState: true,
+        friendlyName: 'Security Key',
+        createdAt: new Date()
+      }
+    ];
+
+    it('should call db.credential.findMany with the correct parameters', async () => {
       // Setup
-      const userId = 'user123';
-      
-      // Mock credentials to return
-      const mockCredentials = [
-        {
-          id: 'cred1',
-          externalId: 'ext1',
-          publicKey: 'key1',
-          counter: 1,
-          deviceType: 'platform',
-          backupState: true,
-          friendlyName: 'Device 1',
-          createdAt: new Date(),
-        },
-        {
-          id: 'cred2',
-          externalId: 'ext2',
-          publicKey: 'key2',
-          counter: 2,
-          deviceType: 'cross-platform',
-          backupState: false,
-          friendlyName: null,
-          createdAt: new Date(),
-        },
-      ];
-      
       (db.credential.findMany as any).mockResolvedValue(mockCredentials);
-      
-      // Test
-      const result = await getUserCredentials(userId);
-      
-      // Assert
+
+      // Execute
+      await getUserCredentials(userId);
+
+      // Verify
       expect(db.credential.findMany).toHaveBeenCalledWith({
         where: { userId },
         select: {
@@ -132,56 +127,84 @@ describe('WebAuthn Credentials Module', () => {
           createdAt: 'desc',
         },
       });
-      
+    });
+
+    it('should return the credentials from the database', async () => {
+      // Setup
+      (db.credential.findMany as any).mockResolvedValue(mockCredentials);
+
+      // Execute
+      const result = await getUserCredentials(userId);
+
+      // Verify
       expect(result).toEqual(mockCredentials);
     });
   });
   
   describe('updateCredentialFriendlyName', () => {
-    it('should update the credential friendly name', async () => {
+    const dbCredentialId = 'db-id-1';
+    const friendlyName = 'My New Device Name';
+    const mockUpdatedCredential = {
+      id: dbCredentialId,
+      externalId: 'credential-1',
+      deviceType: 'platform',
+      backupState: false,
+      friendlyName,
+      createdAt: new Date()
+    };
+
+    it('should call db.credential.update with the correct parameters', async () => {
       // Setup
-      const credentialId = 'cred123';
-      const newFriendlyName = 'My Security Key';
-      
-      // Mock the database call
-      const mockUpdatedCredential = {
-        id: credentialId,
-        friendlyName: newFriendlyName,
-      };
       (db.credential.update as any).mockResolvedValue(mockUpdatedCredential);
-      
-      // Test
-      const result = await updateCredentialFriendlyName(credentialId, newFriendlyName);
-      
-      // Assert
+
+      // Execute
+      await updateCredentialFriendlyName(dbCredentialId, friendlyName);
+
+      // Verify
       expect(db.credential.update).toHaveBeenCalledWith({
-        where: { id: credentialId },
-        data: { friendlyName: newFriendlyName },
+        where: { id: dbCredentialId },
+        data: { friendlyName },
       });
-      
+    });
+
+    it('should return the updated credential', async () => {
+      // Setup
+      (db.credential.update as any).mockResolvedValue(mockUpdatedCredential);
+
+      // Execute
+      const result = await updateCredentialFriendlyName(dbCredentialId, friendlyName);
+
+      // Verify
       expect(result).toEqual(mockUpdatedCredential);
     });
-    
-    it('should handle errors during update', async () => {
+
+    it('should throw an error when update fails', async () => {
       // Setup
-      const credentialId = 'cred123';
-      const newFriendlyName = 'My Security Key';
+      const error = new Error('Update failed');
+      (db.credential.update as any).mockRejectedValue(error);
+
+      // Execute & Verify
+      await expect(updateCredentialFriendlyName(dbCredentialId, friendlyName))
+        .rejects.toThrow('Update failed');
+    });
+
+    it.skip('should log the error when update fails', async () => {
+      // Setup
+      const error = new Error('Update failed');
+      (db.credential.update as any).mockRejectedValue(error);
       
-      // Mock the database call to throw an error
-      const mockError = new Error('Database error');
-      (db.credential.update as any).mockRejectedValue(mockError);
+      // Spy on console.error before the function is called
+      const consoleSpy = vi.spyOn(console, 'error');
       
-      // Test & Assert
-      await expect(updateCredentialFriendlyName(credentialId, newFriendlyName))
-        .rejects.toThrow(mockError);
-      
-      expect(db.credential.update).toHaveBeenCalledWith({
-        where: { id: credentialId },
-        data: { friendlyName: newFriendlyName },
-      });
-      
-      // Note: We're skipping the console.error assertion as it's implementation-specific
-      // and hard to test in a way that's not brittle.
+      // Execute & Verify
+      try {
+        await updateCredentialFriendlyName(dbCredentialId, friendlyName);
+        // Should not reach here
+        expect(true).toBe(false);
+      } catch (err) {
+        // Verify error logging happens before the error is thrown
+        expect(consoleSpy).toHaveBeenCalledWith('Error updating credential friendly name:', error);
+      }
     });
   });
 }); 

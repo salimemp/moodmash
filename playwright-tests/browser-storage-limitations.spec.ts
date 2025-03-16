@@ -104,7 +104,12 @@ test.describe('Browser Storage Limitations', () => {
     // Mock the Storage API's estimate method to return low space
     await page.addInitScript(() => {
       if (navigator.storage && navigator.storage.estimate) {
+        // No need to store original implementation since we're not using it
+        // Just add a comment explaining our mock implementation
+        console.log('Overriding storage estimate method');
+        
         navigator.storage.estimate = async () => {
+          // Return mock values simulating nearly full storage
           return {
             quota: 100 * 1024 * 1024, // 100MB total
             usage: 99 * 1024 * 1024,  // 99MB used (almost full)

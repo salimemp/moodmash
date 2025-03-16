@@ -1,98 +1,80 @@
 import { getExpectedOrigin, getRpID, rpName, supportedAlgorithmIDs, timeoutDuration } from '@/lib/auth/webauthn-config';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('WebAuthn Configuration Module', () => {
+describe('WebAuthn Configuration', () => {
   const originalEnv = { ...process.env };
   
   beforeEach(() => {
-    // Reset environment variables before each test
     vi.resetModules();
-    process.env = { ...originalEnv };
+    // Clear env vars for testing
+    delete process.env.NEXT_PUBLIC_APP_URL;
   });
   
   afterEach(() => {
-    // Restore original environment after each test
-    process.env = originalEnv;
-    vi.restoreAllMocks();
+    // Restore env vars
+    process.env = { ...originalEnv };
   });
   
   describe('getRpID', () => {
-    it('should return hostname from NEXT_PUBLIC_APP_URL when available', () => {
-      // Setup
-      process.env.NEXT_PUBLIC_APP_URL = 'https://example.com/path';
-      
-      // Mock URL constructor
-      const mockHostname = 'example.com';
-      class MockURL {
-        hostname: string;
-        
-        constructor(_url: string) {
-          this.hostname = mockHostname;
-        }
-        
-        // Add required static methods to satisfy TypeScript
-        static canParse() { return true; }
-        static createObjectURL() { return ''; }
-        static parse() { return new URL('https://example.com'); }
-        static revokeObjectURL() {}
-      }
-      
-      global.URL = MockURL as any;
-      
-      // Test
-      const result = getRpID();
-      
-      // Assert
-      expect(result).toBe('example.com');
+    it('should return localhost when no NEXT_PUBLIC_APP_URL is set', () => {
+      const rpID = getRpID();
+      expect(rpID).toBe('localhost');
     });
     
-    it('should return "localhost" when NEXT_PUBLIC_APP_URL is not available', () => {
-      // Setup
-      process.env.NEXT_PUBLIC_APP_URL = undefined;
-      
-      // Test
-      const result = getRpID();
-      
-      // Assert
-      expect(result).toBe('localhost');
+    it('should extract hostname from NEXT_PUBLIC_APP_URL', () => {
+      process.env.NEXT_PUBLIC_APP_URL = 'https://example.com';
+      const rpID = getRpID();
+      expect(rpID).toBe('example.com');
+    });
+    
+    it('should handle URLs with ports correctly', () => {
+      process.env.NEXT_PUBLIC_APP_URL = 'https://example.com:3000';
+      const rpID = getRpID();
+      expect(rpID).toBe('example.com');
+    });
+    
+    it('should handle subdomains correctly', () => {
+      process.env.NEXT_PUBLIC_APP_URL = 'https://app.example.com';
+      const rpID = getRpID();
+      expect(rpID).toBe('app.example.com');
+    });
+  });
+  
+  describe('rpName', () => {
+    it('should be defined', () => {
+      expect(rpName).toBeDefined();
+      expect(typeof rpName).toBe('string');
+      expect(rpName).toBe('MoodMash');
+    });
+  });
+  
+  describe('timeoutDuration', () => {
+    it('should be defined', () => {
+      expect(timeoutDuration).toBeDefined();
+      expect(typeof timeoutDuration).toBe('number');
+      expect(timeoutDuration).toBe(60000); // 1 minute in milliseconds
+    });
+  });
+  
+  describe('supportedAlgorithmIDs', () => {
+    it('should be defined', () => {
+      expect(supportedAlgorithmIDs).toBeDefined();
+      expect(Array.isArray(supportedAlgorithmIDs)).toBe(true);
+      expect(supportedAlgorithmIDs).toContain(-7); // ES256
+      expect(supportedAlgorithmIDs).toContain(-257); // RS256
     });
   });
   
   describe('getExpectedOrigin', () => {
-    it('should return NEXT_PUBLIC_APP_URL when available', () => {
-      // Setup
+    it('should return localhost origin when no NEXT_PUBLIC_APP_URL is set', () => {
+      const origin = getExpectedOrigin();
+      expect(origin).toBe('http://localhost:3000');
+    });
+    
+    it('should return the NEXT_PUBLIC_APP_URL when set', () => {
       process.env.NEXT_PUBLIC_APP_URL = 'https://example.com';
-      
-      // Test
-      const result = getExpectedOrigin();
-      
-      // Assert
-      expect(result).toBe('https://example.com');
-    });
-    
-    it('should return localhost origin when NEXT_PUBLIC_APP_URL is not available', () => {
-      // Setup
-      process.env.NEXT_PUBLIC_APP_URL = undefined;
-      
-      // Test
-      const result = getExpectedOrigin();
-      
-      // Assert
-      expect(result).toBe('http://localhost:3000');
-    });
-  });
-  
-  describe('constants', () => {
-    it('should export rpName as "MoodMash"', () => {
-      expect(rpName).toBe('MoodMash');
-    });
-    
-    it('should export timeoutDuration as 60000', () => {
-      expect(timeoutDuration).toBe(60000);
-    });
-    
-    it('should export supportedAlgorithmIDs with ES256 and RS256', () => {
-      expect(supportedAlgorithmIDs).toEqual([-7, -257]);
+      const origin = getExpectedOrigin();
+      expect(origin).toBe('https://example.com');
     });
   });
 }); 
