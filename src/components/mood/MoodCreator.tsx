@@ -1,4 +1,8 @@
-import { emotionToGradient, sentimentAnalyzer, type SentimentResult } from '@/lib/ml/sentiment-analyzer';
+import {
+  emotionToGradient,
+  sentimentAnalyzer,
+  type SentimentResult,
+} from '@/lib/ml/sentiment-analyzer';
 import { debounce } from '@/lib/utils';
 import React, { useCallback, useEffect, useState } from 'react';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -37,25 +41,28 @@ const MoodCreator: React.FC = () => {
   // Debounced analysis function to avoid too many API calls
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const analyzeSentiment = useCallback(
-    debounce(((async (text: string) => {
-      if (!text.trim()) {
-        setSentiment(null);
-        setShowSuggestions(false);
-        return;
-      }
-      
-      setAnalyzing(true);
-      try {
-        const result = await sentimentAnalyzer.analyzeText(text);
-        setSentiment(result);
-        setShowSuggestions(true);
-      } catch (error) {
-        console.error('Failed to analyze sentiment:', error);
-        setSentiment(null);
-      } finally {
-        setAnalyzing(false);
-      }
-    }) as (...args: unknown[]) => unknown), 500),
+    debounce(
+      (async (text: string) => {
+        if (!text.trim()) {
+          setSentiment(null);
+          setShowSuggestions(false);
+          return;
+        }
+
+        setAnalyzing(true);
+        try {
+          const result = await sentimentAnalyzer.analyzeText(text);
+          setSentiment(result);
+          setShowSuggestions(true);
+        } catch (error) {
+          console.error('Failed to analyze sentiment:', error);
+          setSentiment(null);
+        } finally {
+          setAnalyzing(false);
+        }
+      }) as (...args: unknown[]) => unknown,
+      500
+    ),
     []
   );
 
@@ -71,18 +78,10 @@ const MoodCreator: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!text.trim() || !selectedEmoji) return;
-    
-    // In a real app, this would save the mood to the database
-    console.log('Creating mood:', {
-      text,
-      emoji: selectedEmoji,
-      gradientColors,
-      sentimentScore: sentiment?.score,
-      emotions: sentiment?.dominantEmotions,
-    });
-    
+
+    // TODO: Implement actual mood creation logic
     // Reset the form
     setText('');
     setSentiment(null);
@@ -97,7 +96,7 @@ const MoodCreator: React.FC = () => {
   return (
     <div className="w-full max-w-md mx-auto p-4 bg-card rounded-lg shadow-md">
       <h2 className="text-xl font-bold mb-4">Create a New Mood</h2>
-      
+
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="mood-text" className="block text-sm font-medium mb-1">
@@ -111,56 +110,53 @@ const MoodCreator: React.FC = () => {
             placeholder="Describe your mood or feelings..."
           />
         </div>
-        
+
         {analyzing && (
           <div className="flex justify-center my-4">
             <LoadingSpinner size="sm" />
             <span className="ml-2">Analyzing your mood...</span>
           </div>
         )}
-        
+
         {showSuggestions && sentiment && (
           <div className="mb-4">
             <p className="text-sm mb-2">Based on your description, you seem to be feeling:</p>
             <div className="flex flex-wrap gap-2 mb-3">
-              {sentiment.dominantEmotions.map((emotion) => (
-                <span 
-                  key={emotion.type} 
-                  className="px-2 py-1 text-xs rounded-full bg-primary/10"
-                >
+              {sentiment.dominantEmotions.map(emotion => (
+                <span key={emotion.type} className="px-2 py-1 text-xs rounded-full bg-primary/10">
                   {emotion.type} ({(emotion.score * 100).toFixed(0)}%)
                 </span>
               ))}
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mb-3">
-              {Object.entries(moodEmojis).map(([mood, emojiList]) => (
-                mood === sentiment.mood ? (
-                  emojiList.map((emoji) => (
-                    <button
-                      type="button"
-                      key={emoji}
-                      onClick={() => handleEmojiSelect(emoji)}
-                      className={`text-2xl p-2 rounded-full ${
-                        selectedEmoji === emoji ? 'bg-primary/20' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  ))
-                ) : null
-              ))}
+              {Object.entries(moodEmojis).map(([mood, emojiList]) =>
+                mood === sentiment.mood
+                  ? emojiList.map(emoji => (
+                      <button
+                        type="button"
+                        key={emoji}
+                        onClick={() => handleEmojiSelect(emoji)}
+                        className={`text-2xl p-2 rounded-full ${
+                          selectedEmoji === emoji ? 'bg-primary/20' : 'hover:bg-muted'
+                        }`}
+                      >
+                        {emoji}
+                      </button>
+                    ))
+                  : null
+              )}
             </div>
           </div>
         )}
-        
-        <div 
+
+        <div
           className="mb-4 h-32 rounded-lg flex items-center justify-center text-4xl"
           style={gradientStyle}
         >
           {selectedEmoji || '🙂'}
         </div>
-        
+
         <button
           type="submit"
           disabled={!text.trim() || !selectedEmoji}
@@ -173,4 +169,4 @@ const MoodCreator: React.FC = () => {
   );
 };
 
-export default MoodCreator; 
+export default MoodCreator;
