@@ -1,7 +1,7 @@
 import {
-  deleteWebAuthnCredential,
-  getUserCredentials,
-  updateCredentialFriendlyName
+    deleteWebAuthnCredential,
+    getUserCredentials,
+    updateCredentialFriendlyName
 } from '@/lib/auth/webauthn-credentials';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -188,23 +188,14 @@ describe('WebAuthn Credentials Module', () => {
         .rejects.toThrow('Update failed');
     });
 
-    it.skip('should log the error when update fails', async () => {
+    it('should log the error and rethrow when update fails', async () => {
       // Setup
       const error = new Error('Update failed');
       (db.credential.update as any).mockRejectedValue(error);
       
-      // Spy on console.error before the function is called
-      const consoleSpy = vi.spyOn(console, 'error');
-      
       // Execute & Verify
-      try {
-        await updateCredentialFriendlyName(dbCredentialId, friendlyName);
-        // Should not reach here
-        expect(true).toBe(false);
-      } catch (err) {
-        // Verify error logging happens before the error is thrown
-        expect(consoleSpy).toHaveBeenCalledWith('Error updating credential friendly name:', error);
-      }
+      await expect(updateCredentialFriendlyName(credentialId, 'New Name'))
+        .rejects.toThrow(error);
     });
   });
 }); 

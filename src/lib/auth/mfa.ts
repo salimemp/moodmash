@@ -97,9 +97,11 @@ export async function verifyBackupCode(userId: string, code: string): Promise<bo
 // Function to generate a QR code for TOTP setup
 export async function generateTOTPQRCode(secret: string, email: string): Promise<string> {
   try {
-    const otpauth = authenticator.keyuri(email, 'MoodMash', secret);
+    const serviceName = process.env.MFA_SERVICE_NAME || 'MoodMash';
+    const otpauth = authenticator.keyuri(email, serviceName, secret);
     return await QRCode.toDataURL(otpauth);
-  } catch {
+  } catch (error) {
+    console.error('QR code generation error:', error);
     throw new Error('Failed to generate QR code');
   }
 }

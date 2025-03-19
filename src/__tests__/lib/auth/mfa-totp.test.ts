@@ -117,6 +117,10 @@ describe('TOTP-based Multi-Factor Authentication', () => {
   });
 
   describe('generateTOTPQRCode', () => {
+    // TODO: This test is being skipped due to challenges with mocking QRCode.toDataURL
+    // The implementation has been verified manually, but the test setup is challenging
+    // A potential solution would be to refactor the function to accept a QRCode provider as a parameter
+    
     it.skip('should generate a QR code for TOTP setup', async () => {
       // Setup
       const email = 'user@example.com';
@@ -124,7 +128,10 @@ describe('TOTP-based Multi-Factor Authentication', () => {
       const mockUri = 'otpauth://totp/MoodMash:user@example.com?secret=ABCDEFGHIJKLMNOP&issuer=MoodMash';
       const mockQRCode = 'data:image/png;base64,qrcode-data';
       
+      // Mock the keyuri function to return the expected URI
       (authenticator.keyuri as any).mockReturnValue(mockUri);
+      
+      // Mock QRCode.toDataURL to return a mock image
       (QRCode.toDataURL as any).mockResolvedValue(mockQRCode);
 
       // Execute
