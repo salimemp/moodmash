@@ -40,14 +40,19 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
     const loadModel = async () => {
       try {
         setIsModelLoading(true);
-        
+
         // Load model
         const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
-        const detectionConfig = {
+        // Define the type explicitly to match the mediapipe runtime
+        type MediaPipeConfig = {
+          runtime: 'mediapipe';
+          solutionPath: string;
+        };
+        const detectionConfig: MediaPipeConfig = {
           runtime: 'mediapipe',
           solutionPath: 'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection',
-        } as any; // Using any type to avoid type issues
-        
+        };
+
         const faceDetector = await faceDetection.createDetector(model, detectionConfig);
         setDetector(faceDetector);
       } catch (error) {
@@ -68,30 +73,30 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   // Set up camera
   const setupCamera = async () => {
     if (!videoRef.current) return;
-    
+
     try {
       setCameraError(null);
       setIsLoading(true);
-      
+
       const constraints = {
         video: {
           facingMode: 'user',
           width: { ideal: width },
-          height: { ideal: height }
-        }
+          height: { ideal: height },
+        },
       };
-      
+
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       videoRef.current.srcObject = stream;
-      
+
       // Wait for video to be ready
-      await new Promise<void>((resolve) => {
+      await new Promise<void>(resolve => {
         if (!videoRef.current) return;
         videoRef.current.onloadedmetadata = () => {
           resolve();
         };
       });
-      
+
       videoRef.current.play();
       setIsCameraActive(true);
     } catch (error) {
@@ -124,27 +129,27 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   // Capture image
   const captureImage = () => {
     if (!videoRef.current || !canvasRef.current) return;
-    
+
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    
+
     // Draw the current frame
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
+
     // Get image data as URL
     const imageData = canvas.toDataURL('image/jpeg');
-    
+
     // Send to parent component
     if (onImageCaptured) {
       onImageCaptured(imageData);
     }
-    
+
     // Detect faces and emotions
     detectFace();
   };
@@ -152,13 +157,13 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   // Detect faces
   const detectFace = async () => {
     if (!detector || !videoRef.current || !canvasRef.current) return;
-    
+
     try {
       const video = videoRef.current;
-      
+
       // Detect faces
       const faces = await detector.estimateFaces(video);
-      
+
       if (faces.length > 0) {
         // In a real app, we would analyze facial features for actual emotion detection
         // For demo purposes, we'll generate random emotions
@@ -166,17 +171,17 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
           { emotion: 'joy', score: Math.random() },
           { emotion: 'sadness', score: Math.random() * 0.7 },
           { emotion: 'anger', score: Math.random() * 0.4 },
-          { emotion: 'surprise', score: Math.random() * 0.5 }
+          { emotion: 'surprise', score: Math.random() * 0.5 },
         ];
-        
+
         // Sort by score
         mockEmotions.sort((a, b) => b.score - a.score);
-        
+
         // Notify parent
         if (onEmotionDetected) {
           onEmotionDetected(mockEmotions);
         }
-        
+
         // Draw face detection visualization
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
@@ -184,16 +189,16 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
           // Clear canvas
           ctx.fillStyle = 'rgba(0, 0, 0, 0)';
           ctx.clearRect(0, 0, canvas.width, canvas.height);
-          
+
           // Draw faces
           faces.forEach(face => {
             const box = face.box;
-            
+
             // Draw bounding box
             ctx.strokeStyle = '#00FF00';
             ctx.lineWidth = 2;
             ctx.strokeRect(box.xMin, box.yMin, box.width, box.height);
-            
+
             // Draw keypoints
             if (face.keypoints) {
               face.keypoints.forEach(keypoint => {
@@ -220,7 +225,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
 
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto">
-      <div 
+      <div
         className="relative w-full aspect-video bg-muted rounded-lg overflow-hidden mb-4"
         data-testid="camera-container"
         style={{ width: `${width}px`, height: `${height}px` }}
@@ -237,29 +242,21 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
             {cameraError}
           </div>
         ) : null}
-        
-        <video 
-          ref={videoRef}
-          className="w-full h-full object-cover"
-          playsInline
-          muted
-        />
-        
-        <canvas 
-          ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full"
-        />
+
+        <video ref={videoRef} className="w-full h-full object-cover" playsInline muted />
+
+        <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full" />
       </div>
-      
+
       <div className="flex gap-2 w-full mb-4">
         <Button
           onClick={toggleCamera}
           className="flex-1"
-          variant={isCameraActive ? "destructive" : "default"}
+          variant={isCameraActive ? 'destructive' : 'default'}
         >
           {buttonText}
         </Button>
-        
+
         {isCameraActive && (
           <Button
             onClick={captureImage}
@@ -275,4 +272,4 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   );
 };
 
-export default CameraCapture; 
+export default CameraCapture;
