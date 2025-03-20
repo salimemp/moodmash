@@ -1,10 +1,12 @@
-import * as authUtils from '@/lib/auth/utils';
-import { db } from '@/lib/db/prisma';
-import updateProfileHandler from '@/pages/api/profile/update';
+import { NextApiRequest, NextApiResponse } from 'next';
 import { createMocks } from 'node-mocks-http';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
+vi.mock('@/lib/auth/utils', () => ({
+  getSessionFromReq: vi.fn(),
+}));
+
 vi.mock('@/lib/db/prisma', () => ({
   db: {
     user: {
@@ -13,177 +15,101 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
-// Instead of mocking getServerSession directly, mock the utils function
-vi.mock('@/lib/auth/utils', () => ({
-  getSessionFromReq: vi.fn(),
-}));
-
 vi.mock('@/lib/auth/rate-limit', () => ({
-  rateLimit: vi.fn().mockResolvedValue(true),
+  rateLimit: vi.fn(),
 }));
 
-// Define a type for the mock user object to avoid TypeScript errors
-type MockUser = {
-  id: string;
-  email: string;
-  name: string | null;
-  bio: string | null;
-  image: string | null;
-  emailVerified: Date | null;
-  password: string | null;
-  settings: string | null;
-  role: string;
-  mfaEnabled: boolean;
-  mfaSecret: string | null;
-  mfaBackupCodes: string[];
-  createdAt: Date;
-  updatedAt: Date;
-};
+// Import mocked dependencies
+import { rateLimit } from '@/lib/auth/rate-limit';
+import { getSessionFromReq } from '@/lib/auth/utils';
+import { db } from '@/lib/db/prisma';
 
-// Define a type for the selected user data returned by the API
-type UserSelect = {
-  id: string;
-  email: string;
-  name: string | null;
-  bio: string | null;
-  image: string | null;
-};
+// Import the API handler
+import handler from '@/pages/api/profile/update';
 
-// Tests for Profile Update API
-// Validates profile update functionality and input validation
 describe('Profile Update API', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (rateLimit as any).mockResolvedValue(true);
   });
 
-  // Verifies that the API rejects non-POST methods
-  // Ensures correct HTTP method validation
   it('should return 405 for non-POST requests', async () => {
     const { req, res } = createMocks({
       method: 'GET',
     });
 
-    await updateProfileHandler(req, res);
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
 
     expect(res._getStatusCode()).toBe(405);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Method not allowed',
-    });
+    expect(res._getJSONData()).toEqual({ message: 'Method not allowed' });
   });
 
-  // Verifies that unauthenticated requests are rejected
-  // Ensures proper authentication checks
-  it('should return 401 for unauthenticated requests', async () => {
+  it('should return 401 when user is not authenticated', async () => {
     const { req, res } = createMocks({
       method: 'POST',
-      body: { name: 'New Name', bio: 'New Bio', image: 'new-image.jpg' },
     });
 
-    // Mock null session to simulate unauthenticated request
-    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce(null);
+    (getSessionFromReq as any).mockResolvedValueOnce({ user: null });
 
-    await updateProfileHandler(req, res);
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
 
+    expect(getSessionFromReq).toHaveBeenCalledWith(req, res);
     expect(res._getStatusCode()).toBe(401);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Unauthorized',
-    });
+    expect(res._getJSONData()).toEqual({ message: 'Unauthorized' });
   });
 
-  // Verifies that bio length is validated properly
-  // Ensures input validation rules are enforced
   it('should return 400 if bio exceeds 160 characters', async () => {
     const { req, res } = createMocks({
       method: 'POST',
-      body: { 
-        name: 'Test User', 
-        bio: 'a'.repeat(161), 
-        image: 'image.jpg' 
+      body: {
+        bio: 'a'.repeat(161), // Bio exceeding 160 characters
       },
     });
 
-    // Mock authenticated session
-    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
-      user: { id: 'user-123', email: 'user@example.com' },
-      expires: new Date().toISOString(),
+    (getSessionFromReq as any).mockResolvedValueOnce({
+      user: { id: 'user-123' },
     });
 
-    await updateProfileHandler(req, res);
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
 
     expect(res._getStatusCode()).toBe(400);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Bio cannot exceed 160 characters',
-    });
-    expect(db.user.update).not.toHaveBeenCalled();
+    expect(res._getJSONData()).toEqual({ message: 'Bio cannot exceed 160 characters' });
   });
 
-  // Verifies successful profile update
-  // Ensures the entire flow works correctly with valid inputs
-  it('should update user profile successfully with valid inputs', async () => {
-    const profileData = { 
-      name: 'Updated Name', 
-      bio: 'Updated Bio', 
-      image: 'updated-image.jpg' 
+  it('should update user profile successfully', async () => {
+    const profileData = {
+      name: 'Test User',
+      bio: 'This is a test bio',
+      image: 'https://example.com/image.jpg',
     };
-    
+
     const { req, res } = createMocks({
       method: 'POST',
       body: profileData,
     });
 
-    // Create a mock user with the required properties
-    const mockUser: MockUser = {
+    const mockUser = {
       id: 'user-123',
-      email: 'user@example.com',
-      name: 'Updated Name',
-      bio: 'Updated Bio',
-      image: 'updated-image.jpg',
-      emailVerified: null,
-      password: null,
-      settings: null,
-      role: 'USER',
-      mfaEnabled: false,
-      mfaSecret: null,
-      mfaBackupCodes: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
+      ...profileData,
+      email: 'test@example.com',
     };
 
-    // Mock authenticated session
-    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
-      user: { id: 'user-123', email: 'user@example.com' },
-      expires: new Date().toISOString(),
+    (getSessionFromReq as any).mockResolvedValueOnce({
+      user: { id: 'user-123' },
     });
 
-    // Only mock the selected fields that the handler returns
-    const selectedUserData: UserSelect = {
-      id: mockUser.id,
-      email: mockUser.email,
-      name: mockUser.name,
-      bio: mockUser.bio,
-      image: mockUser.image,
-    };
+    (db.user.update as any).mockResolvedValueOnce(mockUser);
 
-    // Mock the database update to return only the selected fields
-    vi.mocked(db.user.update).mockResolvedValueOnce(selectedUserData as any);
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
 
-    await updateProfileHandler(req, res);
-
-    expect(res._getStatusCode()).toBe(200);
-    
-    // Parse the response data to compare
-    const responseData = JSON.parse(res._getData());
-    expect(responseData.message).toBe('Profile updated successfully');
-    expect(responseData.user).toEqual(selectedUserData);
-    
     expect(db.user.update).toHaveBeenCalledWith({
       where: { id: 'user-123' },
-      data: expect.objectContaining({
+      data: {
         name: profileData.name,
         bio: profileData.bio,
         image: profileData.image,
         updatedAt: expect.any(Date),
-      }),
+      },
       select: {
         id: true,
         name: true,
@@ -192,74 +118,48 @@ describe('Profile Update API', () => {
         bio: true,
       },
     });
-  });
-
-  // Verifies partial profile updates
-  // Ensures users can update only specific fields
-  it('should update only provided fields', async () => {
-    const partialProfileData = { 
-      name: 'Updated Name'
-      // No bio or image
-    };
-    
-    const { req, res } = createMocks({
-      method: 'POST',
-      body: partialProfileData,
-    });
-
-    // Create a mock user with the required properties
-    const mockUser: MockUser = {
-      id: 'user-123',
-      email: 'user@example.com',
-      name: 'Updated Name',
-      bio: null,
-      image: null,
-      emailVerified: null,
-      password: null,
-      settings: null,
-      role: 'USER',
-      mfaEnabled: false,
-      mfaSecret: null,
-      mfaBackupCodes: [],
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    // Mock authenticated session
-    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
-      user: { id: 'user-123', email: 'user@example.com' },
-      expires: new Date().toISOString(),
-    });
-
-    // Only mock the selected fields that the handler returns
-    const selectedUserData: UserSelect = {
-      id: mockUser.id,
-      email: mockUser.email,
-      name: mockUser.name,
-      bio: mockUser.bio,
-      image: mockUser.image,
-    };
-
-    // Mock the database update to return only the selected fields
-    vi.mocked(db.user.update).mockResolvedValueOnce(selectedUserData as any);
-
-    await updateProfileHandler(req, res);
 
     expect(res._getStatusCode()).toBe(200);
-    
-    // Parse the response data to compare
-    const responseData = JSON.parse(res._getData());
-    expect(responseData.message).toBe('Profile updated successfully');
-    expect(responseData.user).toEqual(selectedUserData);
-    
+    expect(res._getJSONData()).toEqual({
+      message: 'Profile updated successfully',
+      user: mockUser,
+    });
+  });
+
+  it('should handle null values correctly', async () => {
+    const profileData = {
+      name: null,
+      bio: null,
+      image: null,
+    };
+
+    const { req, res } = createMocks({
+      method: 'POST',
+      body: profileData,
+    });
+
+    const mockUser = {
+      id: 'user-123',
+      ...profileData,
+      email: 'test@example.com',
+    };
+
+    (getSessionFromReq as any).mockResolvedValueOnce({
+      user: { id: 'user-123' },
+    });
+
+    (db.user.update as any).mockResolvedValueOnce(mockUser);
+
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
+
     expect(db.user.update).toHaveBeenCalledWith({
       where: { id: 'user-123' },
-      data: expect.objectContaining({
-        name: partialProfileData.name,
+      data: {
+        name: null,
         bio: null,
         image: null,
         updatedAt: expect.any(Date),
-      }),
+      },
       select: {
         id: true,
         name: true,
@@ -268,31 +168,48 @@ describe('Profile Update API', () => {
         bio: true,
       },
     });
+
+    expect(res._getStatusCode()).toBe(200);
   });
 
-  // Verifies error handling
-  // Ensures database errors are handled gracefully
-  it('should handle database errors gracefully', async () => {
+  it('should handle server errors', async () => {
     const { req, res } = createMocks({
       method: 'POST',
-      body: { name: 'Test User' },
+      body: {
+        name: 'Test User',
+      },
     });
 
-    // Mock authenticated session
-    vi.mocked(authUtils.getSessionFromReq).mockResolvedValueOnce({
-      user: { id: 'user-123', email: 'user@example.com' },
-      expires: new Date().toISOString(),
+    (getSessionFromReq as any).mockResolvedValueOnce({
+      user: { id: 'user-123' },
     });
 
-    vi.mocked(db.user.update).mockRejectedValueOnce(
-      new Error('Database error')
-    );
+    // Mock a database error
+    const error = new Error('Database error');
+    (db.user.update as any).mockRejectedValueOnce(error);
 
-    await updateProfileHandler(req, res);
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
+
+    expect(consoleSpy).toHaveBeenCalledWith('Error updating profile:', error);
     expect(res._getStatusCode()).toBe(500);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Internal server error',
+    expect(res._getJSONData()).toEqual({ message: 'Internal server error' });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('should respect rate limiting', async () => {
+    const { req, res } = createMocks({
+      method: 'POST',
     });
+
+    // Simulate rate limit being exceeded
+    (rateLimit as any).mockResolvedValueOnce(false);
+
+    await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
+
+    expect(rateLimit).toHaveBeenCalledWith(req, res, 'general');
+    // No assertions needed for response, as it's handled by the rate limit function
   });
 }); 

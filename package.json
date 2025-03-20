@@ -2,6 +2,7 @@
   "name": "moodmash",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,6 +13,8 @@
     "build-storybook": "storybook build",
     "type-check": "tsc --noEmit",
     "test": "vitest run --coverage",
+    "test:esm": "NODE_OPTIONS=--experimental-vm-modules vitest run --coverage",
+    "test:esm:win": "set NODE_OPTIONS=--experimental-vm-modules && vitest run --coverage",
     "test:watch": "vitest",
     "test:api": "vitest run --config=vitest.config.ts src/__tests__/api/**/*.test.ts",
     "test:load": "bash ./scripts/load-test.sh",

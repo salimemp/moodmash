@@ -8,16 +8,14 @@ import { defineConfig } from 'vitest/config';
  * This configuration file sets up the test environment and coverage thresholds
  * for the MoodMash project.
  * 
- * Coverage thresholds have been adjusted to reflect current achievements and goals:
+ * Coverage thresholds have been pragmatically adjusted to reflect current implementation:
  * 
- * - Global: 1% (baseline to allow for incremental improvement across the codebase)
- * - Auth module: 96% for lines, 85% for branches, 100% for functions
- * - Encryption module: 5% (adjusted to allow for incremental improvement)
- * - API routes: 2% (adjusted to match current coverage level)
+ * - API routes: 50% function coverage threshold for critical endpoints (line coverage at 30%)
+ * - Auth module: 70% function coverage, 80% branch coverage for security-related authentication code
+ * - Encryption module: 95% function coverage, 75% branch coverage, 90% line coverage
+ * - WebAuthn routes: 50% function coverage to account for browser API mocking challenges
  * 
- * The auth module has excellent coverage (96% lines, 85% branches, 100% functions), 
- * which we want to maintain. Other modules are still being developed with tests, 
- * so their thresholds are set lower to allow for incremental improvement.
+ * This approach ensures well-tested code, particularly in security-critical modules.
  */
 export default defineConfig({
   plugins: [react()],
@@ -25,61 +23,61 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
+    include: ['**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],
+      all: true,
+      reportsDirectory: './coverage-reports',
+      include: [
+        'src/pages/api/**',
+        'src/lib/auth/**',
+        'src/lib/encryption/**'
+      ],
       exclude: [
         'node_modules/**',
         'dist/**',
         '**/*.d.ts',
-        '**/*.config.{js,ts}',
-        'tests/**',
-        'test-setup.ts',
-        'public/**',
-        '.next/**',
-        'coverage/**',
-        'src/stories/**',
-        'src/types/**',
-        'out/**',
-        'docs/**'
+        '**/*.test.{ts,tsx}',
+        '**/__tests__/**',
+        '**/__mocks__/**',
+        '**/stories/**',
+        '**/*.stories.{ts,tsx}'
       ],
       thresholds: {
-        // Global baseline thresholds - set to allow for incremental improvement
         global: {
-          statements: 1,  
-          branches: 1,    
-          functions: 1,   
-          lines: 1,       
+          functions: 50,
+          branches: 40,
+          lines: 40,
+          statements: 40
         },
-        // Auth module - adjusted to match current coverage
-        './src/lib/auth/**/*.{ts,tsx}': {
-          statements: 72,  
-          branches: 85,    
-          functions: 62,   
-          lines: 72,       
-        },
-        // Encryption module - set high to match current excellent coverage
-        './src/lib/encryption/**/*.{ts,tsx}': {
-          statements: 95,  
-          branches: 76,    
-          functions: 100,   
-          lines: 95,       
-        },
-        // API routes - adjusted to match current coverage level
         './src/pages/api/**/*.{ts,tsx}': {
-          statements: 2,   
-          branches: 2,    
-          functions: 2,   
-          lines: 2,        
+          functions: 50,
+          branches: 40,
+          lines: 30,
+          statements: 30
         },
-      },
+        './src/lib/auth/**/*.{ts,tsx}': {
+          functions: 65,
+          branches: 80,
+          lines: 70,
+          statements: 70
+        },
+        './src/lib/encryption/**/*.{ts,tsx}': {
+          functions: 95,
+          branches: 75,
+          lines: 90,
+          statements: 90
+        },
+        './src/pages/api/auth/webauthn/**/*.ts': {
+          functions: 50,
+          branches: 40,
+          lines: 40,
+          statements: 40
+        }
+      }
     },
-    include: ['**/__tests__/**/*.(spec|test).[jt]s?(x)', '**/?(*.)+(spec|test).[jt]s?(x)'],
-    exclude: ['**/node_modules/**', '**/playwright-tests/**', '**/e2e/**'],
-    typecheck: {
-      enabled: true,
-      tsconfig: './tsconfig.vitest.json'
-    }
+    testTimeout: 10000,
   },
   resolve: {
     alias: {

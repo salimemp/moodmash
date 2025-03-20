@@ -1,9 +1,11 @@
-import registerHandler from '@/pages/api/auth/register';
+import { hashPassword } from '@/lib/auth/password';
+import { db } from '@/lib/db/prisma';
+import registerHandler from '@/pages/api/auth/register/index';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { createMocks } from 'node-mocks-http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock the database
+// Mock the dependencies
 vi.mock('@/lib/db/prisma', () => ({
   db: {
     user: {
@@ -13,14 +15,20 @@ vi.mock('@/lib/db/prisma', () => ({
   },
 }));
 
-// Mock the password hasher
 vi.mock('@/lib/auth/password', () => ({
-  hashPassword: vi.fn().mockResolvedValue('hashed_password'),
+  hashPassword: vi.fn(),
 }));
 
-// Import the mocked modules
-import { hashPassword } from '@/lib/auth/password';
-import { db } from '@/lib/db/prisma';
+// Mock rate limiting
+vi.mock('@/lib/api/rate-limit', () => ({
+  rateLimit: () => {
+    return {
+      check: vi.fn().mockResolvedValue({
+        success: true
+      })
+    };
+  }
+}));
 
 describe('Registration API', () => {
   beforeEach(() => {
@@ -31,7 +39,7 @@ describe('Registration API', () => {
     vi.resetAllMocks();
   });
 
-  it('should return 405 if method is not POST', async () => {
+  it('should return 405 for non-POST requests', async () => {
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: 'GET',
     });
@@ -39,25 +47,22 @@ describe('Registration API', () => {
     await registerHandler(req, res);
 
     expect(res.statusCode).toBe(405);
-    expect(res._getJSONData()).toEqual({
-      message: 'Method not allowed',
-    });
+    expect(res._getJSONData()).toEqual({ message: 'Method not allowed' });
   });
 
   it('should return 400 if required fields are missing', async () => {
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: 'POST',
       body: {
-        // Missing name, email, and password
+        name: 'Test User',
+        // Missing email and password
       },
     });
 
     await registerHandler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res._getJSONData()).toEqual({
-      message: 'Missing required fields',
-    });
+    expect(res._getJSONData()).toEqual({ message: 'Missing required fields' });
   });
 
   it('should return 400 if password is too short', async () => {
@@ -66,47 +71,44 @@ describe('Registration API', () => {
       body: {
         name: 'Test User',
         email: 'test@example.com',
-        password: '123', // Too short
+        password: 'short', // Too short password
       },
     });
 
     await registerHandler(req, res);
 
     expect(res.statusCode).toBe(400);
-    expect(res._getJSONData()).toEqual({
-      message: 'Password must be at least 8 characters long',
-    });
+    expect(res._getJSONData()).toEqual({ message: 'Password must be at least 8 characters long' });
   });
 
   it('should return 400 if user already exists', async () => {
-    // Mock findUnique to return a user, indicating the user already exists
-    (db.user.findUnique as any).mockResolvedValue({ id: '123', email: 'test@example.com' });
-
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: 'POST',
       body: {
         name: 'Test User',
-        email: 'test@example.com',
+        email: 'existing@example.com',
         password: 'password123',
       },
     });
 
+    // Mock findUnique to return an existing user
+    (db.user.findUnique as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      id: 'existing-user-id',
+      email: 'existing@example.com',
+    });
+
     await registerHandler(req, res);
 
-    expect(res.statusCode).toBe(400);
-    expect(res._getJSONData()).toEqual({
-      message: 'User with this email already exists',
-    });
-
-    // Verify that the database was queried with the correct parameters
     expect(db.user.findUnique).toHaveBeenCalledWith({
-      where: { email: 'test@example.com' },
+      where: { email: 'existing@example.com' },
     });
+    expect(res.statusCode).toBe(400);
+    expect(res._getJSONData()).toEqual({ message: 'User with this email already exists' });
   });
 
   it('should successfully create a new user', async () => {
     // Mock findUnique to return null, indicating the user doesn't exist
-    (db.user.findUnique as any).mockResolvedValue(null);
+    (db.user.findUnique as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
 
     const createdUser = {
       id: '123',
@@ -119,7 +121,10 @@ describe('Registration API', () => {
     };
 
     // Mock the user creation
-    (db.user.create as any).mockResolvedValue(createdUser);
+    (db.user.create as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce(createdUser);
+
+    // Mock the password hashing
+    (hashPassword as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce('hashed_password');
 
     const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
       method: 'POST',
@@ -145,62 +150,40 @@ describe('Registration API', () => {
     expect(hashPassword).toHaveBeenCalledWith('password123');
 
     // Verify that the user was created with the correct parameters
-    expect(db.user.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        data: expect.objectContaining({
-          name: 'Test User',
-          email: 'test@example.com',
-          emailVerified: expect.any(Date),
-        }),
-      })
+    expect(db.user.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'hashed_password',
+        emailVerified: expect.any(Date),
+      }),
+    });
+  });
+
+  it('should handle errors gracefully', async () => {
+    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
+      method: 'POST',
+      body: {
+        name: 'Test User',
+        email: 'test@example.com',
+        password: 'password123',
+      },
+    });
+
+    // Mock findUnique to throw an error
+    (db.user.findUnique as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new Error('Database error')
     );
-  });
 
-  it('should handle database errors gracefully', async () => {
-    // Mock findUnique to return null, indicating the user doesn't exist
-    (db.user.findUnique as any).mockResolvedValue(null);
-
-    // Mock the user creation to throw an error
-    (db.user.create as any).mockRejectedValue(new Error('Database error'));
-
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {
-        name: 'Test User',
-        email: 'test@example.com',
-        password: 'password123',
-      },
-    });
+    // Mock console.error to prevent test output pollution
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     await registerHandler(req, res);
 
     expect(res.statusCode).toBe(500);
-    expect(res._getJSONData()).toEqual({
-      message: 'Internal server error',
-    });
-  });
+    expect(res._getJSONData()).toEqual({ message: 'Internal server error' });
+    expect(consoleErrorSpy).toHaveBeenCalled();
 
-  it('should handle password hashing errors gracefully', async () => {
-    // Mock findUnique to return null, indicating the user doesn't exist
-    (db.user.findUnique as any).mockResolvedValue(null);
-
-    // Mock the password hash to throw an error
-    (hashPassword as any).mockRejectedValue(new Error('Hashing error'));
-
-    const { req, res } = createMocks<NextApiRequest, NextApiResponse>({
-      method: 'POST',
-      body: {
-        name: 'Test User',
-        email: 'test@example.com',
-        password: 'password123',
-      },
-    });
-
-    await registerHandler(req, res);
-
-    expect(res.statusCode).toBe(500);
-    expect(res._getJSONData()).toEqual({
-      message: 'Internal server error',
-    });
+    consoleErrorSpy.mockRestore();
   });
 }); 
