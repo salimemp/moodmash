@@ -168,8 +168,6 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
         // Filter out very low confidence detections (threshold can be adjusted)
         const confidenceFaces = faces.filter(face => !face.score || face.score > 0.2);
         
-        // Use filtered faces for emotion detection
-        
         // In a real app, we would analyze facial features for actual emotion detection
         // For demo purposes, we'll generate random emotions
         const mockEmotions: FaceEmotion[] = [
@@ -196,7 +194,7 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           
           // Draw faces with different colors for different confidence levels
-          faces.forEach(face => {
+          confidenceFaces.forEach(face => {
             // Determine color based on confidence
             const confidence = face.score || 1.0;
             let strokeColor = '#00FF00'; // High confidence (green)
