@@ -48,8 +48,11 @@ Based on the documentation and test coverage reports, this is a comprehensive ch
   - [x] `comparePasswords` function
 - [x] `src/lib/auth/mfa.ts` and `src/lib/auth/mfa-totp.ts`
   - [x] `generateMfaSecret` function
-  - [x] TOTP verification
-  - [x] Backup code handling
+  - [x] `validateTOTP` function
+  - [x] `setupTOTP` function
+  - [ ] `generateQRCode` function (tests skipped)
+  - [x] `validateBackupCode` function
+  - [x] `getBackupCodes` function
 
 ### Rate Limiting Module
 

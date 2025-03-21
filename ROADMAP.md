@@ -681,7 +681,9 @@ MoodMash is a social platform enabling users to share their moods anonymously th
 
 ### Testing Improvements
 - [x] Address the Vite CJS Node API deprecation warning by converting to ES Modules
-- [ ] Review and implement the 4 currently skipped tests
+- [ ] Review and implement the 9 currently skipped tests:
+  - [ ] Implement 4 QR code generation tests in MFA module
+  - [ ] Address 5 rate-limiting tests in MFA API endpoints
 - [ ] Increase test coverage in low-coverage areas:
   - [x] Authentication configuration and API endpoints
   - [x] Multi-factor authentication (MFA) endpoints
