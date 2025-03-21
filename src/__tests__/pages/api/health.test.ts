@@ -1,104 +1,144 @@
-import { db } from '@/lib/db/prisma';
-import healthHandler from '@/pages/api/health';
+import type { NextApiRequest, NextApiResponse } from 'next';
+import type { MockResponse } from 'node-mocks-http';
 import { createMocks } from 'node-mocks-http';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock dependencies
+// Mock the database module
 vi.mock('@/lib/db/prisma', () => ({
   db: {
     $queryRaw: vi.fn(),
   },
 }));
 
-// Tests for Health API
-// Validates API health check functionality
-describe('Health API', () => {
+// Mock environment variables
+const originalEnv = { ...process.env };
+
+// Import after mocking
+import { db } from '@/lib/db/prisma';
+import handler from '@/pages/api/health';
+
+describe('Health API Endpoint', () => {
+  let req: NextApiRequest;
+  let res: MockResponse<NextApiResponse>;
+  let mockConsoleError: any;
+
   beforeEach(() => {
-    vi.clearAllMocks();
-    // Mock environment variables
-    vi.stubEnv('NODE_ENV', 'test');
-    vi.stubEnv('npm_package_version', '0.1.0');
+    // Create fresh mocks for each test
+    const mocks = createMocks<NextApiRequest, NextApiResponse>({
+      method: 'GET',
+    });
+    req = mocks.req;
+    res = mocks.res as MockResponse<NextApiResponse>;
+
+    // Mock console.error to prevent actual console output during tests
+    mockConsoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Reset all mocks
+    vi.resetAllMocks();
+    
+    // Mock Date.now for consistent timestamps in tests
+    const mockDate = new Date('2023-01-01T12:00:00.000Z');
+    vi.spyOn(global, 'Date').mockImplementation(() => mockDate as any);
   });
 
   afterEach(() => {
-    vi.unstubAllEnvs();
+    mockConsoleError.mockRestore();
+    vi.restoreAllMocks();
+    process.env = { ...originalEnv };
   });
 
-  // Verifies that the API rejects non-GET methods
-  // Ensures correct HTTP method validation
-  it('should return 405 for non-GET requests', async () => {
-    const { req, res } = createMocks({
-      method: 'POST',
-    });
-
-    await healthHandler(req, res);
-
-    expect(res._getStatusCode()).toBe(405);
-    expect(JSON.parse(res._getData())).toEqual({
-      message: 'Method not allowed',
-    });
-  });
-
-  // Verifies successful health check
-  // Ensures the API returns healthy status when database is connected
   it('should return 200 and healthy status when database is connected', async () => {
-    const { req, res } = createMocks({
-      method: 'GET',
-    });
-
     // Mock successful database query
-    vi.mocked(db.$queryRaw).mockResolvedValueOnce([{ '1': 1 }]);
+    vi.mocked(db.$queryRaw).mockResolvedValue([{ '1': 1 }]);
+    
+    // Set environment variables for testing
+    vi.stubEnv('NODE_ENV', 'test');
+    vi.stubEnv('npm_package_version', '1.0.0');
 
-    await healthHandler(req, res);
+    // Call the handler
+    await handler(req, res);
 
+    // Check the response
     expect(res._getStatusCode()).toBe(200);
     
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       status: 'healthy',
-      timestamp: expect.any(String),
+      timestamp: '2023-01-01T12:00:00.000Z',
       environment: 'test',
-      version: '0.1.0',
+      version: '1.0.0',
     });
-    
-    // Verify timestamp is a valid ISO date string
-    expect(() => new Date(responseData.timestamp)).not.toThrow();
-    
-    // Verify database was queried
-    expect(db.$queryRaw).toHaveBeenCalled();
+
+    // Verify that the database query was called
+    expect(db.$queryRaw).toHaveBeenCalledTimes(1);
+    expect(db.$queryRaw).toHaveBeenCalledWith(expect.any(Object)); // SQL template literal
   });
 
-  // Verifies unhealthy status when database connection fails
-  // Ensures the API correctly reports database connectivity issues
-  it('should return 503 when database connection fails', async () => {
-    const { req, res } = createMocks({
-      method: 'GET',
+  it('should use default values when environment variables are not set', async () => {
+    // Mock successful database query
+    vi.mocked(db.$queryRaw).mockResolvedValue([{ '1': 1 }]);
+    
+    // Mock missing environment variables by providing empty values
+    vi.stubEnv('NODE_ENV', '');
+    vi.stubEnv('npm_package_version', '');
+
+    // Call the handler
+    await handler(req, res);
+
+    // Check the response
+    expect(res._getStatusCode()).toBe(200);
+    
+    const responseData = JSON.parse(res._getData());
+    expect(responseData).toEqual({
+      status: 'healthy',
+      timestamp: '2023-01-01T12:00:00.000Z',
+      environment: 'development',
+      version: '0.1.0',
     });
+  });
 
+  it('should return 503 when database connection fails', async () => {
     // Mock database error
-    vi.mocked(db.$queryRaw).mockRejectedValueOnce(new Error('Database connection error'));
+    const mockError = new Error('Database connection failed');
+    vi.mocked(db.$queryRaw).mockRejectedValue(mockError);
 
-    // Mock console.error to prevent test output pollution
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    // Call the handler
+    await handler(req, res);
 
-    await healthHandler(req, res);
-
+    // Check the response
     expect(res._getStatusCode()).toBe(503);
     
     const responseData = JSON.parse(res._getData());
     expect(responseData).toEqual({
       status: 'unhealthy',
       message: 'Database connection failed',
-      timestamp: expect.any(String),
+      timestamp: '2023-01-01T12:00:00.000Z',
     });
+
+    // Verify console.error was called with the error
+    expect(mockConsoleError).toHaveBeenCalledWith('Health check failed:', mockError);
+  });
+
+  it('should return 405 for non-GET methods', async () => {
+    // Create a POST request
+    const mocks = createMocks<NextApiRequest, NextApiResponse>({
+      method: 'POST',
+    });
+    req = mocks.req;
+    res = mocks.res as MockResponse<NextApiResponse>;
+
+    // Call the handler
+    await handler(req, res);
+
+    // Check the response
+    expect(res._getStatusCode()).toBe(405);
     
-    // Verify timestamp is a valid ISO date string
-    expect(() => new Date(responseData.timestamp)).not.toThrow();
-    
-    // Verify error was logged
-    expect(consoleErrorSpy).toHaveBeenCalled();
-    
-    // Restore console.error
-    consoleErrorSpy.mockRestore();
+    const responseData = JSON.parse(res._getData());
+    expect(responseData).toEqual({
+      message: 'Method not allowed',
+    });
+
+    // Verify that the database query was not called
+    expect(db.$queryRaw).not.toHaveBeenCalled();
   });
 }); 
