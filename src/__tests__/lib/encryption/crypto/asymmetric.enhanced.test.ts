@@ -62,7 +62,6 @@ describe('Asymmetric Encryption (Enhanced Tests)', () => {
       
       // Convert keys to Base64 strings
       const senderSecretKeyBase64 = encodeBase64(senderKeys.secretKey);
-      const senderPublicKeyBase64 = encodeBase64(senderKeys.publicKey);
       const recipientPublicKeyBase64 = encodeBase64(recipientKeys.publicKey);
       const recipientSecretKeyBase64 = encodeBase64(recipientKeys.secretKey);
       
