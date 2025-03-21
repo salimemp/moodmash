@@ -26,7 +26,7 @@ vi.mock('@/lib/api/handlers', () => {
   
   return {
     ApiError: MockApiError,
-    createApiHandler: (config: any, handler: any) => {
+    createApiHandler: (_config: any, handler: any) => {
       // Return a function that will be our API handler
       return async (req: NextApiRequest, res: NextApiResponse) => {
         // Extract userId from the request context (added by our tests)
