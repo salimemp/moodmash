@@ -14,21 +14,29 @@ interface ExtendedRequest extends NextApiRequest {
   _closeCallback?: () => void;
 }
 
-// Mock dependencies
-vi.mock('@/lib/api/streaming', () => ({
-  createStreamingResponse: vi.fn().mockImplementation(() => ({
-    send: vi.fn(),
-    isClosed: vi.fn().mockReturnValue(false),
-    error: vi.fn(),
-    close: vi.fn(),
-  })),
-}));
+// Mock dependencies first
+vi.mock('@/lib/api/streaming', () => {
+  const mockSend = vi.fn();
+  const mockIsClosed = vi.fn().mockReturnValue(false);
+  
+  return {
+    createStreamingResponse: vi.fn().mockImplementation(() => ({
+      send: mockSend,
+      isClosed: mockIsClosed,
+      error: vi.fn(),
+      close: vi.fn(),
+    })),
+  };
+});
 
 // Mock the createApiHandler to directly execute the handler function
 vi.mock('@/lib/api/handlers', () => ({
-  createApiHandler: vi.fn((_, handler) => {
-    return (req: ExtendedRequest, res: NextApiResponse) => handler(req, res, { userId: req._userId });
-  }),
+  createApiHandler: (_config: any, handler: any) => {
+    return (req: NextApiRequest, res: NextApiResponse) => {
+      const extendedReq = req as ExtendedRequest;
+      return handler(req, res, { userId: extendedReq._userId });
+    };
+  },
 }));
 
 // Import after mocks
@@ -40,6 +48,7 @@ describe('Streaming Notifications API', () => {
 
   beforeEach(() => {
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.resetAllMocks();
   });
 
   afterEach(() => {
@@ -52,8 +61,8 @@ describe('Streaming Notifications API', () => {
       method: 'GET',
     });
     
-    // Set the userId context
-    req._userId = undefined;
+    // Set the userId context to undefined (not authenticated)
+    (req as ExtendedRequest)._userId = undefined;
 
     await handler(req, res);
 
@@ -69,12 +78,13 @@ describe('Streaming Notifications API', () => {
         on: vi.fn((_, callback) => {
           if (_ === 'close') {
             // Store callback for later testing
-            req._closeCallback = callback;
+            (req as ExtendedRequest)._closeCallback = callback;
           }
         }),
         _userId: 'test-user-id',
       }
-    );
+    ) as ExtendedRequest;
+    
     const { res } = createMocks();
     
     const mockStream = {
@@ -118,7 +128,8 @@ describe('Streaming Notifications API', () => {
         on: vi.fn(),
         _userId: 'test-user-id',
       }
-    );
+    ) as ExtendedRequest;
+    
     const { res } = createMocks();
     
     const mockStream = {
@@ -155,7 +166,8 @@ describe('Streaming Notifications API', () => {
         on: vi.fn(),
         _userId: 'test-user-id',
       }
-    );
+    ) as ExtendedRequest;
+    
     const { res } = createMocks();
     
     const mockStream = {
@@ -181,48 +193,23 @@ describe('Streaming Notifications API', () => {
   });
 
   it('should handle client disconnection', async () => {
+    // For this test, we'll mock the activeStreams map and notifyUser function
+    // rather than accessing the internal state directly
+    
     const req = Object.assign(
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((eventName, handler) => {
+        on: vi.fn((eventName, callback) => {
           if (eventName === 'close') {
             // Store callback for later testing
-            req._closeCallback = handler;
+            req._closeCallback = callback;
           }
         }),
         _userId: 'test-user-id',
       }
-    );
-    const { res } = createMocks();
-
-    await handler(req, res);
-
-    // Trigger the close event
-    req._closeCallback();
+    ) as ExtendedRequest;
     
-    // Create a notification to test sending after disconnect
-    const notification: Notification = {
-      type: 'test',
-      message: 'Test message',
-      timestamp: Date.now(),
-    };
-    
-    // This should not throw an error
-    notifyUser('test-user-id', notification);
-    
-    // No expectation needed - we're just verifying it doesn't throw
-  });
-
-  it('should notify users when using the notifyUser function', async () => {
-    const req = Object.assign(
-      createMocks().req,
-      { 
-        method: 'GET',
-        on: vi.fn(),
-        _userId: 'test-user-id-2',
-      }
-    );
     const { res } = createMocks();
     
     const mockStream = {
@@ -234,6 +221,53 @@ describe('Streaming Notifications API', () => {
     vi.mocked(createStreamingResponse).mockReturnValue(mockStream);
 
     await handler(req, res);
+    
+    // Verify connection was set up
+    expect(mockStream.send).toHaveBeenCalled();
+
+    // Now trigger the close event
+    if (req._closeCallback) {
+      req._closeCallback();
+    }
+    
+    // At this point, the listener should have been removed
+    // We'll test this indirectly by confirming notifyUser doesn't throw
+    
+    // Create a notification to test sending after disconnect
+    const notification: Notification = {
+      type: 'test',
+      message: 'Test message',
+      timestamp: Date.now(),
+    };
+    
+    // Should not throw
+    expect(() => notifyUser('test-user-id', notification)).not.toThrow();
+  });
+
+  it('should notify users when using the notifyUser function', async () => {
+    const req = Object.assign(
+      createMocks().req,
+      { 
+        method: 'GET',
+        on: vi.fn(),
+        _userId: 'test-user-id-2',
+      }
+    ) as ExtendedRequest;
+    
+    const { res } = createMocks();
+    
+    const mockStream = {
+      send: vi.fn(),
+      isClosed: vi.fn().mockReturnValue(false),
+      error: vi.fn(),
+      close: vi.fn(),
+    };
+    vi.mocked(createStreamingResponse).mockReturnValue(mockStream);
+
+    await handler(req, res);
+    
+    // Clear previous calls to send
+    mockStream.send.mockClear();
     
     // Simulate sending a notification
     const testNotification: Notification = {
@@ -248,18 +282,57 @@ describe('Streaming Notifications API', () => {
     expect(mockStream.send).toHaveBeenCalledWith(testNotification);
   });
 
-  it('should handle notification errors', async () => {
-    // Since we can't easily access the internal map, let's test the error
-    // handling functionality more indirectly
+  it('should handle errors when sending notifications', async () => {
+    const errorHandler = vi.fn();
     
-    // Create a fake error to log
-    const testError = new Error('Stream error');
+    // Use a special mock implementation for this test
+    // First establish a connection
+    const req = Object.assign(
+      createMocks().req,
+      { 
+        method: 'GET',
+        on: vi.fn(),
+        _userId: 'test-user-id-3',
+      }
+    ) as ExtendedRequest;
     
-    // Directly call console.error to verify our spy is working
-    console.error('Error sending notification to client:', testError);
+    const { res } = createMocks();
     
-    // Verify the spy captured it correctly
-    expect(consoleErrorSpy).toHaveBeenCalledWith(
+    // Setup a mock stream that will throw when send is called
+    const mockStreamWithError = {
+      send: vi.fn(),
+      isClosed: vi.fn().mockReturnValue(false),
+      error: vi.fn(),
+      close: vi.fn(),
+    };
+    
+    vi.mocked(createStreamingResponse).mockReturnValue(mockStreamWithError);
+    
+    await handler(req, res);
+    
+    // Ensure the stream is established
+    expect(createStreamingResponse).toHaveBeenCalled();
+    
+    // Setup the error handler mock
+    vi.mocked(console.error).mockImplementation(errorHandler);
+    
+    // Setup the stream.send to throw when called
+    const testError = new Error('Send error');
+    mockStreamWithError.send.mockImplementationOnce(() => {
+      throw testError;
+    });
+    
+    // Send notification
+    const testNotification: Notification = {
+      type: 'test',
+      message: 'Test error notification',
+      timestamp: Date.now(),
+    };
+    
+    notifyUser('test-user-id-3', testNotification);
+    
+    // Check error was caught and logged
+    expect(errorHandler).toHaveBeenCalledWith(
       'Error sending notification to client:',
       testError
     );
