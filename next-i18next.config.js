@@ -1,7 +1,7 @@
 /**
  * @type {import('next-i18next').UserConfig}
  */
-module.exports = {
+const config = {
   // List of languages supported by the application
   // ISO language codes: https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
   i18n: {
@@ -57,3 +57,5 @@ module.exports = {
     cookieSecure: process.env.NODE_ENV === 'production',
   },
 };
+
+export default config;

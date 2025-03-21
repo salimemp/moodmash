@@ -1,6 +1,8 @@
 /** @type {import('next').NextConfig} */
-const { withSentryConfig } = require('@sentry/nextjs');
-const { i18n } = require('./next-i18next.config');
+import { withSentryConfig } from '@sentry/nextjs';
+import i18nConfig from './next-i18next.config.js';
+
+const { i18n } = i18nConfig;
 
 const nextConfig = {
   reactStrictMode: true,
@@ -26,6 +28,8 @@ const sentryWebpackPluginOptions = {
   // Additional Sentry-specific options
 };
 
-module.exports = process.env.SENTRY_DSN
+const config = process.env.SENTRY_DSN
   ? withSentryConfig(nextConfig, sentryWebpackPluginOptions)
   : nextConfig;
+
+export default config;
