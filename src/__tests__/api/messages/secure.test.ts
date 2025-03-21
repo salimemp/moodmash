@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Session } from 'next-auth';
 import { createMocks } from 'node-mocks-http';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Import the required libraries and types
 import { prisma } from '@/lib/prisma';
+import type { EncryptedMessage, EncryptionKey, User } from '@prisma/client';
 
 // Mock the Prisma client
 vi.mock('@/lib/prisma', () => ({
@@ -23,6 +25,14 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+// Define extended request type with mock context
+interface ExtendedRequest extends NextApiRequest {
+  __mockContext?: {
+    session: Session | null;
+    userId: string | null;
+  };
+}
+
 // Mock the API module
 vi.mock('@/pages/api/messages/secure', () => {
   const handler = vi.fn(async (req, res) => {
@@ -31,7 +41,7 @@ vi.mock('@/pages/api/messages/secure', () => {
       return res.status(405).json({ message: `Method ${req.method} not allowed` });
     }
 
-    const mockContext = req.__mockContext || { session: null, userId: null };
+    const mockContext = (req as ExtendedRequest).__mockContext || { session: null, userId: null };
 
     if (!mockContext.userId) {
       return res.status(401).json({ 
@@ -167,7 +177,7 @@ vi.mock('@/pages/api/messages/secure', () => {
               total,
               limit,
               offset,
-              hasMore: offset + limit < total,
+              hasMore: offset + messages.length < total,
             },
           },
         });
@@ -188,8 +198,15 @@ vi.mock('@/pages/api/messages/secure', () => {
 import handler from '@/pages/api/messages/secure';
 
 describe('Secure Messages API', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     vi.clearAllMocks();
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   describe('Authorization', () => {
@@ -207,6 +224,21 @@ describe('Secure Messages API', () => {
         message: 'You must be logged in to perform this action',
       });
     });
+
+    it('should reject methods other than GET and POST', async () => {
+      const { req, res } = createMocks({
+        method: 'PUT',
+      });
+      
+      (req as ExtendedRequest).__mockContext = {
+        session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
+        userId: 'user-123',
+      };
+      
+      await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
+      
+      expect(res._getStatusCode()).toBe(405);
+    });
   });
 
   describe('POST /api/messages/secure', () => {
@@ -219,7 +251,7 @@ describe('Secure Messages API', () => {
       });
       
       // Add mock context
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
@@ -244,13 +276,13 @@ describe('Secure Messages API', () => {
         },
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
       // Mock recipient not found
-      (prisma.user.findUnique as any).mockResolvedValueOnce(null);
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
@@ -275,14 +307,14 @@ describe('Secure Messages API', () => {
         },
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
       // Mock recipient found but no encryption key
-      (prisma.user.findUnique as any).mockResolvedValueOnce({ id: 'recipient-123' });
-      (prisma.encryptionKey.findFirst as any).mockResolvedValueOnce(null);
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'recipient-123', name: 'Recipient' } as User);
+      (prisma.encryptionKey.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
@@ -296,46 +328,40 @@ describe('Secure Messages API', () => {
       });
     });
 
-    it('should successfully create a message', async () => {
-      const messageData = {
+    it('should successfully create an encrypted message', async () => {
+      const timestamp = new Date("2025-03-21T12:29:35.311Z");
+      const messageData: Partial<EncryptedMessage> = {
+        id: 'message-123',
+        senderId: 'user-123',
         recipientId: 'recipient-123',
         ciphertext: 'encrypted-data',
         nonce: 'nonce-value',
         senderPublicKey: 'sender-public-key',
+        timestamp,
         metadata: 'some-metadata',
+        read: false,
       };
       
       const { req, res } = createMocks({
         method: 'POST',
-        body: messageData,
+        body: {
+          recipientId: 'recipient-123',
+          ciphertext: 'encrypted-data',
+          nonce: 'nonce-value',
+          senderPublicKey: 'sender-public-key',
+          metadata: 'some-metadata',
+        },
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
-      // Mock successful recipient and encryption key retrieval
-      (prisma.user.findUnique as any).mockResolvedValueOnce({ id: 'recipient-123' });
-      (prisma.encryptionKey.findFirst as any).mockResolvedValueOnce({ 
-        userId: 'recipient-123',
-        publicKey: 'recipient-public-key'
-      });
-      
-      // Mock successful message creation
-      const createdMessage = {
-        id: 'message-123',
-        senderId: 'user-123',
-        recipientId: 'recipient-123',
-        ciphertext: messageData.ciphertext,
-        nonce: messageData.nonce,
-        senderPublicKey: messageData.senderPublicKey,
-        timestamp: new Date(),
-        metadata: messageData.metadata,
-        read: false,
-      };
-      
-      (prisma.encryptedMessage.create as any).mockResolvedValueOnce(createdMessage);
+      // Mock successful flow
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'recipient-123', name: 'Recipient' } as User);
+      (prisma.encryptionKey.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ userId: 'recipient-123', publicKey: 'recipient-key' } as EncryptionKey);
+      (prisma.encryptedMessage.create as ReturnType<typeof vi.fn>).mockResolvedValueOnce(messageData as EncryptedMessage);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
@@ -343,26 +369,26 @@ describe('Secure Messages API', () => {
         data: {
           sender: { connect: { id: 'user-123' } },
           recipient: { connect: { id: 'recipient-123' } },
-          ciphertext: messageData.ciphertext,
-          nonce: messageData.nonce,
-          senderPublicKey: messageData.senderPublicKey,
+          ciphertext: 'encrypted-data',
+          nonce: 'nonce-value',
+          senderPublicKey: 'sender-public-key',
           timestamp: expect.any(Date),
-          metadata: messageData.metadata,
+          metadata: 'some-metadata',
           read: false,
         },
       });
       
       expect(res._getStatusCode()).toBe(201);
       expect(res._getJSONData()).toEqual({
-        id: createdMessage.id,
+        id: messageData.id,
         senderId: 'user-123',
         recipientId: 'recipient-123',
-        timestamp: expect.any(String),
+        timestamp: timestamp.toISOString(),
         message: 'Message sent successfully',
       });
     });
 
-    it('should handle server errors', async () => {
+    it('should handle database errors when creating messages', async () => {
       const { req, res } = createMocks({
         method: 'POST',
         body: {
@@ -373,73 +399,58 @@ describe('Secure Messages API', () => {
         },
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
-      // Mock DB error
-      (prisma.user.findUnique as any).mockRejectedValueOnce(new Error('Database error'));
+      // Mock the flow up to the error
+      (prisma.user.findUnique as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ id: 'recipient-123', name: 'Recipient' } as User);
+      (prisma.encryptionKey.findFirst as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ userId: 'recipient-123', publicKey: 'recipient-key' } as EncryptionKey);
       
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Mock database error
+      const dbError = new Error('Database connection failed');
+      (prisma.encryptedMessage.create as ReturnType<typeof vi.fn>).mockRejectedValueOnce(dbError);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
+      expect(consoleErrorSpy).toHaveBeenCalled();
       expect(res._getStatusCode()).toBe(500);
       expect(res._getJSONData()).toEqual({
         error: 'Internal Server Error',
         message: 'Failed to send encrypted message',
       });
-      
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
     });
   });
 
   describe('GET /api/messages/secure', () => {
-    it('should return messages with default pagination', async () => {
+    it('should retrieve messages with default pagination', async () => {
+      const mockMessages = [
+        { id: 'msg1', senderId: 'user-123', recipientId: 'recipient-456' },
+        { id: 'msg2', senderId: 'recipient-456', recipientId: 'user-123' },
+      ];
+      
       const { req, res } = createMocks({
         method: 'GET',
+        query: {}, // No query params
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
-      const mockMessages: Array<any> = [
-        {
-          id: 'message-1',
-          senderId: 'user-123',
-          recipientId: 'user-456',
-          ciphertext: 'encrypted-1',
-          nonce: 'nonce-1',
-          senderPublicKey: 'sender-key-1',
-          timestamp: new Date('2023-01-01').toISOString(),
-          sender: { id: 'user-123', name: 'Sender', image: 'sender.jpg' },
-          recipient: { id: 'user-456', name: 'Recipient', image: 'recipient.jpg' },
-        },
-        {
-          id: 'message-2',
-          senderId: 'user-456',
-          recipientId: 'user-123',
-          ciphertext: 'encrypted-2',
-          nonce: 'nonce-2',
-          senderPublicKey: 'sender-key-2',
-          timestamp: new Date('2023-01-02').toISOString(),
-          sender: { id: 'user-456', name: 'Recipient', image: 'recipient.jpg' },
-          recipient: { id: 'user-123', name: 'Sender', image: 'sender.jpg' },
-        },
-      ];
-      
-      (prisma.encryptedMessage.findMany as any).mockResolvedValueOnce(mockMessages);
-      (prisma.encryptedMessage.count as any).mockResolvedValueOnce(2);
+      (prisma.encryptedMessage.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockMessages);
+      (prisma.encryptedMessage.count as ReturnType<typeof vi.fn>).mockResolvedValueOnce(2);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
       expect(prisma.encryptedMessage.findMany).toHaveBeenCalledWith({
         where: {
-          OR: [{ senderId: 'user-123' }, { recipientId: 'user-123' }],
+          OR: [
+            { senderId: 'user-123' },
+            { recipientId: 'user-123' },
+          ],
         },
         include: {
           sender: {
@@ -460,8 +471,8 @@ describe('Secure Messages API', () => {
         orderBy: {
           timestamp: 'desc',
         },
-        take: 20,
-        skip: 0,
+        take: 20, // Default limit
+        skip: 0,  // Default offset
       });
       
       expect(res._getStatusCode()).toBe(200);
@@ -479,114 +490,131 @@ describe('Secure Messages API', () => {
       });
     });
 
-    it('should apply pagination parameters', async () => {
+    it('should filter messages by partnerId when provided', async () => {
+      const mockMessages = [
+        { id: 'msg1', senderId: 'user-123', recipientId: 'partner-789' },
+        { id: 'msg2', senderId: 'partner-789', recipientId: 'user-123' },
+      ];
+      
       const { req, res } = createMocks({
         method: 'GET',
         query: {
-          limit: '5',
-          offset: '10',
+          partnerId: 'partner-789',
+          limit: '10',
+          offset: '5',
         },
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
-      const mockMessages: Array<any> = [];
-      (prisma.encryptedMessage.findMany as any).mockResolvedValueOnce(mockMessages);
-      (prisma.encryptedMessage.count as any).mockResolvedValueOnce(15);
+      (prisma.encryptedMessage.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockMessages);
+      (prisma.encryptedMessage.count as ReturnType<typeof vi.fn>).mockResolvedValueOnce(20); // Total of 20 messages with this partner
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
-      expect(prisma.encryptedMessage.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          take: 5,
-          skip: 10,
-        })
-      );
-      
-      expect(res._getJSONData().data.pagination).toEqual({
-        total: 15,
-        limit: 5,
-        offset: 10,
-        hasMore: false,
-      });
-    });
-
-    it('should filter by partnerId when provided', async () => {
-      const { req, res } = createMocks({
-        method: 'GET',
-        query: {
-          partnerId: 'partner-123',
+      expect(prisma.encryptedMessage.findMany).toHaveBeenCalledWith({
+        where: {
+          OR: [
+            {
+              senderId: 'user-123',
+              recipientId: 'partner-789',
+            },
+            {
+              senderId: 'partner-789',
+              recipientId: 'user-123',
+            },
+          ],
         },
-      });
-      
-      req.__mockContext = {
-        session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
-        userId: 'user-123',
-      };
-      
-      const mockMessages: Array<any> = [];
-      (prisma.encryptedMessage.findMany as any).mockResolvedValueOnce(mockMessages);
-      (prisma.encryptedMessage.count as any).mockResolvedValueOnce(0);
-      
-      await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
-      
-      expect(prisma.encryptedMessage.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: {
-            OR: [
-              {
-                senderId: 'user-123',
-                recipientId: 'partner-123',
-              },
-              {
-                senderId: 'partner-123',
-                recipientId: 'user-123',
-              },
-            ],
+        include: {
+          sender: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
           },
-        })
-      );
+          recipient: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: {
+          timestamp: 'desc',
+        },
+        take: 10, // From query
+        skip: 5,  // From query
+      });
+      
+      expect(res._getStatusCode()).toBe(200);
+      expect(res._getJSONData()).toEqual({
+        success: true,
+        data: {
+          messages: mockMessages,
+          pagination: {
+            total: 20,
+            limit: 10,
+            offset: 5,
+            hasMore: true, // 5 + 10 < 20
+          },
+        },
+      });
     });
 
-    it('should handle server errors', async () => {
+    it('should handle database errors when retrieving messages', async () => {
       const { req, res } = createMocks({
         method: 'GET',
       });
       
-      req.__mockContext = {
+      (req as ExtendedRequest).__mockContext = {
         session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
         userId: 'user-123',
       };
       
-      (prisma.encryptedMessage.findMany as any).mockRejectedValueOnce(new Error('Database error'));
-      
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      // Mock database error
+      const dbError = new Error('Database error occurred');
+      (prisma.encryptedMessage.findMany as ReturnType<typeof vi.fn>).mockRejectedValueOnce(dbError);
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
+      expect(consoleErrorSpy).toHaveBeenCalled();
       expect(res._getStatusCode()).toBe(500);
       expect(res._getJSONData()).toEqual({
         error: 'Internal Server Error',
         message: 'Failed to get encrypted messages',
       });
-      
-      expect(consoleSpy).toHaveBeenCalled();
-      consoleSpy.mockRestore();
     });
-  });
 
-  describe('Method validation', () => {
-    it('should reject methods other than GET and POST', async () => {
+    it('should return pagination metadata with hasMore=false when at the end', async () => {
+      const mockMessages = [
+        { id: 'msg1', senderId: 'user-123', recipientId: 'recipient-456' },
+      ];
+      
       const { req, res } = createMocks({
-        method: 'PUT',
+        method: 'GET',
+        query: {
+          limit: '10',
+          offset: '0',
+        },
       });
+      
+      (req as ExtendedRequest).__mockContext = {
+        session: { user: { id: 'user-123' }, expires: new Date().toISOString() } as Session,
+        userId: 'user-123',
+      };
+      
+      (prisma.encryptedMessage.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockMessages);
+      (prisma.encryptedMessage.count as ReturnType<typeof vi.fn>).mockResolvedValueOnce(1); // Only 1 message total
       
       await handler(req as unknown as NextApiRequest, res as unknown as NextApiResponse);
       
-      expect(res._getStatusCode()).toBe(405);
+      expect(res._getStatusCode()).toBe(200);
+      expect(res._getJSONData().data.pagination.hasMore).toBe(false);
     });
   });
 }); 
