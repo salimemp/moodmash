@@ -702,7 +702,12 @@ MoodMash is a social platform enabling users to share their moods anonymously th
     - [x] Recipient validation tests
     - [x] Encryption key validation tests
   - [ ] Message handling components
-- [ ] Add more edge case tests for face detection
+- [x] Add more edge case tests for face detection
+  - [x] No faces detected
+  - [x] Multiple faces detected
+  - [x] Low confidence detections
+  - [x] Partial faces / faces at edge of frame
+  - [x] Face detection errors
 - [ ] Create better mocks for WebRTC and canvas operations
 
 ### CI/CD Enhancements
