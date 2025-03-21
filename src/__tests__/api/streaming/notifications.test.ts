@@ -4,8 +4,15 @@
  * This test file provides coverage for the GET /api/streaming/notifications endpoint
  */
 
+import { NextApiRequest, NextApiResponse } from 'next';
 import { createMocks } from 'node-mocks-http';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Custom type for request with additional properties
+interface ExtendedRequest extends NextApiRequest {
+  _userId?: string;
+  _closeCallback?: () => void;
+}
 
 // Mock dependencies
 vi.mock('@/lib/api/streaming', () => ({
@@ -19,8 +26,8 @@ vi.mock('@/lib/api/streaming', () => ({
 
 // Mock the createApiHandler to directly execute the handler function
 vi.mock('@/lib/api/handlers', () => ({
-  createApiHandler: vi.fn((config, handler) => {
-    return (req: any, res: any) => handler(req, res, { userId: req._userId });
+  createApiHandler: vi.fn((_, handler) => {
+    return (req: ExtendedRequest, res: NextApiResponse) => handler(req, res, { userId: req._userId });
   }),
 }));
 
@@ -59,8 +66,8 @@ describe('Streaming Notifications API', () => {
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((event, callback) => {
-          if (event === 'close') {
+        on: vi.fn((_, callback) => {
+          if (_ === 'close') {
             // Store callback for later testing
             req._closeCallback = callback;
           }
@@ -108,7 +115,7 @@ describe('Streaming Notifications API', () => {
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((event, callback) => {}),
+        on: vi.fn(),
         _userId: 'test-user-id',
       }
     );
@@ -145,7 +152,7 @@ describe('Streaming Notifications API', () => {
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((event, callback) => {}),
+        on: vi.fn(),
         _userId: 'test-user-id',
       }
     );
@@ -178,10 +185,10 @@ describe('Streaming Notifications API', () => {
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((event, callback) => {
-          if (event === 'close') {
+        on: vi.fn((eventName, handler) => {
+          if (eventName === 'close') {
             // Store callback for later testing
-            req._closeCallback = callback;
+            req._closeCallback = handler;
           }
         }),
         _userId: 'test-user-id',
@@ -194,15 +201,17 @@ describe('Streaming Notifications API', () => {
     // Trigger the close event
     req._closeCallback();
     
-    // Test sending notification after disconnect
-    const testNotification: Notification = {
+    // Create a notification to test sending after disconnect
+    const notification: Notification = {
       type: 'test',
       message: 'Test message',
       timestamp: Date.now(),
     };
     
     // This should not throw an error
-    notifyUser('test-user-id', testNotification);
+    notifyUser('test-user-id', notification);
+    
+    // No expectation needed - we're just verifying it doesn't throw
   });
 
   it('should notify users when using the notifyUser function', async () => {
@@ -210,7 +219,7 @@ describe('Streaming Notifications API', () => {
       createMocks().req,
       { 
         method: 'GET',
-        on: vi.fn((event, callback) => {}),
+        on: vi.fn(),
         _userId: 'test-user-id-2',
       }
     );
@@ -242,13 +251,6 @@ describe('Streaming Notifications API', () => {
   it('should handle notification errors', async () => {
     // Since we can't easily access the internal map, let's test the error
     // handling functionality more indirectly
-    
-    // Create a test notification
-    const testNotification: Notification = {
-      type: 'test',
-      message: 'This will cause an error',
-      timestamp: Date.now(),
-    };
     
     // Create a fake error to log
     const testError = new Error('Stream error');
