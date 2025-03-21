@@ -227,12 +227,36 @@ Based on the documentation and test coverage reports, this is a comprehensive ch
 
 ### MFA Endpoints
 
-- [ ] `src/pages/api/auth/mfa/setup.ts`
-  - [ ] MFA initialization
-  - [ ] Secret generation
-- [ ] `src/pages/api/auth/mfa/verify.ts`
-  - [ ] Code verification
-  - [ ] User activation
-- [ ] `src/pages/api/auth/mfa/disable.ts`
-  - [ ] MFA deactivation
-  - [ ] Security validation
+- [x] `src/pages/api/auth/mfa/setup.ts`
+  - [x] MFA initialization
+  - [x] Secret generation
+- [x] `src/pages/api/auth/mfa/verify.ts`
+  - [x] Code verification
+  - [x] User activation
+- [x] `src/pages/api/auth/mfa/disable.ts`
+  - [x] MFA deactivation
+  - [x] Security validation
+
+### Notification API Endpoints
+
+- [x] `src/pages/api/streaming/notifications.ts`
+  - [x] Real-time notification delivery
+  - [x] Connection management
+  - [x] Event streaming
+- [x] `src/pages/api/test/notification.ts`
+  - [x] Notification creation
+  - [x] Format validation
+  - [x] User targeting
+  - [x] Error handling
+
+### Secure Messages API Endpoints
+
+- [x] `src/pages/api/messages/secure.ts`
+  - [x] Authenticated access enforcement
+  - [x] Message sending (POST)
+  - [x] Message retrieval (GET)
+  - [x] Pagination support
+  - [x] Error handling
+  - [x] Recipient validation
+  - [x] Encryption key validation
+  - ⚠️ Tests exist (secure.test.ts, combined.test.ts) but coverage reporting is unreliable

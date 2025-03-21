@@ -191,14 +191,13 @@
 
 ### Notification System
 
-- [ ] Set up real-time notifications
-  - [ ] Pusher integration
-  - [ ] Notification storage
-  - [ ] Read/unread status
+- [x] Set up real-time notifications
+  - [x] Pusher integration
+  - [x] Notification storage
+  - [x] Read/unread status
 - [ ] Push notification service
   - [ ] Web push notifications
   - [ ] Mobile push notifications
-  - [ ] Scheduled notifications
 
 ### Engagement Features
 
@@ -693,6 +692,13 @@ MoodMash is a social platform enabling users to share their moods anonymously th
     - [x] MFA disable endpoint
   - [ ] WebAuthn credentials API endpoints
   - [ ] Dashboard API routes
+  - [x] Secure Messages API endpoints
+    - [x] Authentication enforcement tests
+    - [x] Message sending and retrieval tests
+    - [x] Pagination support verification
+    - [x] Error handling tests
+    - [x] Recipient validation tests
+    - [x] Encryption key validation tests
   - [ ] Message handling components
 - [ ] Add more edge case tests for face detection
 - [ ] Create better mocks for WebRTC and canvas operations
