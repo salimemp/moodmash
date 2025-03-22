@@ -117,7 +117,7 @@ export class MockHTMLCanvasElement {
   }
   
   // Mock for toDataURL
-  toDataURL(type = 'image/png', quality?: number): string {
+  toDataURL(type = 'image/png', _quality?: number): string {
     return `data:${type};base64,mockImageData`;
   }
   

@@ -52,9 +52,9 @@ export class MockMediaStreamTrack implements MediaStreamTrack {
     this.readyState = 'ended';
   }
   
-  addEventListener(type: string, listener: EventListenerOrEventListenerObject) {}
-  removeEventListener(type: string, listener: EventListenerOrEventListenerObject) {}
-  dispatchEvent(event: Event): boolean { return true; }
+  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject) {}
+  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject) {}
+  dispatchEvent(_event: Event): boolean { return true; }
 }
 
 // Mock MediaStream
@@ -107,9 +107,9 @@ export class MockMediaStream implements MediaStream {
     return new MockMediaStream([...this.tracks]);
   }
   
-  addEventListener(type: string, listener: EventListenerOrEventListenerObject): void {}
-  removeEventListener(type: string, listener: EventListenerOrEventListenerObject): void {}
-  dispatchEvent(event: Event): boolean { return true; }
+  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
+  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
+  dispatchEvent(_event: Event): boolean { return true; }
 }
 
 // Mock getUserMedia
