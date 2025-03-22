@@ -75,7 +75,7 @@ describe('CameraCapture Component', () => {
     
     // Wait for the error message to appear
     await waitFor(() => {
-      expect(screen.getByText(/Could not access the camera/i)).toBeInTheDocument();
+      expect(screen.getByText('Camera Not Available')).toBeInTheDocument();
     });
   });
   

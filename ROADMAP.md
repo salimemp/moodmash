@@ -61,14 +61,15 @@
 
 ### Internationalization & Documentation
 
-- [ ] Multi-language and Localization
-  - [ ] Set up next-intl or next-i18next
-  - [ ] Create translation workflow
-  - [ ] Configure language detection
-- [ ] Code documentation
-  - [ ] JSDoc comments for all components and functions
-  - [ ] API documentation
-  - [ ] Automated documentation generation
+- [x] Set up next-i18next
+- [x] Add support for multiple languages (en, fr, es, de, etc.)
+- [x] Create language switcher component
+- [x] Add RTL support for languages like Arabic and Hebrew
+- [x] Implement automated translation workflow
+- [x] Add documentation on i18n usage
+- [x] Enhance date, number, and currency formatters with locale support
+- [x] Create translation management interface for admins
+- [x] Optimize translation loading with code splitting and lazy loading
 
 ## 2. Authentication System
 
