@@ -1,3 +1,4 @@
+import { features, useFeatureDetection } from '@/hooks/useWithFallback';
 import * as faceDetection from '@tensorflow-models/face-detection';
 import '@tensorflow/tfjs-backend-webgl';
 import '@tensorflow/tfjs-core';
@@ -39,6 +40,8 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
   const [detector, setDetector] = useState<faceDetection.FaceDetector | null>(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isCameraSupported, isDetectionComplete] = useFeatureDetection(features.camera);
+  const [isWebGLSupported] = useFeatureDetection(features.webGL);
 
   // Load face detection model
   useEffect(() => {
@@ -272,6 +275,46 @@ const CameraCapture: React.FC<CameraCaptureProps> = ({
       stopCamera();
     };
   }, []);
+
+  // If camera or WebGL is not supported, show a fallback UI
+  if (isDetectionComplete && (!isCameraSupported || !isWebGLSupported)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-4 border rounded-lg bg-gray-50 text-center">
+        <div className="text-red-500 mb-4 text-xl">
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            width="32" 
+            height="32" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2" 
+            strokeLinecap="round" 
+            strokeLinejoin="round"
+            className="mx-auto mb-2"
+          >
+            <path d="M13 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-8"></path>
+            <path d="M18 2h-6v6h6V2zM22 12v6"></path>
+            <path d="M18 14v4"></path>
+            <path d="M14 18h8"></path>
+          </svg>
+          {!isCameraSupported ? 'Camera Not Available' : 'WebGL Not Supported'}
+        </div>
+        <p className="text-gray-600 mb-4">
+          {!isCameraSupported
+            ? 'This feature requires camera access, which is not available on your device or browser.'
+            : 'This feature requires WebGL support, which is not available in your browser.'
+          }
+        </p>
+        <button
+          onClick={onImageCaptured ? () => onImageCaptured('/images/fallback-image.jpg') : undefined}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+        >
+          Use Default Image
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto">

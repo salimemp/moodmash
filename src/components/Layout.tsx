@@ -1,6 +1,8 @@
-import React from 'react';
-import Head from 'next/head';
 import { useTranslation } from '@/hooks/useTranslation';
+import Head from 'next/head';
+import React from 'react';
+import { OfflineIndicator } from './ui/OfflineIndicator';
+import { UpdatePrompt } from './ui/UpdatePrompt';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,7 +24,11 @@ const Layout: React.FC<LayoutProps> = ({ children, title, description }) => {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main>{children}</main>
+      <div className="min-h-screen flex flex-col">
+        <UpdatePrompt />
+        <OfflineIndicator />
+        <main className="flex-grow">{children}</main>
+      </div>
     </>
   );
 };
