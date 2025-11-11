@@ -1,0 +1,127 @@
+/* MoodMash Custom Styles */
+
+/* Emotion color coding */
+.emotion-happy {
+    color: #fbbf24;
+    background-color: #fef3c7;
+}
+
+.emotion-sad {
+    color: #3b82f6;
+    background-color: #dbeafe;
+}
+
+.emotion-anxious {
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+
+.emotion-calm {
+    color: #10b981;
+    background-color: #d1fae5;
+}
+
+.emotion-energetic {
+    color: #f59e0b;
+    background-color: #fed7aa;
+}
+
+.emotion-tired {
+    color: #6b7280;
+    background-color: #f3f4f6;
+}
+
+.emotion-angry {
+    color: #dc2626;
+    background-color: #fecaca;
+}
+
+.emotion-peaceful {
+    color: #8b5cf6;
+    background-color: #ede9fe;
+}
+
+.emotion-stressed {
+    color: #ef4444;
+    background-color: #fee2e2;
+}
+
+.emotion-neutral {
+    color: #64748b;
+    background-color: #f1f5f9;
+}
+
+/* Intensity indicators */
+.intensity-1 { opacity: 0.3; }
+.intensity-2 { opacity: 0.5; }
+.intensity-3 { opacity: 0.7; }
+.intensity-4 { opacity: 0.85; }
+.intensity-5 { opacity: 1.0; }
+
+/* Smooth transitions */
+.transition-all {
+    transition: all 0.3s ease;
+}
+
+/* Card hover effect */
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+/* Fade in animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/* Emotion selector button */
+.emotion-btn {
+    transition: all 0.2s ease;
+}
+
+.emotion-btn:hover {
+    transform: scale(1.05);
+}
+
+.emotion-btn.selected {
+    ring: 2px;
+    ring-offset: 2px;
+}
+
+/* Activity card */
+.activity-card {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.activity-card:hover {
+    border-color: #6366f1;
+    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+}
+
+/* Responsive chart container */
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .chart-container {
+        height: 400px;
+    }
+}

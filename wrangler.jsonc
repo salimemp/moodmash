@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "moodmash",
+  "compatibility_date": "2025-11-11",
+  "pages_build_output_dir": "./dist",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  // D1 Database for mood tracking
+  // To create: npx wrangler d1 create moodmash-production
+  // Then add the database_id here
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "moodmash-production",
+      "database_id": "your-database-id-here"
+    }
+  ]
+}
