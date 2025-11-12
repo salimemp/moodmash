@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
 import type { Bindings, MoodEntry, WellnessActivity, MoodStats, Emotion } from './types';
+import { renderHTML, renderLoadingState } from './template';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -360,69 +361,75 @@ app.post('/api/activities/:id/log', async (c) => {
 });
 
 // =============================================================================
+// PWA ROUTES
+// =============================================================================
+
+// Manifest
+app.get('/manifest.json', async (c) => {
+  return c.json({
+    name: 'MoodMash - Mood Tracking',
+    short_name: 'MoodMash',
+    description: 'Intelligent mood tracking and emotional wellness platform',
+    start_url: '/',
+    display: 'standalone',
+    background_color: '#6366f1',
+    theme_color: '#6366f1',
+    orientation: 'portrait-primary',
+    icons: [
+      {
+        src: '/static/icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'any maskable'
+      }
+    ],
+    categories: ['health', 'lifestyle', 'medical'],
+    shortcuts: [
+      {
+        name: 'Log Mood',
+        short_name: 'Log',
+        description: 'Quickly log your current mood',
+        url: '/log'
+      },
+      {
+        name: 'View Dashboard',
+        short_name: 'Dashboard',
+        description: 'View your mood statistics',
+        url: '/'
+      }
+    ]
+  });
+});
+
+// Service Worker
+app.get('/sw.js', (c) => {
+  return c.text(`
+// MoodMash Service Worker - Simple version for MVP
+const CACHE_NAME = 'moodmash-v1';
+const ASSETS = ['/static/styles.css', '/static/app.js', '/static/i18n.js', '/static/utils.js'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+});
+
+self.addEventListener('fetch', e => {
+  if (e.request.url.includes('/api/')) return;
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+});
+  `, 200, { 'Content-Type': 'application/javascript' });
+});
+
+// =============================================================================
 // WEB PAGES
 // =============================================================================
 
 // Home page
 app.get('/', (c) => {
-  return c.html(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MoodMash - Intelligent Mood Tracking</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <script>
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
-                }
-              }
-            }
-          }
-        </script>
-        <link href="/static/styles.css" rel="stylesheet">
-    </head>
-    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <i class="fas fa-brain text-primary text-2xl mr-3"></i>
-                        <span class="text-2xl font-bold text-gray-800">MoodMash</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="/" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="/log" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Log Mood</a>
-                        <a href="/activities" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Activities</a>
-                        <a href="/about" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">About</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Loading state -->
-            <div id="loading" class="text-center py-12">
-                <i class="fas fa-spinner fa-spin text-4xl text-primary"></i>
-                <p class="mt-4 text-gray-600">Loading your mood data...</p>
-            </div>
-        </div>
-        
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-        <script src="/static/app.js"></script>
-    </body>
-    </html>
-  `);
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/app.js"></script>
+  `;
+  return c.html(renderHTML('Dashboard', content, 'dashboard'));
 });
 
 // Log mood page

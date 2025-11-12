@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MoodMash Icon Generator</title>
+</head>
+<body>
+    <h1>MoodMash Icon Generator</h1>
+    <p>This will generate placeholder icons for the PWA</p>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <div id="output"></div>
+    
+    <script>
+        const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+        const output = document.getElementById('output');
+        
+        sizes.forEach(size => {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            
+            // Draw background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#6366f1');
+            gradient.addColorStop(1, '#8b5cf6');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw brain icon (simple representation)
+            ctx.fillStyle = 'white';
+            ctx.font = `bold ${size * 0.5}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧠', size / 2, size / 2);
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.download = `icon-${size}x${size}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.textContent = `Download ${size}x${size} icon`;
+            link.style.display = 'block';
+            link.style.marginBottom = '10px';
+            output.appendChild(link);
+        });
+        
+        output.innerHTML += '<p>Right-click each link above and save the icons to public/icons/ directory</p>';
+    </script>
+</body>
+</html>
