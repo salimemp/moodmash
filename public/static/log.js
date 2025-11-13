@@ -4,16 +4,16 @@ const API_BASE = '/api';
 
 // Emotion configuration
 const EMOTIONS = {
-    happy: { icon: 'fa-smile', color: '#fbbf24', label: 'Happy' },
-    sad: { icon: 'fa-sad-tear', color: '#3b82f6', label: 'Sad' },
-    anxious: { icon: 'fa-dizzy', color: '#ef4444', label: 'Anxious' },
-    calm: { icon: 'fa-smile-beam', color: '#10b981', label: 'Calm' },
-    energetic: { icon: 'fa-bolt', color: '#f59e0b', label: 'Energetic' },
-    tired: { icon: 'fa-tired', color: '#6b7280', label: 'Tired' },
-    angry: { icon: 'fa-angry', color: '#dc2626', label: 'Angry' },
-    peaceful: { icon: 'fa-spa', color: '#8b5cf6', label: 'Peaceful' },
-    stressed: { icon: 'fa-frown', color: '#ef4444', label: 'Stressed' },
-    neutral: { icon: 'fa-meh', color: '#64748b', label: 'Neutral' }
+    happy: { icon: 'fa-smile', color: '#fbbf24' },
+    sad: { icon: 'fa-sad-tear', color: '#3b82f6' },
+    anxious: { icon: 'fa-dizzy', color: '#ef4444' },
+    calm: { icon: 'fa-smile-beam', color: '#10b981' },
+    energetic: { icon: 'fa-bolt', color: '#f59e0b' },
+    tired: { icon: 'fa-tired', color: '#6b7280' },
+    angry: { icon: 'fa-angry', color: '#dc2626' },
+    peaceful: { icon: 'fa-spa', color: '#8b5cf6' },
+    stressed: { icon: 'fa-frown', color: '#ef4444' },
+    neutral: { icon: 'fa-meh', color: '#64748b' }
 };
 
 const WEATHER_OPTIONS = ['sunny', 'cloudy', 'rainy', 'snowy', 'clear'];
@@ -46,14 +46,14 @@ function renderLogForm() {
             <div class="bg-white rounded-lg shadow-md p-8">
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">
                     <i class="fas fa-pen text-primary mr-2"></i>
-                    Log Your Mood
+                    ${i18n.t('log_mood_title')}
                 </h1>
-                <p class="text-gray-600 mb-8">Track how you're feeling right now</p>
+                <p class="text-gray-600 mb-8">${i18n.t('log_mood_subtitle')}</p>
                 
                 <!-- Emotion Selection -->
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        How are you feeling? <span class="text-red-500">*</span>
+                        ${i18n.t('form_emotion_label')} <span class="text-red-500">*</span>
                     </label>
                     <div class="grid grid-cols-5 gap-3" id="emotion-selector">
                         ${Object.entries(EMOTIONS).map(([key, config]) => `
@@ -62,21 +62,21 @@ function renderLogForm() {
                                     onclick="selectEmotion('${key}')"
                                     data-emotion="${key}">
                                 <i class="fas ${config.icon} text-3xl mb-2" style="color: ${config.color}"></i>
-                                <span class="text-sm font-medium text-gray-700">${config.label}</span>
+                                <span class="text-sm font-medium text-gray-700">${i18n.t(`emotion_${key}`)}</span>
                             </button>
                         `).join('')}
                     </div>
-                    <div id="emotion-error" class="text-red-500 text-sm mt-2 hidden">Please select an emotion</div>
+                    <div id="emotion-error" class="text-red-500 text-sm mt-2 hidden">${i18n.t('error_emotion_required')}</div>
                 </div>
                 
                 <!-- Intensity -->
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Intensity <span class="text-red-500">*</span>
-                        <span class="text-gray-500 font-normal">(Current: <span id="intensity-value">3</span>)</span>
+                        ${i18n.t('form_intensity_label')} <span class="text-red-500">*</span>
+                        <span class="text-gray-500 font-normal">(${i18n.t('form_intensity_current')}: <span id="intensity-value">3</span>)</span>
                     </label>
                     <div class="flex items-center space-x-4">
-                        <span class="text-sm text-gray-600">Low</span>
+                        <span class="text-sm text-gray-600">${i18n.t('form_intensity_low')}</span>
                         <input type="range" 
                                id="intensity-slider" 
                                min="1" 
@@ -84,33 +84,33 @@ function renderLogForm() {
                                value="3" 
                                class="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
                                oninput="updateIntensity(this.value)">
-                        <span class="text-sm text-gray-600">High</span>
+                        <span class="text-sm text-gray-600">${i18n.t('form_intensity_high')}</span>
                     </div>
                 </div>
                 
                 <!-- Notes -->
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Notes (Optional)
+                        ${i18n.t('form_notes_label')}
                     </label>
                     <textarea id="notes" 
                               rows="3" 
                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                              placeholder="What's on your mind? Any triggers or events?"
+                              placeholder="${i18n.t('form_notes_placeholder')}"
                               onchange="updateNotes(this.value)"></textarea>
                 </div>
                 
                 <!-- Context: Weather -->
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Weather (Optional)
+                        ${i18n.t('form_weather_label')}
                     </label>
                     <div class="flex flex-wrap gap-2">
                         ${WEATHER_OPTIONS.map(w => `
                             <button type="button" 
                                     class="px-4 py-2 rounded-lg border ${formData.weather === w ? 'border-primary bg-indigo-50 text-primary' : 'border-gray-300 text-gray-700 hover:border-gray-400'}"
                                     onclick="selectWeather('${w}')">
-                                ${w.charAt(0).toUpperCase() + w.slice(1)}
+                                ${i18n.t(`weather_${w}`)}
                             </button>
                         `).join('')}
                     </div>
@@ -119,7 +119,7 @@ function renderLogForm() {
                 <!-- Context: Sleep -->
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Sleep Hours (Optional)
+                        ${i18n.t('form_sleep_label')}
                     </label>
                     <input type="number" 
                            id="sleep-hours" 
@@ -127,21 +127,21 @@ function renderLogForm() {
                            max="24" 
                            step="0.5" 
                            class="w-full md:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-                           placeholder="e.g., 7.5"
+                           placeholder="${i18n.t('form_sleep_placeholder')}"
                            onchange="updateSleep(this.value)">
                 </div>
                 
                 <!-- Context: Activities -->
                 <div class="mb-6">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Activities (Optional)
+                        ${i18n.t('form_activities_label')}
                     </label>
                     <div class="flex flex-wrap gap-2">
                         ${ACTIVITY_OPTIONS.map(a => `
                             <button type="button" 
                                     class="px-4 py-2 rounded-lg border ${formData.activities.includes(a) ? 'border-primary bg-indigo-50 text-primary' : 'border-gray-300 text-gray-700 hover:border-gray-400'}"
                                     onclick="toggleActivity('${a}')">
-                                ${a.charAt(0).toUpperCase() + a.slice(1)}
+                                ${i18n.t(`activity_${a}`)}
                             </button>
                         `).join('')}
                     </div>
@@ -150,14 +150,14 @@ function renderLogForm() {
                 <!-- Context: Social -->
                 <div class="mb-8">
                     <label class="block text-sm font-semibold text-gray-700 mb-3">
-                        Social Interaction (Optional)
+                        ${i18n.t('form_social_label')}
                     </label>
                     <div class="flex flex-wrap gap-2">
                         ${SOCIAL_OPTIONS.map(s => `
                             <button type="button" 
                                     class="px-4 py-2 rounded-lg border ${formData.social_interaction === s ? 'border-primary bg-indigo-50 text-primary' : 'border-gray-300 text-gray-700 hover:border-gray-400'}"
                                     onclick="selectSocial('${s}')">
-                                ${s.charAt(0).toUpperCase() + s.slice(1)}
+                                ${i18n.t(`social_${s}`)}
                             </button>
                         `).join('')}
                     </div>
@@ -166,12 +166,12 @@ function renderLogForm() {
                 <!-- Submit Buttons -->
                 <div class="flex items-center justify-between pt-6 border-t border-gray-200">
                     <a href="/" class="text-gray-600 hover:text-gray-800">
-                        <i class="fas fa-arrow-left mr-2"></i>Cancel
+                        <i class="fas fa-arrow-left mr-2"></i>${i18n.t('btn_cancel')}
                     </a>
                     <button type="button" 
                             onclick="submitMood()" 
                             class="px-6 py-3 bg-primary text-white rounded-lg hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-300 font-semibold">
-                        <i class="fas fa-save mr-2"></i>Save Mood
+                        <i class="fas fa-save mr-2"></i>${i18n.t('btn_save')}
                     </button>
                 </div>
             </div>
@@ -180,14 +180,14 @@ function renderLogForm() {
             <div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
                     <i class="fas fa-check-circle text-green-500 text-6xl mb-4"></i>
-                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Mood Saved!</h3>
-                    <p class="text-gray-600 mb-6">Your mood entry has been recorded successfully.</p>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">${i18n.t('success_mood_saved_title')}</h3>
+                    <p class="text-gray-600 mb-6">${i18n.t('success_mood_saved')}</p>
                     <div class="flex space-x-4">
                         <a href="/" class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-indigo-700">
-                            View Dashboard
+                            ${i18n.t('btn_view_dashboard')}
                         </a>
                         <button onclick="resetForm()" class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                            Log Another
+                            ${i18n.t('btn_log_another')}
                         </button>
                     </div>
                 </div>
@@ -303,7 +303,7 @@ async function submitMood() {
         document.getElementById('success-modal').classList.remove('hidden');
     } catch (error) {
         console.error('Failed to save mood:', error);
-        alert('Failed to save mood. Please try again.');
+        alert(i18n.t('error_mood_save_failed'));
     }
 }
 

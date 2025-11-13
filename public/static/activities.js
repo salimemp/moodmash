@@ -37,7 +37,7 @@ async function loadActivities(emotion = '') {
         currentFilter = emotion;
     } catch (error) {
         console.error('Failed to load activities:', error);
-        showError('Failed to load wellness activities');
+        showError(i18n.t('error_loading_failed'));
     }
 }
 
@@ -50,41 +50,41 @@ function renderActivitiesPage() {
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-800 mb-2">
                     <i class="fas fa-heart text-red-500 mr-2"></i>
-                    Wellness Activities
+                    ${i18n.t('activities_title')}
                 </h1>
-                <p class="text-gray-600">Personalized activities to improve your mood and wellbeing</p>
+                <p class="text-gray-600">${i18n.t('activities_subtitle')}</p>
             </div>
             
             <!-- Filter by Emotion -->
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                 <label class="block text-sm font-semibold text-gray-700 mb-3">
                     <i class="fas fa-filter mr-2"></i>
-                    Filter by Emotion
+                    ${i18n.t('activities_filter_label')}
                 </label>
                 <div class="flex flex-wrap gap-2">
                     <button onclick="filterByEmotion('')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === '' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        All Activities
+                        ${i18n.t('activities_all')}
                     </button>
                     <button onclick="filterByEmotion('anxious')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === 'anxious' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        Anxious
+                        ${i18n.t('emotion_anxious')}
                     </button>
                     <button onclick="filterByEmotion('stressed')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === 'stressed' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        Stressed
+                        ${i18n.t('emotion_stressed')}
                     </button>
                     <button onclick="filterByEmotion('sad')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === 'sad' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        Sad
+                        ${i18n.t('emotion_sad')}
                     </button>
                     <button onclick="filterByEmotion('tired')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === 'tired' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        Tired
+                        ${i18n.t('emotion_tired')}
                     </button>
                     <button onclick="filterByEmotion('angry')" 
                             class="px-4 py-2 rounded-lg ${currentFilter === 'angry' ? 'bg-primary text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}">
-                        Angry
+                        ${i18n.t('emotion_angry')}
                     </button>
                 </div>
             </div>
@@ -101,9 +101,9 @@ function renderActivitiesGrid() {
         return `
             <div class="bg-white rounded-lg shadow-md p-12 text-center">
                 <i class="fas fa-inbox text-gray-400 text-6xl mb-4"></i>
-                <p class="text-gray-600 text-lg">No activities found for this filter.</p>
+                <p class="text-gray-600 text-lg">${i18n.t('activities_no_results')}</p>
                 <button onclick="filterByEmotion('')" class="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-indigo-700">
-                    View All Activities
+                    ${i18n.t('activities_view_all')}
                 </button>
             </div>
         `;
@@ -148,11 +148,11 @@ function renderActivityCard(activity) {
             
             <!-- Target Emotions -->
             <div class="mb-4">
-                <p class="text-xs font-semibold text-gray-500 mb-2">HELPS WITH:</p>
+                <p class="text-xs font-semibold text-gray-500 mb-2">${i18n.t('activities_helps_with')}:</p>
                 <div class="flex flex-wrap gap-1">
                     ${activity.target_emotions.map(emotion => `
-                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded capitalize">
-                            ${emotion}
+                        <span class="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs rounded">
+                            ${i18n.t(`emotion_${emotion}`)}
                         </span>
                     `).join('')}
                 </div>
@@ -162,7 +162,7 @@ function renderActivityCard(activity) {
             <div class="flex space-x-2">
                 <button onclick="startActivity(${activity.id}, '${activity.title}')" 
                         class="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-indigo-700 text-sm font-medium">
-                    <i class="fas fa-play mr-2"></i>Start
+                    <i class="fas fa-play mr-2"></i>${i18n.t('btn_start')}
                 </button>
                 <button onclick="viewDetails(${activity.id})" 
                         class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
@@ -189,21 +189,21 @@ function startActivity(activityId, activityTitle) {
         <div class="bg-white rounded-lg p-8 max-w-md mx-4">
             <h3 class="text-2xl font-bold text-gray-800 mb-4">
                 <i class="fas fa-play-circle text-primary mr-2"></i>
-                Start Activity
+                ${i18n.t('activities_start_title')}
             </h3>
             <p class="text-gray-600 mb-6">
-                Ready to start "${activityTitle}"? 
+                ${i18n.t('activities_ready').replace('{activity}', activityTitle)}
                 <br><br>
-                Find a comfortable space, eliminate distractions, and give yourself this time for wellbeing.
+                ${i18n.t('activities_ready_desc')}
             </p>
             <div class="flex space-x-4">
                 <button onclick="completeActivity(${activityId}, true)" 
                         class="flex-1 px-4 py-3 bg-primary text-white rounded-lg hover:bg-indigo-700 font-semibold">
-                    <i class="fas fa-check mr-2"></i>Mark as Done
+                    <i class="fas fa-check mr-2"></i>${i18n.t('btn_mark_done')}
                 </button>
                 <button onclick="closeModal()" 
                         class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                    Cancel
+                    ${i18n.t('btn_cancel')}
                 </button>
             </div>
         </div>
@@ -223,10 +223,10 @@ async function completeActivity(activityId, completed) {
         closeModal();
         
         // Show success message
-        showSuccess('Activity logged! Great job taking care of yourself.');
+        showSuccess(i18n.t('success_activity_logged'));
     } catch (error) {
         console.error('Failed to log activity:', error);
-        alert('Failed to log activity. Please try again.');
+        alert(i18n.t('error_activity_log_failed'));
     }
 }
 
@@ -269,16 +269,16 @@ function viewDetails(activityId) {
             </div>
             
             <div class="mb-6">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">DESCRIPTION</h4>
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">${i18n.t('activities_description')}</h4>
                 <p class="text-gray-600">${activity.description}</p>
             </div>
             
             <div class="mb-6">
-                <h4 class="text-sm font-semibold text-gray-700 mb-2">HELPS WITH THESE EMOTIONS</h4>
+                <h4 class="text-sm font-semibold text-gray-700 mb-2">${i18n.t('activities_helps_emotions')}</h4>
                 <div class="flex flex-wrap gap-2">
                     ${activity.target_emotions.map(emotion => `
-                        <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full capitalize">
-                            ${emotion}
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-sm rounded-full">
+                            ${i18n.t(`emotion_${emotion}`)}
                         </span>
                     `).join('')}
                 </div>
@@ -287,11 +287,11 @@ function viewDetails(activityId) {
             <div class="flex space-x-4">
                 <button onclick="startActivity(${activity.id}, '${activity.title}')" 
                         class="flex-1 px-6 py-3 bg-primary text-white rounded-lg hover:bg-indigo-700 font-semibold">
-                    <i class="fas fa-play mr-2"></i>Start This Activity
+                    <i class="fas fa-play mr-2"></i>${i18n.t('activities_start_this')}
                 </button>
                 <button onclick="closeModal()" 
                         class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                    Close
+                    ${i18n.t('btn_close')}
                 </button>
             </div>
         </div>
@@ -330,7 +330,7 @@ function showError(message) {
             <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-3"></i>
             <p class="text-red-700 font-semibold">${message}</p>
             <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                Retry
+                ${i18n.t('btn_retry')}
             </button>
         </div>
     `;

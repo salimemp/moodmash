@@ -31,7 +31,7 @@ async function init() {
         renderDashboard();
     } catch (error) {
         console.error('Failed to initialize dashboard:', error);
-        showError('Failed to load dashboard data');
+        showError(i18n.t('error_loading_failed'));
     }
 }
 
@@ -90,46 +90,46 @@ function renderStatsCards() {
                      statsData.recent_trend === 'declining' ? 'fa-arrow-down text-red-500' :
                      'fa-minus text-gray-500';
     
-    const trendText = statsData.recent_trend === 'improving' ? 'Improving' :
-                     statsData.recent_trend === 'declining' ? 'Declining' : 'Stable';
+    const trendText = statsData.recent_trend === 'improving' ? i18n.t('trend_improving') :
+                     statsData.recent_trend === 'declining' ? i18n.t('trend_declining') : i18n.t('trend_stable');
     
     const emotionConfig = EMOTIONS[statsData.most_common_emotion] || EMOTIONS.neutral;
     
     return `
         <div class="bg-white rounded-lg shadow-md p-6 card-hover">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-600">Total Entries</span>
+                <span class="text-sm text-gray-600">${i18n.t('stats_total_entries')}</span>
                 <i class="fas fa-clipboard-list text-primary"></i>
             </div>
             <div class="text-3xl font-bold text-gray-800">${statsData.total_entries}</div>
-            <p class="text-xs text-gray-500 mt-1">Last 30 days</p>
+            <p class="text-xs text-gray-500 mt-1">${i18n.t('stats_last_30_days')}</p>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6 card-hover">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-600">Most Common</span>
+                <span class="text-sm text-gray-600">${i18n.t('stats_most_common')}</span>
                 <i class="fas ${emotionConfig.icon}" style="color: ${emotionConfig.color}"></i>
             </div>
-            <div class="text-2xl font-bold text-gray-800 capitalize">${statsData.most_common_emotion}</div>
-            <p class="text-xs text-gray-500 mt-1">Primary emotion</p>
+            <div class="text-2xl font-bold text-gray-800">${i18n.t(`emotion_${statsData.most_common_emotion}`)}</div>
+            <p class="text-xs text-gray-500 mt-1">${i18n.t('stats_primary_emotion')}</p>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6 card-hover">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-600">Avg Intensity</span>
+                <span class="text-sm text-gray-600">${i18n.t('stats_avg_intensity')}</span>
                 <i class="fas fa-signal text-secondary"></i>
             </div>
             <div class="text-3xl font-bold text-gray-800">${statsData.average_intensity.toFixed(1)}</div>
-            <p class="text-xs text-gray-500 mt-1">Out of 5.0</p>
+            <p class="text-xs text-gray-500 mt-1">${i18n.t('stats_out_of_5')}</p>
         </div>
         
         <div class="bg-white rounded-lg shadow-md p-6 card-hover">
             <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-600">Trend</span>
+                <span class="text-sm text-gray-600">${i18n.t('stats_trend')}</span>
                 <i class="fas ${trendIcon}"></i>
             </div>
             <div class="text-2xl font-bold text-gray-800">${trendText}</div>
-            <p class="text-xs text-gray-500 mt-1">30-day trend</p>
+            <p class="text-xs text-gray-500 mt-1">${i18n.t('stats_30_day_trend')}</p>
         </div>
     `;
 }
@@ -138,7 +138,7 @@ function renderStatsCards() {
 function renderMoodChart() {
     return `
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Mood Distribution</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">${i18n.t('chart_mood_distribution')}</h3>
             <div class="chart-container">
                 <canvas id="moodChart"></canvas>
             </div>
@@ -150,7 +150,7 @@ function renderMoodChart() {
 function renderIntensityChart() {
     return `
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Intensity Trend</h3>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">${i18n.t('chart_intensity_trend')}</h3>
             <div class="chart-container">
                 <canvas id="intensityChart"></canvas>
             </div>
@@ -172,7 +172,7 @@ function createMoodChart() {
     new Chart(ctx, {
         type: 'doughnut',
         data: {
-            labels: emotions.map(e => e.charAt(0).toUpperCase() + e.slice(1)),
+            labels: emotions.map(e => i18n.t(`emotion_${e}`)),
             datasets: [{
                 data: counts,
                 backgroundColor: colors,
@@ -256,7 +256,7 @@ function renderInsights() {
         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
             <h3 class="text-lg font-semibold text-gray-800 mb-4">
                 <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-                Insights & Recommendations
+                ${i18n.t('insights_title')}
             </h3>
             <div class="space-y-3">
                 ${statsData.insights.map(insight => `
@@ -275,8 +275,8 @@ function renderRecentMoods() {
     if (!moodData || moodData.length === 0) {
         return `
             <div class="bg-white rounded-lg shadow-md p-6">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">Recent Moods</h3>
-                <p class="text-gray-500 text-center py-8">No mood entries yet. <a href="/log" class="text-primary hover:underline">Log your first mood!</a></p>
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">${i18n.t('recent_moods_title')}</h3>
+                <p class="text-gray-500 text-center py-8">${i18n.t('recent_moods_empty')} <a href="/log" class="text-primary hover:underline">${i18n.t('recent_moods_log_first')}</a></p>
             </div>
         `;
     }
@@ -284,9 +284,9 @@ function renderRecentMoods() {
     return `
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Recent Moods</h3>
+                <h3 class="text-lg font-semibold text-gray-800">${i18n.t('recent_moods_title')}</h3>
                 <a href="/log" class="text-primary hover:text-secondary text-sm font-medium">
-                    <i class="fas fa-plus mr-1"></i>Log New
+                    <i class="fas fa-plus mr-1"></i>${i18n.t('btn_log_new')}
                 </a>
             </div>
             <div class="space-y-3">
@@ -309,11 +309,11 @@ function renderMoodCard(mood) {
             </div>
             <div class="flex-1">
                 <div class="flex items-center justify-between mb-1">
-                    <span class="font-semibold text-gray-800 capitalize">${mood.emotion}</span>
+                    <span class="font-semibold text-gray-800">${i18n.t(`emotion_${mood.emotion}`)}</span>
                     <span class="text-sm text-gray-500">${date}</span>
                 </div>
                 <div class="flex items-center mb-2">
-                    <span class="text-sm text-gray-600 mr-2">Intensity:</span>
+                    <span class="text-sm text-gray-600 mr-2">${i18n.t('intensity_label')}</span>
                     ${renderIntensityStars(mood.intensity)}
                 </div>
                 ${mood.notes ? `<p class="text-sm text-gray-600">${mood.notes}</p>` : ''}
@@ -339,7 +339,7 @@ function renderMoodContext(mood) {
     
     if (mood.weather) {
         contexts.push(`<span class="inline-flex items-center px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded">
-            <i class="fas fa-cloud-sun mr-1"></i>${mood.weather}
+            <i class="fas fa-cloud-sun mr-1"></i>${i18n.t(`weather_${mood.weather}`)}
         </span>`);
     }
     
@@ -368,7 +368,7 @@ function showError(message) {
             <i class="fas fa-exclamation-circle text-red-500 text-4xl mb-3"></i>
             <p class="text-red-700 font-semibold">${message}</p>
             <button onclick="location.reload()" class="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
-                Retry
+                ${i18n.t('btn_retry')}
             </button>
         </div>
     `;
