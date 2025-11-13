@@ -58,6 +58,14 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
    - Smooth animations and transitions
    - Color-coded emotions
 
+7. **Internationalization (i18n)**
+   - 13 language support (English, Spanish, Chinese, French, German, Italian, Arabic, Hindi, Bengali, Tamil, Japanese, Korean, Malay)
+   - Complete translations for all UI elements
+   - RTL (Right-to-Left) support for Arabic
+   - Automatic language detection
+   - Persistent language preferences
+   - Real-time language switching
+
 ### 📋 Functional Entry URIs
 
 **API Endpoints:**
@@ -267,26 +275,46 @@ npx wrangler pages secret put API_KEY --project-name moodmash
 
 ### How to Use MoodMash
 
-1. **Log Your First Mood**
+1. **Choose Your Language**
+   - Click the language selector (🌐 icon) in navigation
+   - Select from 13 available languages
+   - Interface automatically switches to your chosen language
+   - Language preference saved for future visits
+   - Supported languages:
+     - 🇺🇸 English
+     - 🇪🇸 Español (Spanish)
+     - 🇨🇳 中文 (Chinese)
+     - 🇫🇷 Français (French)
+     - 🇩🇪 Deutsch (German)
+     - 🇮🇹 Italiano (Italian)
+     - 🇸🇦 العربية (Arabic) - with RTL support
+     - 🇮🇳 हिन्दी (Hindi)
+     - 🇧🇩 বাংলা (Bengali)
+     - 🇮🇳 தமிழ் (Tamil)
+     - 🇯🇵 日本語 (Japanese)
+     - 🇰🇷 한국어 (Korean)
+     - 🇲🇾 Bahasa Melayu (Malay)
+
+2. **Log Your First Mood**
    - Click "Log Mood" in navigation
    - Select your current emotion
    - Adjust intensity (1-5 scale)
    - Add optional context (weather, sleep, activities)
    - Click "Save Mood"
 
-2. **View Your Dashboard**
+3. **View Your Dashboard**
    - See mood distribution chart
    - Track intensity trends over time
    - Review personalized insights
    - Browse recent mood entries
 
-3. **Explore Wellness Activities**
+4. **Explore Wellness Activities**
    - Click "Activities" in navigation
    - Filter by your current emotion
    - Start recommended activities
    - Track completed activities
 
-4. **Analyze Your Patterns**
+5. **Analyze Your Patterns**
    - Dashboard shows 30-day statistics
    - Most common emotion identified
    - Trend analysis (improving/declining/stable)
@@ -345,4 +373,4 @@ For questions or feedback, contact the development team.
 
 **Built with ❤️ using Hono + Cloudflare Pages**
 
-*Last Updated: 2025-11-11*
+*Last Updated: 2025-11-13*
