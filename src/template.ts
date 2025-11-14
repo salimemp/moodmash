@@ -56,6 +56,9 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Load i18n and utils first -->
         <script src="/static/i18n.js"></script>
         <script src="/static/utils.js"></script>
+        <script src="/static/onboarding.js"></script>
+        <script src="/static/chatbot.js"></script>
+        <script src="/static/accessibility.js"></script>
         
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>
