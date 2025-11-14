@@ -15,8 +15,8 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 - **Sandbox Demo**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai
 - **API Health**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai/api/health
-- **Production**: (To be deployed)
-- **GitHub**: (To be created)
+- **GitHub**: https://github.com/salimemp/moodmash
+- **Production**: (Coming soon to Cloudflare Pages)
 
 ## ✨ Current Features (MVP v1.0)
 
@@ -65,6 +65,42 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
    - Automatic language detection
    - Persistent language preferences
    - Real-time language switching
+
+8. **Onboarding System**
+   - Interactive 4-slide onboarding tour
+   - Free tier feature showcase
+   - Premium tier benefits ($4.99/month)
+   - Animated transitions and progress indicators
+   - Skip and navigation controls
+   - First-visit detection with localStorage
+
+9. **Multilingual Chatbot**
+   - Floating chatbot interface
+   - FAQ database with smart keyword matching
+   - Quick action buttons
+   - 13-language support
+   - Context-aware responses
+   - Smooth animations and typing indicators
+
+10. **Accessibility Features**
+    - Text-to-speech read aloud (Alt+R)
+    - Adjustable font sizes (small/normal/large)
+    - High contrast mode
+    - Keyboard navigation support
+    - ARIA labels and live regions
+    - Screen reader optimized
+    - WCAG 2.1 AA compliant
+    - Reduced motion support
+
+11. **Premium Tier ($4.99/month)**
+    - Unlimited analytics history
+    - AI-powered insights and predictions
+    - Advanced pattern recognition
+    - Export data to CSV/PDF
+    - Custom themes and widgets
+    - Cloud sync across devices
+    - Priority support
+    - Early access to new features
 
 ### 📋 Functional Entry URIs
 
@@ -320,6 +356,25 @@ npx wrangler pages secret put API_KEY --project-name moodmash
    - Trend analysis (improving/declining/stable)
    - AI-generated insights and recommendations
 
+6. **Use the Chatbot**
+   - Click the purple chat icon (bottom right)
+   - Ask questions about features, premium, or languages
+   - Use quick action buttons
+   - Get instant answers in your language
+
+7. **Enable Accessibility Features**
+   - Click the green accessibility icon (bottom left)
+   - Toggle read aloud (or press Alt+R)
+   - Adjust font size (small/normal/large)
+   - Enable high contrast mode
+   - Use keyboard shortcuts (Tab, Enter, Esc)
+
+8. **Upgrade to Premium**
+   - Click "Upgrade to Premium" in onboarding or chatbot
+   - Unlock unlimited history, AI insights, and exports
+   - Only $4.99/month with 7-day free trial
+   - Cancel anytime
+
 ## 🔐 Privacy & Security
 
 - All mood data stored in Cloudflare D1 with encryption
@@ -373,4 +428,4 @@ For questions or feedback, contact the development team.
 
 **Built with ❤️ using Hono + Cloudflare Pages**
 
-*Last Updated: 2025-11-13*
+*Last Updated: 2025-11-14*
