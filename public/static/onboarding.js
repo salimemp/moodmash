@@ -3,12 +3,20 @@
 class OnboardingManager {
     constructor() {
         this.currentSlide = 0;
-        this.slides = this.getSlides();
+        this.slides = null; // Will be initialized lazily
         this.hasSeenOnboarding = localStorage.getItem('onboarding_completed') === 'true';
     }
     
     getSlides() {
-        return [
+        // Lazy initialization to ensure i18n is available
+        if (this.slides) return this.slides;
+        
+        if (typeof i18n === 'undefined') {
+            console.warn('i18n not loaded yet, using fallback');
+            return [];
+        }
+        
+        this.slides = [
             {
                 icon: '🧠',
                 title: i18n.t('onboarding_welcome_title'),
@@ -62,6 +70,8 @@ class OnboardingManager {
                 type: 'start'
             }
         ];
+        
+        return this.slides;
     }
     
     shouldShow() {
@@ -95,8 +105,13 @@ class OnboardingManager {
     }
     
     renderSlide() {
-        const slide = this.slides[this.currentSlide];
-        const isLast = this.currentSlide === this.slides.length - 1;
+        const slides = this.getSlides();
+        if (!slides || slides.length === 0) {
+            return '<div>Loading...</div>';
+        }
+        
+        const slide = slides[this.currentSlide];
+        const isLast = this.currentSlide === slides.length - 1;
         const isFirst = this.currentSlide === 0;
         
         let featuresHTML = slide.features.map(f => `
@@ -167,7 +182,7 @@ class OnboardingManager {
                         
                         <!-- Progress dots -->
                         <div class="flex space-x-2">
-                            ${this.slides.map((_, i) => `
+                            ${slides.map((_, i) => `
                                 <button onclick="onboardingManager.goToSlide(${i})"
                                         class="w-2 h-2 rounded-full transition-all ${i === this.currentSlide ? 'bg-primary w-8' : 'bg-gray-300 dark:bg-gray-600'}"
                                         aria-label="${i18n.t('onboarding_slide')} ${i + 1}"></button>
@@ -195,7 +210,8 @@ class OnboardingManager {
     }
     
     nextSlide() {
-        if (this.currentSlide < this.slides.length - 1) {
+        const slides = this.getSlides();
+        if (slides && this.currentSlide < slides.length - 1) {
             this.currentSlide++;
             this.updateSlide();
         }

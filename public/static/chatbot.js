@@ -4,12 +4,19 @@ class ChatbotManager {
     constructor() {
         this.isOpen = false;
         this.messages = [];
-        this.qaDatabase = this.getQADatabase();
+        this.qaDatabase = null; // Will be initialized lazily
     }
     
     getQADatabase() {
-        // Multilingual FAQ database
-        return {
+        // Lazy initialization to ensure i18n is available
+        if (this.qaDatabase) return this.qaDatabase;
+        
+        if (typeof i18n === 'undefined') {
+            console.warn('i18n not loaded yet for chatbot');
+            return { greetings: ['Hello!'], faqs: [], defaultResponses: ['Please try again later.'] };
+        }
+        
+        this.qaDatabase = {
             greetings: [
                 i18n.t('chatbot_greeting1'),
                 i18n.t('chatbot_greeting2'),
@@ -51,6 +58,8 @@ class ChatbotManager {
                 i18n.t('chatbot_default3')
             ]
         };
+        
+        return this.qaDatabase;
     }
     
     render() {
@@ -142,7 +151,10 @@ class ChatbotManager {
         document.body.appendChild(container);
         
         // Show welcome message after a delay
-        setTimeout(() => this.addBotMessage(this.qaDatabase.greetings[0]), 1000);
+        setTimeout(() => {
+            const qa = this.getQADatabase();
+            this.addBotMessage(qa.greetings[0]);
+        }, 1000);
     }
     
     toggle() {
@@ -216,9 +228,10 @@ class ChatbotManager {
     
     getResponse(message) {
         const lowerMessage = message.toLowerCase();
+        const qa = this.getQADatabase();
         
         // Check FAQs
-        for (const faq of this.qaDatabase.faqs) {
+        for (const faq of qa.faqs) {
             if (faq.keywords.some(keyword => lowerMessage.includes(keyword))) {
                 return faq.answer;
             }
@@ -227,11 +240,11 @@ class ChatbotManager {
         // Greeting check
         const greetingWords = ['hello', 'hi', 'hey', 'greetings', 'hola', '你好', 'bonjour', 'hallo', 'ciao', 'مرحبا', 'नमस्ते', 'হ্যালো', 'வணக்கம்', 'こんにちは', '안녕하세요', 'hai'];
         if (greetingWords.some(word => lowerMessage.includes(word))) {
-            return this.qaDatabase.greetings[Math.floor(Math.random() * this.qaDatabase.greetings.length)];
+            return qa.greetings[Math.floor(Math.random() * qa.greetings.length)];
         }
         
         // Default response
-        return this.qaDatabase.defaultResponses[Math.floor(Math.random() * this.qaDatabase.defaultResponses.length)];
+        return qa.defaultResponses[Math.floor(Math.random() * qa.defaultResponses.length)];
     }
     
     scrollToBottom() {
