@@ -203,15 +203,15 @@ const translations = {
         onboarding_premium_coming_soon: 'Premium features coming soon! Stay tuned.',
         
         // Chatbot
-        chatbot_title: 'MoodMash Assistant',
+        chatbot_title: 'Mood',
         chatbot_subtitle: 'How can I help you?',
         chatbot_toggle: 'Toggle chatbot',
         chatbot_input_placeholder: 'Type your message...',
         chatbot_send: 'Send message',
         
-        chatbot_greeting1: 'Hello! 👋 I\'m your MoodMash assistant. How can I help you today?',
-        chatbot_greeting2: 'Hi there! I\'m here to help you with any questions about MoodMash.',
-        chatbot_greeting3: 'Welcome! Ask me anything about mood tracking, features, or premium benefits.',
+        chatbot_greeting1: 'Hello! 👋 I\'m Mood, your personal assistant. How can I help you today?',
+        chatbot_greeting2: 'Hi there! I\'m Mood. I\'m here to help you with any questions about MoodMash.',
+        chatbot_greeting3: 'Welcome! I\'m Mood. Ask me anything about mood tracking, features, or premium benefits.',
         
         chatbot_quick_help: 'How to use?',
         chatbot_quick_premium: 'Premium benefits?',
@@ -245,6 +245,20 @@ const translations = {
         accessibility_kb_activate: 'Activate element',
         accessibility_kb_close: 'Close dialogs',
         accessibility_kb_read: 'Toggle read aloud',
+        
+        // Authentication
+        auth_login: 'Login',
+        auth_logout: 'Logout',
+        auth_signup: 'Sign Up',
+        auth_profile: 'Profile',
+        auth_settings: 'Settings',
+        auth_user_menu: 'User menu',
+        auth_login_success: 'Welcome back!',
+        auth_logout_success: 'Logged out successfully',
+        auth_error: 'Authentication failed',
+        auth_required: 'Please login to continue',
+        auth_premium_required: 'This feature requires Premium',
+        auth_upgrade_premium: 'Upgrade to Premium',
         pwa_install_later: 'Maybe Later',
         
         // Time formats
@@ -2155,7 +2169,18 @@ class I18n {
     }
     
     t(key) {
-        return this.translations[this.currentLanguage][key] || key;
+        // Try current language first
+        if (this.translations[this.currentLanguage] && this.translations[this.currentLanguage][key]) {
+            return this.translations[this.currentLanguage][key];
+        }
+        
+        // Fallback to English
+        if (this.translations['en'] && this.translations['en'][key]) {
+            return this.translations['en'][key];
+        }
+        
+        // Return key if not found
+        return key;
     }
     
     getAvailableLanguages() {

@@ -171,6 +171,9 @@ function renderNavigation(currentPage = '') {
                                 <i class="fas ${theme === 'dark' ? 'fa-moon' : 'fa-sun'} text-xs"></i>
                             </div>
                         </button>
+                        
+                        <!-- User Profile -->
+                        <div id="user-profile-container"></div>
                     </div>
                 </div>
             </div>
