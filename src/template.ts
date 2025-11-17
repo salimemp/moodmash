@@ -64,7 +64,14 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>
         <script>
-            document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
+            // Wait for i18n to be defined before rendering
+            if (typeof i18n !== 'undefined') {
+                document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
+            } else {
+                window.addEventListener('DOMContentLoaded', () => {
+                    document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
+                });
+            }
         </script>
 
         <!-- Main Content -->

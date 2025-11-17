@@ -11,8 +11,14 @@ class OnboardingManager {
         // Lazy initialization to ensure i18n is available
         if (this.slides) return this.slides;
         
-        if (typeof i18n === 'undefined') {
+        if (typeof i18n === 'undefined' || !i18n.translations) {
             console.warn('i18n not loaded yet, using fallback');
+            return [];
+        }
+        
+        // Verify English translations exist
+        if (!i18n.translations.en) {
+            console.error('English translations missing!');
             return [];
         }
         

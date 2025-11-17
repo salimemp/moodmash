@@ -336,5 +336,15 @@ function showError(message) {
     `;
 }
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', init);
+// Initialize on page load - wait for i18n to be available
+function waitForI18n(callback) {
+    if (typeof i18n !== 'undefined' && i18n.translations) {
+        callback();
+    } else {
+        setTimeout(() => waitForI18n(callback), 50);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    waitForI18n(init);
+});
