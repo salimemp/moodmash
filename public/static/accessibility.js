@@ -281,14 +281,25 @@ class AccessibilityManager {
 // Global instance
 const accessibilityManager = new AccessibilityManager();
 
-// Initialize accessibility features after DOM loads
+// Wait for i18n before rendering
+function waitForI18n(callback) {
+    if (typeof i18n !== 'undefined' && i18n.translations) {
+        callback();
+    } else {
+        setTimeout(() => waitForI18n(callback), 50);
+    }
+}
+
+// Initialize accessibility features after DOM loads and i18n is ready
 if (typeof window !== 'undefined') {
     window.addEventListener('load', () => {
-        accessibilityManager.render();
-        
-        // Setup read-aloud on navigation
-        setInterval(() => {
-            accessibilityManager.setupReadAloudOnHover();
-        }, 2000);
+        waitForI18n(() => {
+            accessibilityManager.render();
+            
+            // Setup read-aloud on navigation
+            setInterval(() => {
+                accessibilityManager.setupReadAloudOnHover();
+            }, 2000);
+        });
     });
 }

@@ -264,9 +264,18 @@ class ChatbotManager {
 // Global instance
 const chatbotManager = new ChatbotManager();
 
-// Initialize chatbot after DOM loads
+// Wait for i18n before rendering
+function waitForI18n(callback) {
+    if (typeof i18n !== 'undefined' && i18n.translations) {
+        callback();
+    } else {
+        setTimeout(() => waitForI18n(callback), 50);
+    }
+}
+
+// Initialize chatbot after DOM loads and i18n is ready
 if (typeof window !== 'undefined') {
     window.addEventListener('load', () => {
-        chatbotManager.render();
+        waitForI18n(() => chatbotManager.render());
     });
 }

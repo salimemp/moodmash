@@ -269,11 +269,22 @@ class OnboardingManager {
 // Global instance
 const onboardingManager = new OnboardingManager();
 
-// Auto-show on first visit
+// Wait for i18n before rendering
+function waitForI18n(callback) {
+    if (typeof i18n !== 'undefined' && i18n.translations) {
+        callback();
+    } else {
+        setTimeout(() => waitForI18n(callback), 50);
+    }
+}
+
+// Auto-show on first visit after i18n is ready
 if (typeof window !== 'undefined') {
     window.addEventListener('load', () => {
-        setTimeout(() => {
-            onboardingManager.show();
-        }, 500);
+        waitForI18n(() => {
+            setTimeout(() => {
+                onboardingManager.show();
+            }, 500);
+        });
     });
 }
