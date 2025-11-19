@@ -1,7 +1,7 @@
 // MoodMash Service Worker
-// Version 1.0.0
+// Version 2.0.0 - Fixed i18n caching
 
-const CACHE_NAME = 'moodmash-v1.0.0';
+const CACHE_NAME = 'moodmash-v2.0.0';
 const ASSETS_TO_CACHE = [
     '/',
     '/log',
@@ -13,6 +13,10 @@ const ASSETS_TO_CACHE = [
     '/static/activities.js',
     '/static/i18n.js',
     '/static/utils.js',
+    '/static/onboarding.js',
+    '/static/chatbot.js',
+    '/static/accessibility.js',
+    '/static/auth.js',
     '/manifest.json',
     // CDN resources (cached separately)
     'https://cdn.tailwindcss.com',
@@ -89,7 +93,27 @@ self.addEventListener('fetch', (event) => {
         return;
     }
     
-    // Cache-first strategy for assets
+    // Network-first strategy for JavaScript files (always get latest)
+    if (event.request.url.includes('/static/') && event.request.url.endsWith('.js')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Clone and cache the response
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                    return response;
+                })
+                .catch(() => {
+                    // Fallback to cache if network fails
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+    
+    // Cache-first strategy for other assets
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {

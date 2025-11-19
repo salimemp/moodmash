@@ -404,17 +404,66 @@ app.get('/manifest.json', async (c) => {
 // Service Worker
 app.get('/sw.js', (c) => {
   return c.text(`
-// MoodMash Service Worker - Simple version for MVP
-const CACHE_NAME = 'moodmash-v1';
-const ASSETS = ['/static/styles.css', '/static/app.js', '/static/i18n.js', '/static/utils.js'];
+// MoodMash Service Worker - Version 2.0.0 with i18n fix
+const CACHE_NAME = 'moodmash-v2.0.0';
+const ASSETS = [
+  '/static/styles.css',
+  '/static/app.js',
+  '/static/log.js',
+  '/static/activities.js',
+  '/static/i18n.js',
+  '/static/utils.js',
+  '/static/onboarding.js',
+  '/static/chatbot.js',
+  '/static/accessibility.js',
+  '/static/auth.js'
+];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+  console.log('SW v2.0.0: Installing...');
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  console.log('SW v2.0.0: Activating...');
+  e.waitUntil(
+    caches.keys().then(keys => 
+      Promise.all(keys.map(key => {
+        if (key !== CACHE_NAME) {
+          console.log('SW: Deleting old cache:', key);
+          return caches.delete(key);
+        }
+      }))
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener('fetch', e => {
+  // Skip API requests
   if (e.request.url.includes('/api/')) return;
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  
+  // Network-first for JS files (always get fresh)
+  if (e.request.url.includes('/static/') && e.request.url.endsWith('.js')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(r => {
+          const clone = r.clone();
+          caches.open(CACHE_NAME).then(c => c.put(e.request, clone));
+          return r;
+        })
+        .catch(() => caches.match(e.request))
+    );
+    return;
+  }
+  
+  // Cache-first for other assets
+  e.respondWith(
+    caches.match(e.request).then(r => r || fetch(e.request))
+  );
 });
   `, 200, { 'Content-Type': 'application/javascript' });
 });
