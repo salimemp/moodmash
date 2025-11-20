@@ -1,8 +1,18 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { serveStatic } from 'hono/cloudflare-workers';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Bindings, MoodEntry, WellnessActivity, MoodStats, Emotion } from './types';
 import { renderHTML, renderLoadingState } from './template';
+import { 
+  initOAuthProviders, 
+  createSession, 
+  getSession, 
+  deleteSession, 
+  getCurrentUser,
+  requireAuth,
+  type Session
+} from './auth';
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -11,6 +21,253 @@ app.use('/api/*', cors());
 
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
+
+// =============================================================================
+// OAUTH AUTHENTICATION ROUTES
+// =============================================================================
+
+// Google OAuth - Initiate
+app.get('/auth/google', async (c) => {
+  const { google } = initOAuthProviders(c.env);
+  const state = crypto.randomUUID();
+  const url = await google.createAuthorizationURL(state, {
+    scopes: ['email', 'profile']
+  });
+  
+  // Store state in cookie for CSRF protection
+  setCookie(c, 'oauth_state', state, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    maxAge: 60 * 10, // 10 minutes
+    sameSite: 'Lax'
+  });
+  
+  return c.redirect(url.toString());
+});
+
+// Google OAuth - Callback
+app.get('/auth/google/callback', async (c) => {
+  const code = c.req.query('code');
+  const state = c.req.query('state');
+  const storedState = getCookie(c, 'oauth_state');
+  
+  if (!code || !state || state !== storedState) {
+    return c.redirect('/?error=oauth_failed');
+  }
+  
+  try {
+    const { google } = initOAuthProviders(c.env);
+    const tokens = await google.validateAuthorizationCode(code);
+    
+    // Fetch user info
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.accessToken}` }
+    });
+    
+    const user = await response.json();
+    
+    // Create session
+    const session: Session = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture,
+      provider: 'google',
+      isPremium: false, // Check database for premium status
+      createdAt: Date.now()
+    };
+    
+    const sessionToken = createSession(session);
+    
+    // Set session cookie
+    setCookie(c, 'session_token', sessionToken, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      sameSite: 'Lax'
+    });
+    
+    // Clean up state cookie
+    deleteCookie(c, 'oauth_state');
+    
+    return c.redirect('/?login=success');
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+    return c.redirect('/?error=oauth_failed');
+  }
+});
+
+// GitHub OAuth - Initiate
+app.get('/auth/github', async (c) => {
+  const { github } = initOAuthProviders(c.env);
+  const state = crypto.randomUUID();
+  const url = await github.createAuthorizationURL(state, {
+    scopes: ['user:email']
+  });
+  
+  setCookie(c, 'oauth_state', state, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    maxAge: 60 * 10,
+    sameSite: 'Lax'
+  });
+  
+  return c.redirect(url.toString());
+});
+
+// GitHub OAuth - Callback
+app.get('/auth/github/callback', async (c) => {
+  const code = c.req.query('code');
+  const state = c.req.query('state');
+  const storedState = getCookie(c, 'oauth_state');
+  
+  if (!code || !state || state !== storedState) {
+    return c.redirect('/?error=oauth_failed');
+  }
+  
+  try {
+    const { github } = initOAuthProviders(c.env);
+    const tokens = await github.validateAuthorizationCode(code);
+    
+    // Fetch user info
+    const response = await fetch('https://api.github.com/user', {
+      headers: { 
+        Authorization: `Bearer ${tokens.accessToken}`,
+        'User-Agent': 'MoodMash'
+      }
+    });
+    
+    const user = await response.json();
+    
+    // Fetch primary email if not public
+    let email = user.email;
+    if (!email) {
+      const emailResponse = await fetch('https://api.github.com/user/emails', {
+        headers: { 
+          Authorization: `Bearer ${tokens.accessToken}`,
+          'User-Agent': 'MoodMash'
+        }
+      });
+      const emails = await emailResponse.json();
+      email = emails.find((e: any) => e.primary)?.email || emails[0]?.email;
+    }
+    
+    const session: Session = {
+      userId: user.id.toString(),
+      email: email,
+      name: user.name || user.login,
+      picture: user.avatar_url,
+      provider: 'github',
+      isPremium: false,
+      createdAt: Date.now()
+    };
+    
+    const sessionToken = createSession(session);
+    
+    setCookie(c, 'session_token', sessionToken, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'Lax'
+    });
+    
+    deleteCookie(c, 'oauth_state');
+    
+    return c.redirect('/?login=success');
+  } catch (error) {
+    console.error('GitHub OAuth error:', error);
+    return c.redirect('/?error=oauth_failed');
+  }
+});
+
+// Facebook OAuth - Initiate
+app.get('/auth/facebook', async (c) => {
+  const { facebook } = initOAuthProviders(c.env);
+  const state = crypto.randomUUID();
+  const url = await facebook.createAuthorizationURL(state, {
+    scopes: ['email', 'public_profile']
+  });
+  
+  setCookie(c, 'oauth_state', state, {
+    path: '/',
+    httpOnly: true,
+    secure: true,
+    maxAge: 60 * 10,
+    sameSite: 'Lax'
+  });
+  
+  return c.redirect(url.toString());
+});
+
+// Facebook OAuth - Callback
+app.get('/auth/facebook/callback', async (c) => {
+  const code = c.req.query('code');
+  const state = c.req.query('state');
+  const storedState = getCookie(c, 'oauth_state');
+  
+  if (!code || !state || state !== storedState) {
+    return c.redirect('/?error=oauth_failed');
+  }
+  
+  try {
+    const { facebook } = initOAuthProviders(c.env);
+    const tokens = await facebook.validateAuthorizationCode(code);
+    
+    // Fetch user info
+    const response = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${tokens.accessToken}`);
+    const user = await response.json();
+    
+    const session: Session = {
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      picture: user.picture?.data?.url,
+      provider: 'facebook',
+      isPremium: false,
+      createdAt: Date.now()
+    };
+    
+    const sessionToken = createSession(session);
+    
+    setCookie(c, 'session_token', sessionToken, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 60 * 24 * 30,
+      sameSite: 'Lax'
+    });
+    
+    deleteCookie(c, 'oauth_state');
+    
+    return c.redirect('/?login=success');
+  } catch (error) {
+    console.error('Facebook OAuth error:', error);
+    return c.redirect('/?error=oauth_failed');
+  }
+});
+
+// Logout
+app.post('/auth/logout', (c) => {
+  const token = getCookie(c, 'session_token');
+  if (token) {
+    deleteSession(token);
+  }
+  deleteCookie(c, 'session_token');
+  return c.json({ success: true });
+});
+
+// Get current user
+app.get('/api/auth/me', (c) => {
+  const user = getCurrentUser(c);
+  if (!user) {
+    return c.json({ authenticated: false }, 401);
+  }
+  return c.json({ authenticated: true, user });
+});
 
 // =============================================================================
 // API ROUTES

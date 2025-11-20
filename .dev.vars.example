@@ -1,0 +1,20 @@
+# OAuth Configuration for Local Development
+# Copy this file to .dev.vars and fill in your OAuth credentials
+
+# Google OAuth
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+# GitHub OAuth
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+
+# Facebook OAuth
+FACEBOOK_CLIENT_ID=your_facebook_app_id
+FACEBOOK_CLIENT_SECRET=your_facebook_app_secret
+
+# Session Secret (generate with: openssl rand -base64 32)
+SESSION_SECRET=your_random_session_secret_here
+
+# Base URL (for OAuth callbacks)
+BASE_URL=http://localhost:3000

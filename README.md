@@ -154,6 +154,65 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 5. Chart.js renders visualizations
 6. Insights generated from statistical analysis
 
+## 🔐 OAuth Setup
+
+### Get OAuth Credentials
+
+1. **Google OAuth**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   - Create a new project or select existing
+   - Create OAuth 2.0 Client ID
+   - Add authorized redirect URI: `http://localhost:3000/auth/google/callback`
+   - Copy Client ID and Client Secret
+
+2. **GitHub OAuth**
+   - Go to [GitHub Developer Settings](https://github.com/settings/developers)
+   - Click "New OAuth App"
+   - Set callback URL: `http://localhost:3000/auth/github/callback`
+   - Copy Client ID and Client Secret
+
+3. **Facebook OAuth**
+   - Go to [Facebook Developers](https://developers.facebook.com/apps/)
+   - Create a new app
+   - Add Facebook Login product
+   - Set redirect URI: `http://localhost:3000/auth/facebook/callback`
+   - Copy App ID and App Secret
+
+### Configure Environment Variables
+
+```bash
+# Copy example file
+cp .dev.vars.example .dev.vars
+
+# Edit .dev.vars and add your OAuth credentials
+nano .dev.vars
+```
+
+**Example .dev.vars:**
+```bash
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GITHUB_CLIENT_ID=your_github_client_id
+GITHUB_CLIENT_SECRET=your_github_client_secret
+FACEBOOK_CLIENT_ID=your_facebook_app_id
+FACEBOOK_CLIENT_SECRET=your_facebook_app_secret
+SESSION_SECRET=your_random_session_secret
+BASE_URL=http://localhost:3000
+```
+
+**For Production Deployment:**
+```bash
+# Set secrets using Wrangler
+npx wrangler pages secret put GOOGLE_CLIENT_ID --project-name moodmash
+npx wrangler pages secret put GOOGLE_CLIENT_SECRET --project-name moodmash
+npx wrangler pages secret put GITHUB_CLIENT_ID --project-name moodmash
+npx wrangler pages secret put GITHUB_CLIENT_SECRET --project-name moodmash
+npx wrangler pages secret put FACEBOOK_CLIENT_ID --project-name moodmash
+npx wrangler pages secret put FACEBOOK_CLIENT_SECRET --project-name moodmash
+npx wrangler pages secret put SESSION_SECRET --project-name moodmash
+npx wrangler pages secret put BASE_URL --project-name moodmash
+```
+
 ## 🚀 Quick Start
 
 ### Prerequisites
@@ -161,6 +220,7 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - Node.js 18+ and npm
 - Wrangler CLI (installed via npm)
 - Cloudflare account (for production deployment)
+- OAuth credentials (Google, GitHub, Facebook) - see OAuth Setup above
 
 ### Local Development
 
@@ -273,7 +333,7 @@ npx wrangler pages secret put API_KEY --project-name moodmash
 - [ ] HIPAA compliance for healthcare integration
 
 ### Phase 6: Advanced Features
-- [ ] Multi-user authentication (Auth0/Clerk)
+- [x] OAuth 2.0 authentication (Google, GitHub, Facebook) ✨ NEW
 - [ ] Real-time mood notifications
 - [ ] AR/VR mood environments
 - [ ] Voice mood logging
