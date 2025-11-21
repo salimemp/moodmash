@@ -661,8 +661,8 @@ app.get('/manifest.json', async (c) => {
 // Service Worker
 app.get('/sw.js', (c) => {
   return c.text(`
-// MoodMash Service Worker - Version 2.0.0 with i18n fix
-const CACHE_NAME = 'moodmash-v2.0.0';
+// MoodMash Service Worker - Version 3.0.0 - Full page support
+const CACHE_NAME = 'moodmash-v3.0.0';
 const ASSETS = [
   '/static/styles.css',
   '/static/app.js',
@@ -677,7 +677,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  console.log('SW v2.0.0: Installing...');
+  console.log('SW v3.0.0: Installing...');
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
@@ -686,7 +686,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  console.log('SW v2.0.0: Activating...');
+  console.log('SW v3.0.0: Activating and cleaning old caches...');
   e.waitUntil(
     caches.keys().then(keys => 
       Promise.all(keys.map(key => {
@@ -703,8 +703,9 @@ self.addEventListener('fetch', e => {
   // Skip API requests
   if (e.request.url.includes('/api/')) return;
   
-  // Network-first for JS files (always get fresh)
-  if (e.request.url.includes('/static/') && e.request.url.endsWith('.js')) {
+  // Network-first for all JS/HTML files (always get fresh)
+  if (e.request.url.includes('/static/') || 
+      e.request.url.match(/\\/(log|activities|about)$/)) {
     e.respondWith(
       fetch(e.request)
         .then(r => {
@@ -717,7 +718,7 @@ self.addEventListener('fetch', e => {
     return;
   }
   
-  // Cache-first for other assets
+  // Cache-first for other assets (images, fonts, etc.)
   e.respondWith(
     caches.match(e.request).then(r => r || fetch(e.request))
   );
@@ -740,115 +741,20 @@ app.get('/', (c) => {
 
 // Log mood page
 app.get('/log', (c) => {
-  return c.html(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Log Mood - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <script>
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
-                }
-              }
-            }
-          }
-        </script>
-        <link href="/static/styles.css" rel="stylesheet">
-    </head>
-    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <i class="fas fa-brain text-primary text-2xl mr-3"></i>
-                        <span class="text-2xl font-bold text-gray-800">MoodMash</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="/" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="/log" class="text-primary px-3 py-2 rounded-md text-sm font-medium border-b-2 border-primary">Log Mood</a>
-                        <a href="/activities" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Activities</a>
-                        <a href="/about" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">About</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <div id="app" class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Content loaded by log.js -->
-        </div>
-        
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-        <script src="/static/log.js"></script>
-    </body>
-    </html>
-  `);
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/log.js"></script>
+  `;
+  return c.html(renderHTML('Log Mood', content, 'log'));
 });
 
 // Activities page
 app.get('/activities', (c) => {
-  return c.html(`
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Wellness Activities - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
-        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <script>
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
-                }
-              }
-            }
-          }
-        </script>
-        <link href="/static/styles.css" rel="stylesheet">
-    </head>
-    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <i class="fas fa-brain text-primary text-2xl mr-3"></i>
-                        <span class="text-2xl font-bold text-gray-800">MoodMash</span>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <a href="/" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-                        <a href="/log" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">Log Mood</a>
-                        <a href="/activities" class="text-primary px-3 py-2 rounded-md text-sm font-medium border-b-2 border-primary">Activities</a>
-                        <a href="/about" class="text-gray-700 hover:text-primary px-3 py-2 rounded-md text-sm font-medium">About</a>
-                    </div>
-                </div>
-            </div>
-        </nav>
-
-        <!-- Main Content -->
-        <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Content loaded by activities.js -->
-        </div>
-        
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="/static/activities.js"></script>
-    </body>
-    </html>
-  `);
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/activities.js"></script>
+  `;
+  return c.html(renderHTML('Wellness Activities', content, 'activities'));
 });
 
 // About page
