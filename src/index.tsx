@@ -618,6 +618,265 @@ app.post('/api/activities/:id/log', async (c) => {
 });
 
 // =============================================================================
+// NEW FEATURES API ENDPOINTS
+// =============================================================================
+
+// Express Your Mood - Create mood with extended fields
+app.post('/api/moods/express', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const body = await c.req.json<{
+      emotion: string;
+      intensity: number;
+      notes?: string;
+      privacy?: string;
+      tags?: string[];
+      color_value?: string;
+      text_entry?: string;
+      voice_note_url?: string;
+      entry_mode?: string;
+      logged_at: string;
+    }>();
+    
+    // Validate required fields
+    if (!body.emotion || !body.intensity || !body.logged_at) {
+      return c.json({ error: 'Missing required fields: emotion, intensity, logged_at' }, 400);
+    }
+    
+    // Validate intensity range
+    if (body.intensity < 1 || body.intensity > 5) {
+      return c.json({ error: 'Intensity must be between 1 and 5' }, 400);
+    }
+    
+    // Validate privacy
+    if (body.privacy && !['private', 'friends', 'public'].includes(body.privacy)) {
+      return c.json({ error: 'Privacy must be private, friends, or public' }, 400);
+    }
+    
+    const tagsJson = body.tags ? JSON.stringify(body.tags) : null;
+    
+    const result = await DB.prepare(`
+      INSERT INTO mood_entries (
+        user_id, emotion, intensity, notes, logged_at,
+        privacy, tags, color_value, text_entry, voice_note_url, entry_mode
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      1,
+      body.emotion,
+      body.intensity,
+      body.notes || null,
+      body.logged_at,
+      body.privacy || 'private',
+      tagsJson,
+      body.color_value || null,
+      body.text_entry || null,
+      body.voice_note_url || null,
+      body.entry_mode || 'express'
+    ).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      message: 'Mood entry created successfully via Express mode' 
+    }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Quick Select - Fast mood logging
+app.post('/api/moods/quick', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const body = await c.req.json<{
+      emotion: string;
+      intensity?: number;
+      logged_at?: string;
+    }>();
+    
+    if (!body.emotion) {
+      return c.json({ error: 'Missing required field: emotion' }, 400);
+    }
+    
+    const intensity = body.intensity || 3; // Default to medium
+    const loggedAt = body.logged_at || new Date().toISOString();
+    
+    // Insert mood entry
+    const result = await DB.prepare(`
+      INSERT INTO mood_entries (
+        user_id, emotion, intensity, logged_at, entry_mode
+      ) VALUES (?, ?, ?, ?, ?)
+    `).bind(1, body.emotion, intensity, loggedAt, 'quick').run();
+    
+    // Update quick select history
+    await DB.prepare(`
+      INSERT INTO quick_select_history (user_id, emotion, last_used_at, use_count)
+      VALUES (?, ?, CURRENT_TIMESTAMP, 1)
+      ON CONFLICT(user_id, emotion) 
+      DO UPDATE SET 
+        last_used_at = CURRENT_TIMESTAMP,
+        use_count = use_count + 1
+    `).bind(1, body.emotion).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      message: 'Quick mood logged successfully' 
+    }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get quick select history (recently used emojis)
+app.get('/api/quick-select/history', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const result = await DB.prepare(`
+      SELECT emotion, use_count, last_used_at
+      FROM quick_select_history
+      WHERE user_id = 1
+      ORDER BY last_used_at DESC
+      LIMIT 6
+    `).all();
+    
+    return c.json({ history: result.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get mood insights with caching
+app.get('/api/insights', async (c) => {
+  const { DB } = c.env;
+  const periodType = c.req.query('period') || 'weekly'; // daily, weekly, monthly
+  const days = periodType === 'daily' ? 1 : periodType === 'weekly' ? 7 : 30;
+  
+  try {
+    // Check cache first
+    const cached = await DB.prepare(`
+      SELECT * FROM mood_insights_cache
+      WHERE user_id = 1 
+        AND period_type = ?
+        AND calculated_at >= datetime('now', '-1 hour')
+      ORDER BY calculated_at DESC
+      LIMIT 1
+    `).bind(periodType).first();
+    
+    if (cached) {
+      return c.json({
+        insights: {
+          dominant_mood: cached.dominant_mood,
+          mood_stability_score: cached.mood_stability_score,
+          average_intensity: cached.average_intensity,
+          total_entries: cached.total_entries,
+          mood_distribution: JSON.parse(cached.mood_distribution as string),
+          timeline_data: JSON.parse(cached.timeline_data as string),
+        },
+        cached: true
+      });
+    }
+    
+    // Calculate fresh insights
+    // Get mood distribution
+    const distribution = await DB.prepare(`
+      SELECT emotion, COUNT(*) as count, AVG(intensity) as avg_intensity
+      FROM mood_entries
+      WHERE user_id = 1 
+        AND logged_at >= datetime('now', '-${days} days')
+      GROUP BY emotion
+      ORDER BY count DESC
+    `).all();
+    
+    // Get timeline data (grouped by day)
+    const timeline = await DB.prepare(`
+      SELECT 
+        DATE(logged_at) as date,
+        emotion,
+        AVG(intensity) as avg_intensity,
+        COUNT(*) as count
+      FROM mood_entries
+      WHERE user_id = 1 
+        AND logged_at >= datetime('now', '-${days} days')
+      GROUP BY DATE(logged_at), emotion
+      ORDER BY date DESC
+    `).all();
+    
+    // Calculate mood stability (standard deviation of intensity)
+    const allIntensities = await DB.prepare(`
+      SELECT intensity
+      FROM mood_entries
+      WHERE user_id = 1 
+        AND logged_at >= datetime('now', '-${days} days')
+    `).all();
+    
+    let stabilityScore = 1.0;
+    if (allIntensities.results.length > 1) {
+      const intensities = allIntensities.results.map((r: any) => r.intensity);
+      const mean = intensities.reduce((a: number, b: number) => a + b, 0) / intensities.length;
+      const variance = intensities.reduce((a: number, b: number) => a + Math.pow(b - mean, 2), 0) / intensities.length;
+      const stdDev = Math.sqrt(variance);
+      stabilityScore = Math.max(0, 1 - (stdDev / 5)); // Normalize to 0-1
+    }
+    
+    // Build mood distribution object
+    const moodDistribution: Record<string, number> = {};
+    distribution.results.forEach((row: any) => {
+      moodDistribution[row.emotion] = row.count;
+    });
+    
+    // Determine dominant mood
+    const dominantMood = distribution.results.length > 0 
+      ? (distribution.results[0] as any).emotion 
+      : 'neutral';
+    
+    // Get total and average
+    const total = allIntensities.results.length;
+    const avgIntensity = allIntensities.results.length > 0
+      ? allIntensities.results.reduce((a: number, r: any) => a + r.intensity, 0) / total
+      : 0;
+    
+    const insights = {
+      dominant_mood: dominantMood,
+      mood_stability_score: Math.round(stabilityScore * 100) / 100,
+      average_intensity: Math.round(avgIntensity * 10) / 10,
+      total_entries: total,
+      mood_distribution: moodDistribution,
+      timeline_data: timeline.results,
+    };
+    
+    // Cache the results
+    const periodStart = new Date();
+    periodStart.setDate(periodStart.getDate() - days);
+    const periodEnd = new Date();
+    
+    await DB.prepare(`
+      INSERT INTO mood_insights_cache (
+        user_id, period_type, period_start, period_end,
+        dominant_mood, mood_stability_score, average_intensity, total_entries,
+        mood_distribution, timeline_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      1,
+      periodType,
+      periodStart.toISOString().split('T')[0],
+      periodEnd.toISOString().split('T')[0],
+      insights.dominant_mood,
+      insights.mood_stability_score,
+      insights.average_intensity,
+      insights.total_entries,
+      JSON.stringify(insights.mood_distribution),
+      JSON.stringify(insights.timeline_data)
+    ).run();
+    
+    return c.json({ insights, cached: false });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// =============================================================================
 // PWA ROUTES
 // =============================================================================
 
