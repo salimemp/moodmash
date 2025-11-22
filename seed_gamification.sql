@@ -1,5 +1,8 @@
 -- Seed data for Challenges, Color Psychology, and initial gamification
 
+-- Insert default user if not exists
+INSERT OR IGNORE INTO users (id, email, name) VALUES (1, 'user@moodmash.app', 'Demo User');
+
 -- Insert default challenges
 INSERT OR IGNORE INTO challenges (id, title, description, challenge_type, category, goal_value, goal_metric, duration_days, points, badge_icon, badge_color, difficulty) VALUES
   -- Daily challenges
