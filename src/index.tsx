@@ -4,6 +4,7 @@ import { serveStatic } from 'hono/cloudflare-workers';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import type { Bindings, MoodEntry, WellnessActivity, MoodStats, Emotion } from './types';
 import { renderHTML, renderLoadingState } from './template';
+import * as bcrypt from 'bcryptjs';
 import { 
   initOAuthProviders, 
   createSession, 
@@ -1175,9 +1176,8 @@ app.post('/api/auth/register', async (c) => {
       return c.json({ error: 'Username or email already exists' }, 409);
     }
     
-    // Hash password (in production, use proper bcrypt)
-    // For now, using simple hash (MUST be replaced in production)
-    const passwordHash = btoa(password); // DEMO ONLY - Use bcrypt in production
+    // Hash password with bcrypt (10 rounds)
+    const passwordHash = await bcrypt.hash(password, 10);
     
     // Insert user
     const result = await DB.prepare(`
@@ -1256,9 +1256,9 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ error: 'Invalid username or password' }, 401);
     }
     
-    // Verify password (in production, use bcrypt.compare)
-    const passwordHash = btoa(password); // DEMO ONLY
-    if (user.password_hash !== passwordHash) {
+    // Verify password with bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    if (!isPasswordValid) {
       // Increment failed login attempts
       await DB.prepare(`
         UPDATE users SET failed_login_attempts = failed_login_attempts + 1

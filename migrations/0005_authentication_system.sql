@@ -215,7 +215,7 @@ END;
 -- SEED DEFAULT ADMIN USER (for testing)
 -- ============================================================================
 
--- Note: Password is 'admin123' hashed with bcrypt
+-- Note: Password is 'admin123' hashed with bcrypt (10 rounds)
 -- In production, this should be removed or changed immediately
 INSERT OR IGNORE INTO users (id, username, email, name, password_hash, is_verified, is_active)
 VALUES (
@@ -223,7 +223,7 @@ VALUES (
   'admin',
   'admin@moodmash.win',
   'Admin User',
-  '$2a$10$rKZKWKhQXRKZYQKKOKQKOKQKOKQKOKQKOKQKOKQKOKQKOKQKOKQK',
+  '$2b$10$Q/E2ndF9Qg5X2OlWWr4eXOoewqxBpMICmCQvrQUOvc.qizrdRv4pm',
   1,
   1
 );
