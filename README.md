@@ -102,6 +102,35 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Priority support
     - Early access to new features
 
+12. **Express Your Mood (NEW! 🎉)**
+    - Multi-modal mood expression system
+    - 5 input modes: Emoji, Color, Intensity Slider, Text, Voice
+    - Privacy settings (Private, Friends, Public)
+    - Mood tags and sharing options
+    - Quick select from recently used emojis
+    - Color psychology integration
+    - Real-time voice recording
+    - Beautiful gradient UI with animations
+
+13. **Daily Mood Insights (NEW! 📊)**
+    - Comprehensive mood analytics dashboard
+    - Dominant mood tracking with statistics
+    - Interactive mood timeline with intensity visualization
+    - Weekly and monthly trend analysis
+    - Mood stability indicators
+    - Pattern detection and correlations
+    - Personalized wellness recommendations
+    - Export and share insights
+
+14. **Quick Mood Select (NEW! ⚡)**
+    - Fast one-tap mood logging
+    - Recently used emojis for quick access
+    - All emotions available in grid view
+    - Seamless integration with dashboard
+    - Auto-save functionality
+    - Timestamp tracking
+    - Lightweight and responsive
+
 ### 📋 Functional Entry URIs
 
 **API Endpoints:**
@@ -118,6 +147,9 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 **Web Pages:**
 - `/` - Dashboard (mood stats and recent entries)
 - `/log` - Log new mood entry
+- `/express` - 🎉 NEW! Express Your Mood (multi-modal interface)
+- `/insights` - 📊 NEW! Daily Mood Insights (analytics dashboard)
+- `/quick-select` - ⚡ NEW! Quick Mood Select (fast logging)
 - `/activities` - Browse wellness activities
 - `/about` - About MoodMash and future vision
 
@@ -488,4 +520,4 @@ For questions or feedback, contact the development team.
 
 **Built with ❤️ using Hono + Cloudflare Pages**
 
-*Last Updated: 2025-11-14*
+*Last Updated: 2025-11-22*
