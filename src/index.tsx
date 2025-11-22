@@ -877,6 +877,233 @@ app.get('/api/insights', async (c) => {
 });
 
 // =============================================================================
+// AI WELLNESS TIPS & GAMIFICATION & COLOR PSYCHOLOGY APIS
+// =============================================================================
+
+// Generate AI Wellness Tips
+app.post('/api/wellness-tips/generate', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const body = await c.req.json<{
+      mood: string;
+      categories: string[];
+    }>();
+    
+    // In production, integrate with OpenAI API
+    // For now, return curated tips based on mood and category
+    const tips = generateMockTips(body.mood, body.categories);
+    
+    // Store tips in database
+    for (const tip of tips) {
+      await DB.prepare(`
+        INSERT INTO ai_wellness_tips (user_id, tip_text, category, mood_context, ai_model)
+        VALUES (?, ?, ?, ?, ?)
+      `).bind(
+        1,
+        tip.tip_text,
+        tip.category,
+        JSON.stringify({ mood: body.mood }),
+        'mock-ai'
+      ).run();
+    }
+    
+    return c.json({ tips });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Rate wellness tip
+app.post('/api/wellness-tips/:id/rate', async (c) => {
+  const { DB } = c.env;
+  const tipId = c.req.param('id');
+  
+  try {
+    const body = await c.req.json<{ is_helpful: boolean }>();
+    
+    await DB.prepare(`
+      UPDATE ai_wellness_tips 
+      SET is_helpful = ?, rated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(body.is_helpful ? 1 : 0, tipId).run();
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get challenges and user progress
+app.get('/api/challenges', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    // Get active challenges
+    const challenges = await DB.prepare(`
+      SELECT * FROM challenges 
+      WHERE is_active = TRUE
+      ORDER BY difficulty, challenge_type
+    `).all();
+    
+    // Get user progress for all challenges
+    const progress = await DB.prepare(`
+      SELECT challenge_id, current_value, goal_value, is_completed, completion_percentage
+      FROM user_challenge_progress
+      WHERE user_id = 1
+    `).all();
+    
+    // Convert progress array to object keyed by challenge_id
+    const progressMap: Record<number, any> = {};
+    for (const p of progress.results) {
+      progressMap[(p as any).challenge_id] = p;
+    }
+    
+    return c.json({ 
+      challenges: challenges.results,
+      progress: progressMap
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user achievements
+app.get('/api/achievements', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const achievements = await DB.prepare(`
+      SELECT * FROM achievements
+      WHERE user_id = 1
+      ORDER BY unlocked_at DESC
+    `).all();
+    
+    return c.json({ achievements: achievements.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user gamification stats
+app.get('/api/gamification', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const gamification = await DB.prepare(`
+      SELECT * FROM user_gamification
+      WHERE user_id = 1
+    `).first();
+    
+    return c.json({ gamification: gamification || {} });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get color psychology data
+app.get('/api/color-psychology', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const colors = await DB.prepare(`
+      SELECT * FROM color_psychology
+      ORDER BY color_name
+    `).all();
+    
+    return c.json({ colors: colors.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Track color usage
+app.post('/api/color-psychology/track', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const body = await c.req.json<{ color_code: string }>();
+    
+    // Get current mood for context
+    const latestMood = await DB.prepare(`
+      SELECT emotion FROM mood_entries
+      WHERE user_id = 1
+      ORDER BY logged_at DESC
+      LIMIT 1
+    `).first();
+    
+    // Update or insert color preference
+    await DB.prepare(`
+      INSERT INTO user_color_preferences (user_id, color_code, use_count, mood_when_selected)
+      VALUES (?, ?, 1, ?)
+      ON CONFLICT(user_id, color_code) 
+      DO UPDATE SET 
+        use_count = use_count + 1,
+        last_used_at = CURRENT_TIMESTAMP,
+        mood_when_selected = excluded.mood_when_selected
+    `).bind(1, body.color_code, (latestMood as any)?.emotion || null).run();
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Helper function to generate mock tips
+function generateMockTips(mood: string, categories: string[]): any[] {
+  const tips: any[] = [];
+  
+  const tipsMap: Record<string, Record<string, string>> = {
+    mindfulness: {
+      anxious: 'Try a 5-minute breathing exercise. Focus on slow, deep breaths to calm your nervous system.',
+      stressed: 'Practice mindful meditation for 10 minutes. Find a quiet space and focus on the present moment.',
+      sad: 'Try loving-kindness meditation. Direct compassionate thoughts toward yourself and others.',
+      tired: 'Take a mindful rest break. Close your eyes and scan your body for areas of tension.',
+      default: 'Practice mindfulness by observing your thoughts without judgment for 5 minutes.'
+    },
+    exercise: {
+      energetic: 'Go for a 30-minute run or high-intensity workout to channel your energy positively.',
+      tired: 'Try gentle yoga or stretching. Even 10 minutes can boost your energy levels.',
+      stressed: 'Take a brisk 20-minute walk outdoors. Physical movement helps reduce stress hormones.',
+      angry: 'Try boxing or kickboxing. Physical exercise is a healthy way to release anger.',
+      default: 'Engage in 30 minutes of moderate exercise to boost your mood and energy.'
+    },
+    sleep: {
+      tired: 'Prioritize 7-9 hours of sleep tonight. Create a calming bedtime routine.',
+      stressed: 'Try the 4-7-8 breathing technique before bed to promote relaxation.',
+      anxious: 'Avoid screens 1 hour before bed. Blue light can interfere with sleep quality.',
+      default: 'Maintain a consistent sleep schedule. Go to bed and wake up at the same time daily.'
+    },
+    nutrition: {
+      energetic: 'Fuel your energy with complex carbs and protein. Try oatmeal with nuts.',
+      tired: 'Stay hydrated and eat iron-rich foods. Consider a spinach and berry smoothie.',
+      stressed: 'Try omega-3 rich foods like salmon or walnuts to support brain health.',
+      default: 'Eat a balanced diet with plenty of fruits, vegetables, and whole grains.'
+    },
+    social: {
+      sad: 'Reach out to a friend or loved one. Social connection can significantly improve mood.',
+      alone: 'Consider joining a community group or class to meet like-minded people.',
+      stressed: 'Talk to someone you trust about what\'s bothering you. Sharing helps.',
+      default: 'Spend quality time with supportive people. Social bonds are vital for wellbeing.'
+    }
+  };
+  
+  for (const category of categories) {
+    const categoryTips = tipsMap[category];
+    if (categoryTips) {
+      const tipText = categoryTips[mood] || categoryTips.default;
+      tips.push({
+        id: Math.floor(Math.random() * 10000),
+        category,
+        tip_text: tipText
+      });
+    }
+  }
+  
+  return tips;
+}
+
+// =============================================================================
 // PWA ROUTES
 // =============================================================================
 
@@ -920,8 +1147,8 @@ app.get('/manifest.json', async (c) => {
 // Service Worker
 app.get('/sw.js', (c) => {
   return c.text(`
-// MoodMash Service Worker - Version 4.0.0 - New features support
-const CACHE_NAME = 'moodmash-v4.0.0';
+// MoodMash Service Worker - Version 5.0.0 - AI & Gamification features
+const CACHE_NAME = 'moodmash-v5.0.0';
 const ASSETS = [
   '/static/styles.css',
   '/static/app.js',
@@ -930,6 +1157,9 @@ const ASSETS = [
   '/static/express.js',
   '/static/insights.js',
   '/static/quick-select.js',
+  '/static/wellness-tips.js',
+  '/static/challenges.js',
+  '/static/color-psychology.js',
   '/static/i18n.js',
   '/static/utils.js',
   '/static/onboarding.js',
@@ -939,7 +1169,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  console.log('SW v4.0.0: Installing...');
+  console.log('SW v5.0.0: Installing...');
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
@@ -948,7 +1178,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  console.log('SW v4.0.0: Activating and cleaning old caches...');
+  console.log('SW v5.0.0: Activating and cleaning old caches...');
   e.waitUntil(
     caches.keys().then(keys => 
       Promise.all(keys.map(key => {
@@ -967,7 +1197,7 @@ self.addEventListener('fetch', e => {
   
   // Network-first for all JS/HTML files (always get fresh)
   if (e.request.url.includes('/static/') || 
-      e.request.url.match(/\\/(log|activities|express|insights|quick-select|about)$/)) {
+      e.request.url.match(/\\/(log|activities|express|insights|quick-select|wellness-tips|challenges|color-psychology|about)$/)) {
     e.respondWith(
       fetch(e.request)
         .then(r => {
@@ -1044,6 +1274,33 @@ app.get('/quick-select', (c) => {
     <script src="/static/quick-select.js"></script>
   `;
   return c.html(renderHTML('Quick Mood Select', content, 'quick-select'));
+});
+
+// AI Wellness Tips page
+app.get('/wellness-tips', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/wellness-tips.js"></script>
+  `;
+  return c.html(renderHTML('Personalized Wellness Tips', content, 'wellness-tips'));
+});
+
+// Challenges & Achievements page
+app.get('/challenges', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/challenges.js"></script>
+  `;
+  return c.html(renderHTML('Challenges & Achievements', content, 'challenges'));
+});
+
+// Color Psychology page
+app.get('/color-psychology', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/color-psychology.js"></script>
+  `;
+  return c.html(renderHTML('Color Psychology', content, 'color-psychology'));
 });
 
 // About page
