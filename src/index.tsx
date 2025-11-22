@@ -1104,6 +1104,204 @@ function generateMockTips(mood: string, categories: string[]): any[] {
 }
 
 // =============================================================================
+// SOCIAL FEED APIS
+// =============================================================================
+
+// Get social feed
+app.get('/api/social/feed', async (c) => {
+  const { DB } = c.env;
+  const filter = c.req.query('filter') || 'all';
+  
+  try {
+    let query = `
+      SELECT 
+        sp.*,
+        u.name as user_name,
+        EXISTS(SELECT 1 FROM social_post_likes WHERE post_id = sp.id AND user_id = 1) as user_liked
+      FROM social_posts sp
+      JOIN users u ON sp.user_id = u.id
+      WHERE sp.visibility = 'public'
+    `;
+    
+    // Add filters
+    if (filter === 'friends') {
+      query += ` AND sp.user_id IN (SELECT following_id FROM user_follows WHERE follower_id = 1 AND status = 'accepted')`;
+    } else if (filter !== 'all') {
+      query += ` AND sp.emotion = '${filter}'`;
+    }
+    
+    query += ` ORDER BY sp.created_at DESC LIMIT 50`;
+    
+    const posts = await DB.prepare(query).all();
+    
+    return c.json({ posts: posts.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Create new post
+app.post('/api/social/posts', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const body = await c.req.json<{
+      content: string;
+      emotion: string;
+      visibility?: string;
+      emotion_intensity?: number;
+    }>();
+    
+    if (!body.content || !body.emotion) {
+      return c.json({ error: 'Content and emotion are required' }, 400);
+    }
+    
+    const result = await DB.prepare(`
+      INSERT INTO social_posts (user_id, content, emotion, emotion_intensity, visibility)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      1,
+      body.content,
+      body.emotion,
+      body.emotion_intensity || 3,
+      body.visibility || 'public'
+    ).run();
+    
+    // Update user profile post count
+    await DB.prepare(`
+      UPDATE user_profiles 
+      SET total_posts = total_posts + 1
+      WHERE user_id = 1
+    `).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      message: 'Post created successfully'
+    }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Toggle like on post
+app.post('/api/social/posts/:id/like', async (c) => {
+  const { DB } = c.env;
+  const postId = c.req.param('id');
+  
+  try {
+    // Check if already liked
+    const existing = await DB.prepare(`
+      SELECT id FROM social_post_likes
+      WHERE post_id = ? AND user_id = 1
+    `).bind(postId).first();
+    
+    if (existing) {
+      // Unlike
+      await DB.prepare(`
+        DELETE FROM social_post_likes
+        WHERE post_id = ? AND user_id = 1
+      `).bind(postId).run();
+      
+      await DB.prepare(`
+        UPDATE social_posts
+        SET like_count = like_count - 1
+        WHERE id = ?
+      `).bind(postId).run();
+    } else {
+      // Like
+      await DB.prepare(`
+        INSERT INTO social_post_likes (post_id, user_id)
+        VALUES (?, ?)
+      `).bind(postId, 1).run();
+      
+      await DB.prepare(`
+        UPDATE social_posts
+        SET like_count = like_count + 1
+        WHERE id = ?
+      `).bind(postId).run();
+    }
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get post comments
+app.get('/api/social/posts/:id/comments', async (c) => {
+  const { DB } = c.env;
+  const postId = c.req.param('id');
+  
+  try {
+    const comments = await DB.prepare(`
+      SELECT 
+        c.*,
+        u.name as user_name
+      FROM social_post_comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = ?
+      ORDER BY c.created_at ASC
+    `).bind(postId).all();
+    
+    return c.json({ comments: comments.results });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Add comment to post
+app.post('/api/social/posts/:id/comments', async (c) => {
+  const { DB } = c.env;
+  const postId = c.req.param('id');
+  
+  try {
+    const body = await c.req.json<{ content: string }>();
+    
+    if (!body.content) {
+      return c.json({ error: 'Comment content is required' }, 400);
+    }
+    
+    const result = await DB.prepare(`
+      INSERT INTO social_post_comments (post_id, user_id, content)
+      VALUES (?, ?, ?)
+    `).bind(postId, 1, body.content).run();
+    
+    // Update post comment count
+    await DB.prepare(`
+      UPDATE social_posts
+      SET comment_count = comment_count + 1
+      WHERE id = ?
+    `).bind(postId).run();
+    
+    return c.json({ 
+      id: result.meta.last_row_id,
+      message: 'Comment added successfully'
+    }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get user profile
+app.get('/api/social/profile/:userId', async (c) => {
+  const { DB } = c.env;
+  const userId = c.req.param('userId');
+  
+  try {
+    const profile = await DB.prepare(`
+      SELECT up.*, u.email, u.name
+      FROM user_profiles up
+      JOIN users u ON up.user_id = u.id
+      WHERE up.user_id = ?
+    `).bind(userId).first();
+    
+    return c.json({ profile });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// =============================================================================
 // PWA ROUTES
 // =============================================================================
 
@@ -1147,8 +1345,8 @@ app.get('/manifest.json', async (c) => {
 // Service Worker
 app.get('/sw.js', (c) => {
   return c.text(`
-// MoodMash Service Worker - Version 5.0.0 - AI & Gamification features
-const CACHE_NAME = 'moodmash-v5.0.0';
+// MoodMash Service Worker - Version 6.0.0 - Social Feed feature
+const CACHE_NAME = 'moodmash-v6.0.0';
 const ASSETS = [
   '/static/styles.css',
   '/static/app.js',
@@ -1160,6 +1358,7 @@ const ASSETS = [
   '/static/wellness-tips.js',
   '/static/challenges.js',
   '/static/color-psychology.js',
+  '/static/social-feed.js',
   '/static/i18n.js',
   '/static/utils.js',
   '/static/onboarding.js',
@@ -1169,7 +1368,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  console.log('SW v5.0.0: Installing...');
+  console.log('SW v6.0.0: Installing...');
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
@@ -1178,7 +1377,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  console.log('SW v5.0.0: Activating and cleaning old caches...');
+  console.log('SW v6.0.0: Activating and cleaning old caches...');
   e.waitUntil(
     caches.keys().then(keys => 
       Promise.all(keys.map(key => {
@@ -1197,7 +1396,7 @@ self.addEventListener('fetch', e => {
   
   // Network-first for all JS/HTML files (always get fresh)
   if (e.request.url.includes('/static/') || 
-      e.request.url.match(/\\/(log|activities|express|insights|quick-select|wellness-tips|challenges|color-psychology|about)$/)) {
+      e.request.url.match(/\\/(log|activities|express|insights|quick-select|wellness-tips|challenges|color-psychology|social-feed|about)$/)) {
     e.respondWith(
       fetch(e.request)
         .then(r => {
@@ -1301,6 +1500,15 @@ app.get('/color-psychology', (c) => {
     <script src="/static/color-psychology.js"></script>
   `;
   return c.html(renderHTML('Color Psychology', content, 'color-psychology'));
+});
+
+// Social Feed page
+app.get('/social-feed', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/social-feed.js"></script>
+  `;
+  return c.html(renderHTML('Social Feed', content, 'social-feed'));
 });
 
 // About page

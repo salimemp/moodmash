@@ -371,6 +371,25 @@ const translations = {
         color_psych_avoid_when: 'Avoid When',
         color_psych_track: 'Track This Color',
         color_psych_tracked: 'Color preference saved!',
+        
+        // Social Feed (NEW)
+        social_feed_title: 'Social Feed',
+        social_feed_subtitle: 'Share your mood journey with the community',
+        social_feed_post_placeholder: 'How are you feeling? Share your mood...',
+        social_feed_select_emotion: 'Select your emotion',
+        social_feed_post: 'Post',
+        social_feed_all: 'All Posts',
+        social_feed_friends: 'Friends',
+        social_feed_empty_title: 'No posts yet',
+        social_feed_empty_text: 'Be the first to share your mood with the community!',
+        social_feed_post_success: 'Post shared successfully!',
+        social_feed_post_error: 'Failed to post. Please try again.',
+        social_feed_comments_coming_soon: 'Comments feature coming soon!',
+        social_feed_share_coming_soon: 'Share feature coming soon!',
+        privacy_public: '🌍 Public',
+        privacy_friends: '👥 Friends',
+        privacy_private: '🔒 Private',
+        loading_feed: 'Loading feed...',
     },
     
     es: {
