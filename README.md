@@ -13,10 +13,10 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
+- **🚀 Production**: https://91e12bcf.moodmash.pages.dev (LIVE!)
 - **Sandbox Demo**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai
-- **API Health**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai/api/health
+- **API Health**: https://91e12bcf.moodmash.pages.dev/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
-- **Production**: (Coming soon to Cloudflare Pages)
 
 ## ✨ Current Features (MVP v1.0)
 
@@ -520,4 +520,6 @@ For questions or feedback, contact the development team.
 
 **Built with ❤️ using Hono + Cloudflare Pages**
 
-*Last Updated: 2025-11-22*
+*Last Updated: 2025-11-22*  
+**Production Status**: ✅ LIVE at https://91e12bcf.moodmash.pages.dev  
+**Version**: 2.0.0 with Express, Insights, and Quick Select features
