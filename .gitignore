@@ -34,3 +34,10 @@ logs/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+*.mp4
+*.webm
