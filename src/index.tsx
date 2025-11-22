@@ -1104,6 +1104,310 @@ function generateMockTips(mood: string, categories: string[]): any[] {
 }
 
 // =============================================================================
+// AUTHENTICATION APIS
+// =============================================================================
+
+// Check current session
+app.get('/api/auth/me', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    // Get session token from cookie or header
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    if (!sessionToken) {
+      return c.json({ error: 'Not authenticated' }, 401);
+    }
+    
+    // Validate session
+    const session = await DB.prepare(`
+      SELECT s.*, u.id, u.username, u.email, u.name, u.avatar_url
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Invalid or expired session' }, 401);
+    }
+    
+    // Update last activity
+    await DB.prepare(`
+      UPDATE sessions SET last_activity_at = datetime('now') WHERE id = ?
+    `).bind(session.id).run();
+    
+    return c.json({
+      id: session.user_id,
+      username: session.username,
+      email: session.email,
+      name: session.name,
+      avatar_url: session.avatar_url
+    });
+  } catch (error) {
+    console.error('Session check error:', error);
+    return c.json({ error: 'Session check failed' }, 500);
+  }
+});
+
+// Register new user
+app.post('/api/auth/register', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { username, email, password } = await c.req.json();
+    
+    // Validate input
+    if (!username || !email || !password) {
+      return c.json({ error: 'All fields are required' }, 400);
+    }
+    
+    if (password.length < 8) {
+      return c.json({ error: 'Password must be at least 8 characters' }, 400);
+    }
+    
+    // Check if username or email already exists
+    const existingUser = await DB.prepare(`
+      SELECT id FROM users WHERE username = ? OR email = ?
+    `).bind(username, email).first();
+    
+    if (existingUser) {
+      return c.json({ error: 'Username or email already exists' }, 409);
+    }
+    
+    // Hash password (in production, use proper bcrypt)
+    // For now, using simple hash (MUST be replaced in production)
+    const passwordHash = btoa(password); // DEMO ONLY - Use bcrypt in production
+    
+    // Insert user
+    const result = await DB.prepare(`
+      INSERT INTO users (username, email, password_hash, is_verified, is_active)
+      VALUES (?, ?, ?, 0, 1)
+    `).bind(username, email, passwordHash).run();
+    
+    const userId = result.meta.last_row_id;
+    
+    // Create session
+    const sessionToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    await DB.prepare(`
+      INSERT INTO sessions (user_id, session_token, expires_at, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(
+      userId,
+      sessionToken,
+      expiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'register', ?, ?, 1)
+    `).bind(
+      userId,
+      JSON.stringify({ username, email }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    // Set session cookie
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
+    
+    return c.json({
+      success: true,
+      user: { id: userId, username, email },
+      sessionToken
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    return c.json({ error: 'Registration failed' }, 500);
+  }
+});
+
+// Login user
+app.post('/api/auth/login', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { username, password, trustDevice } = await c.req.json();
+    
+    if (!username || !password) {
+      return c.json({ error: 'Username and password required' }, 400);
+    }
+    
+    // Find user
+    const user = await DB.prepare(`
+      SELECT * FROM users 
+      WHERE (username = ? OR email = ?) AND is_active = 1
+    `).bind(username, username).first();
+    
+    if (!user) {
+      // Log failed attempt
+      await DB.prepare(`
+        INSERT INTO security_audit_log (event_type, event_details, ip_address, success)
+        VALUES ('login_failed', ?, ?, 0)
+      `).bind(
+        JSON.stringify({ username }),
+        c.req.header('CF-Connecting-IP') || 'unknown'
+      ).run();
+      
+      return c.json({ error: 'Invalid username or password' }, 401);
+    }
+    
+    // Verify password (in production, use bcrypt.compare)
+    const passwordHash = btoa(password); // DEMO ONLY
+    if (user.password_hash !== passwordHash) {
+      // Increment failed login attempts
+      await DB.prepare(`
+        UPDATE users SET failed_login_attempts = failed_login_attempts + 1
+        WHERE id = ?
+      `).bind(user.id).run();
+      
+      return c.json({ error: 'Invalid username or password' }, 401);
+    }
+    
+    // Reset failed attempts
+    await DB.prepare(`
+      UPDATE users 
+      SET failed_login_attempts = 0, last_login_at = datetime('now'), login_count = login_count + 1
+      WHERE id = ?
+    `).bind(user.id).run();
+    
+    // Create session
+    const sessionToken = crypto.randomUUID();
+    const expiresAt = trustDevice 
+      ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+      : new Date(Date.now() + 24 * 60 * 60 * 1000); // 1 day
+    
+    await DB.prepare(`
+      INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      user.id,
+      sessionToken,
+      trustDevice ? 1 : 0,
+      expiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'login', ?, ?, 1)
+    `).bind(
+      user.id,
+      JSON.stringify({ trusted: trustDevice }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    // Set session cookie
+    const maxAge = trustDevice ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`);
+    
+    return c.json({
+      success: true,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url
+      },
+      sessionToken
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    return c.json({ error: 'Login failed' }, 500);
+  }
+});
+
+// Logout
+app.post('/api/auth/logout', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    if (sessionToken) {
+      await DB.prepare(`
+        DELETE FROM sessions WHERE session_token = ?
+      `).bind(sessionToken).run();
+    }
+    
+    c.header('Set-Cookie', 'session_token=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
+    
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return c.json({ error: 'Logout failed' }, 500);
+  }
+});
+
+// OAuth redirect endpoints (placeholders)
+app.get('/api/auth/oauth/:provider', async (c) => {
+  const provider = c.req.param('provider');
+  
+  // In production, implement proper OAuth flow
+  return c.json({ 
+    error: 'OAuth not yet configured',
+    message: `Please configure ${provider} OAuth credentials`,
+    provider 
+  }, 501);
+});
+
+// WebAuthn challenge endpoint (placeholder)
+app.get('/api/auth/webauthn/login/challenge', async (c) => {
+  return c.json({ 
+    error: 'WebAuthn not yet configured',
+    message: 'Please configure WebAuthn/Passkeys'
+  }, 501);
+});
+
+// WebAuthn verify endpoint (placeholder)
+app.post('/api/auth/webauthn/login/verify', async (c) => {
+  return c.json({ 
+    error: 'WebAuthn not yet configured',
+    message: 'Please configure WebAuthn/Passkeys'
+  }, 501);
+});
+
+// Password reset request
+app.post('/api/auth/password-reset/request', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { email } = await c.req.json();
+    
+    const user = await DB.prepare(`
+      SELECT id FROM users WHERE email = ?
+    `).bind(email).first();
+    
+    if (user) {
+      const resetToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      
+      await DB.prepare(`
+        INSERT INTO password_resets (user_id, reset_token, expires_at)
+        VALUES (?, ?, ?)
+      `).bind(user.id, resetToken, expiresAt.toISOString()).run();
+      
+      // In production, send email with reset link
+      console.log(`Password reset token for ${email}: ${resetToken}`);
+    }
+    
+    // Always return success to prevent email enumeration
+    return c.json({ success: true, message: 'If that email exists, a reset link has been sent' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return c.json({ error: 'Password reset failed' }, 500);
+  }
+});
+
+// =============================================================================
 // SOCIAL FEED APIS
 // =============================================================================
 
@@ -1299,6 +1603,66 @@ app.get('/api/social/profile/:userId', async (c) => {
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
+});
+
+// =============================================================================
+// AUTHENTICATION PAGE ROUTES
+// =============================================================================
+
+// Login page
+app.get('/login', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Login - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="auth-container"></div>
+        
+        <script src="/static/i18n.js"></script>
+        <script src="/static/utils.js"></script>
+        <script>
+          // Set initial view to login
+          window.initialAuthView = 'login';
+        </script>
+        <script src="/static/auth.js"></script>
+    </body>
+    </html>
+  `);
+});
+
+// Register page
+app.get('/register', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Register - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="auth-container"></div>
+        
+        <script src="/static/i18n.js"></script>
+        <script src="/static/utils.js"></script>
+        <script>
+          // Set initial view to register
+          window.initialAuthView = 'register';
+        </script>
+        <script src="/static/auth.js"></script>
+    </body>
+    </html>
+  `);
 });
 
 // =============================================================================

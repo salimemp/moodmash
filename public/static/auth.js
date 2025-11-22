@@ -1,283 +1,499 @@
-// MoodMash OAuth Authentication Manager
+/**
+ * MoodMash Authentication System
+ * Complete authentication flow with multiple methods
+ * Version: 5.0.0
+ */
 
-class AuthManager {
-    constructor() {
-        this.user = null;
-        this.isAuthenticated = false;
-    }
-    
-    async initialize() {
-        // Check if user is authenticated
-        await this.checkAuth();
-        
-        // Check for login success/error in URL
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('login') && urlParams.get('login') === 'success') {
-            await this.checkAuth();
-            this.showNotification(i18n.t('auth_login_success') || 'Welcome back!');
-            // Clean URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-        } else if (urlParams.has('error')) {
-            this.showNotification('Login failed. Please try again.', 'error');
-            window.history.replaceState({}, document.title, window.location.pathname);
+class MoodMashAuth {
+  constructor() {
+    this.currentView = window.initialAuthView || 'register'; // register or login
+    this.i18n = window.i18n || window.i18nManager;
+    this.init();
+  }
+
+  async init() {
+    await this.checkSession();
+    this.render();
+    this.attachEventListeners();
+  }
+
+  async checkSession() {
+    try {
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const user = await response.json();
+        if (user && user.id) {
+          // User is already authenticated, redirect to dashboard
+          window.location.href = '/';
+          return;
         }
-        
-        this.renderUserProfile();
+      }
+    } catch (error) {
+      console.log('No active session');
     }
-    
-    async checkAuth() {
-        try {
-            const response = await fetch('/api/auth/me', {
-                credentials: 'include'
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                this.isAuthenticated = data.authenticated;
-                this.user = data.user;
-            } else {
-                this.isAuthenticated = false;
-                this.user = null;
-            }
-        } catch (error) {
-            console.error('Auth check failed:', error);
-            this.isAuthenticated = false;
-            this.user = null;
-        }
-    }
-    
-    loginWithGoogle() {
-        window.location.href = '/auth/google';
-    }
-    
-    loginWithGitHub() {
-        window.location.href = '/auth/github';
-    }
-    
-    loginWithFacebook() {
-        window.location.href = '/auth/facebook';
-    }
-    
-    async logout() {
-        try {
-            await fetch('/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-            
-            this.isAuthenticated = false;
-            this.user = null;
-            
-            this.showNotification(i18n.t('auth_logout_success') || 'Logged out successfully');
-            this.renderUserProfile();
-            
-            // Reload to clear any user-specific data
-            setTimeout(() => window.location.reload(), 1000);
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
-    }
-    
-    renderUserProfile() {
-        const container = document.getElementById('user-profile-container');
-        if (!container) return;
-        
-        if (this.isAuthenticated && this.user) {
-            container.innerHTML = `
-                <div class="relative">
-                    <button 
-                        onclick="authManager.toggleUserMenu()"
-                        class="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-white/10 transition-colors"
-                        aria-label="${i18n.t('auth_user_menu')}">
-                        ${this.user.picture ? 
-                            `<img src="${this.user.picture}" alt="${this.user.name}" class="w-8 h-8 rounded-full">` :
-                            `<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-sm font-semibold">
-                                ${this.user.name.charAt(0).toUpperCase()}
-                            </div>`
-                        }
-                        <span class="hidden md:inline text-sm font-medium">${this.user.name}</span>
-                        ${this.user.isPremium ? '<span class="text-xs bg-yellow-500 text-black px-2 py-0.5 rounded-full ml-1">PRO</span>' : ''}
-                        <i class="fas fa-chevron-down text-xs"></i>
-                    </button>
-                    
-                    <div id="user-menu" class="hidden absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
-                        <div class="p-4 border-b border-gray-200 dark:border-gray-700">
-                            <p class="text-sm font-semibold text-gray-900 dark:text-white">${this.user.name}</p>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">${this.user.email}</p>
-                            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                <i class="fab fa-${this.user.provider}"></i> ${this.user.provider.charAt(0).toUpperCase() + this.user.provider.slice(1)}
-                            </p>
-                        </div>
-                        
-                        <div class="p-2">
-                            ${!this.user.isPremium ? `
-                                <button onclick="authManager.showPremiumUpgrade()" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center">
-                                    <i class="fas fa-star text-yellow-500 mr-2"></i>
-                                    ${i18n.t('auth_upgrade_premium')}
-                                </button>
-                            ` : ''}
-                            <button onclick="authManager.logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded flex items-center">
-                                <i class="fas fa-sign-out-alt mr-2"></i>
-                                ${i18n.t('auth_logout')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        } else {
-            container.innerHTML = `
-                <button 
-                    onclick="authManager.showLoginModal()"
-                    class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2">
-                    <i class="fas fa-sign-in-alt"></i>
-                    <span>${i18n.t('auth_login')}</span>
-                </button>
-            `;
-        }
-    }
-    
-    toggleUserMenu() {
-        const menu = document.getElementById('user-menu');
-        if (menu) {
-            menu.classList.toggle('hidden');
-        }
-    }
-    
-    showLoginModal() {
-        const modal = document.createElement('div');
-        modal.id = 'login-modal';
-        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4';
-        modal.onclick = (e) => {
-            if (e.target === modal) this.closeLoginModal();
-        };
-        
-        modal.innerHTML = `
-            <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
-                        ${i18n.t('auth_login') || 'Sign In'}
-                    </h2>
-                    <button onclick="authManager.closeLoginModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">
-                    Continue with your preferred account
-                </p>
-                
-                <div class="space-y-3">
-                    <button 
-                        onclick="authManager.loginWithGoogle()"
-                        class="w-full flex items-center justify-center space-x-3 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                        </svg>
-                        <span class="font-medium text-gray-700 dark:text-gray-300">Continue with Google</span>
-                    </button>
-                    
-                    <button 
-                        onclick="authManager.loginWithGitHub()"
-                        class="w-full flex items-center justify-center space-x-3 px-4 py-3 bg-gray-900 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-800 dark:hover:bg-gray-600 transition-colors">
-                        <i class="fab fa-github text-xl"></i>
-                        <span class="font-medium">Continue with GitHub</span>
-                    </button>
-                    
-                    <button 
-                        onclick="authManager.loginWithFacebook()"
-                        class="w-full flex items-center justify-center space-x-3 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        <i class="fab fa-facebook text-xl"></i>
-                        <span class="font-medium">Continue with Facebook</span>
-                    </button>
-                </div>
-                
-                <p class="mt-6 text-xs text-center text-gray-500 dark:text-gray-400">
-                    By continuing, you agree to our Terms of Service and Privacy Policy
-                </p>
+  }
+
+  render() {
+    const container = document.getElementById('auth-container');
+    if (!container) return;
+
+    container.innerHTML = `
+      <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4">
+        <div class="w-full max-w-md">
+          <!-- Logo and Title -->
+          <div class="text-center mb-8">
+            <div class="flex items-center justify-center mb-4">
+              <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
+                <i class="fas fa-smile text-3xl text-white"></i>
+              </div>
             </div>
-        `;
-        
-        document.body.appendChild(modal);
+            <h1 class="text-3xl font-bold text-white mb-2" id="auth-title">
+              ${this.currentView === 'register' ? this.t('auth_create_account') : this.t('auth_welcome_back')}
+            </h1>
+            <p class="text-purple-200" id="auth-subtitle">
+              ${this.currentView === 'register' ? this.t('auth_start_tracking') : this.t('auth_sign_in_continue')}
+            </p>
+          </div>
+
+          <!-- Main Auth Card -->
+          <div class="bg-gradient-to-br from-purple-800/50 to-purple-900/50 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-purple-700/50">
+            
+            <!-- Tab Switcher -->
+            <div class="flex mb-8 bg-black/30 rounded-full p-1">
+              <button 
+                id="tab-login" 
+                class="flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${this.currentView === 'login' ? 'bg-purple-600 text-white shadow-lg' : 'text-purple-300 hover:text-white'}"
+                onclick="authManager.switchView('login')"
+              >
+                ${this.t('auth_login')}
+              </button>
+              <button 
+                id="tab-register" 
+                class="flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${this.currentView === 'register' ? 'bg-purple-600 text-white shadow-lg' : 'text-purple-300 hover:text-white'}"
+                onclick="authManager.switchView('register')"
+              >
+                ${this.t('auth_register')}
+              </button>
+            </div>
+
+            <!-- Auth Form -->
+            <form id="auth-form" onsubmit="authManager.handleSubmit(event)">
+              <div id="form-fields">
+                ${this.renderFormFields()}
+              </div>
+
+              <!-- Submit Button -->
+              <button 
+                type="submit" 
+                class="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 mt-6"
+                id="submit-btn"
+              >
+                <i class="fas ${this.currentView === 'register' ? 'fa-user-plus' : 'fa-sign-in-alt'}"></i>
+                <span>${this.currentView === 'register' ? this.t('auth_create_account') : this.t('auth_sign_in')}</span>
+              </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="flex items-center my-6">
+              <div class="flex-1 border-t border-purple-600"></div>
+              <span class="px-4 text-purple-300 text-sm uppercase">${this.t('auth_or_continue_with')}</span>
+              <div class="flex-1 border-t border-purple-600"></div>
+            </div>
+
+            <!-- OAuth Providers -->
+            <div class="grid grid-cols-5 gap-3 mb-6">
+              ${this.renderOAuthProviders()}
+            </div>
+
+            <!-- Alternative Auth Methods -->
+            <div class="space-y-3">
+              <button 
+                onclick="authManager.signInWithKey()" 
+                class="w-full py-3 bg-black/40 hover:bg-black/60 text-white rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 border border-purple-700/50"
+              >
+                <i class="fas fa-key"></i>
+                <span>${this.t('auth_sign_in_key')}</span>
+              </button>
+
+              <button 
+                onclick="authManager.useBiometrics()" 
+                class="w-full py-3 bg-black/40 hover:bg-black/60 text-white rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 border border-purple-700/50"
+              >
+                <i class="fas fa-fingerprint"></i>
+                <span>${this.t('auth_use_biometrics')}</span>
+              </button>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="mt-6 text-center">
+              <p class="text-purple-300 text-sm flex items-center justify-center space-x-2">
+                <i class="fas fa-lock"></i>
+                <span>${this.t('auth_protected_encryption')}</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Error/Success Messages -->
+          <div id="auth-message" class="mt-4 hidden"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  renderFormFields() {
+    if (this.currentView === 'register') {
+      return `
+        <!-- Username -->
+        <div class="mb-4">
+          <label class="block text-white font-medium mb-2">${this.t('auth_username')}</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username"
+            placeholder="${this.t('auth_username_placeholder')}"
+            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="username"
+          >
+        </div>
+
+        <!-- Email -->
+        <div class="mb-4">
+          <label class="block text-white font-medium mb-2">${this.t('auth_email')}</label>
+          <input 
+            type="email" 
+            id="email" 
+            name="email"
+            placeholder="${this.t('auth_email_placeholder')}"
+            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="email"
+          >
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4 relative">
+          <label class="block text-white font-medium mb-2">${this.t('auth_password')}</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            placeholder="${this.t('auth_password_placeholder')}"
+            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="new-password"
+          >
+          <button 
+            type="button" 
+            onclick="authManager.togglePassword('password')"
+            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+          >
+            <i class="fas fa-eye" id="password-toggle"></i>
+          </button>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="mb-4 relative">
+          <label class="block text-white font-medium mb-2">${this.t('auth_confirm_password')}</label>
+          <input 
+            type="password" 
+            id="confirm-password" 
+            name="confirm-password"
+            placeholder="${this.t('auth_confirm_password_placeholder')}"
+            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="new-password"
+          >
+          <button 
+            type="button" 
+            onclick="authManager.togglePassword('confirm-password')"
+            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+          >
+            <i class="fas fa-eye" id="confirm-password-toggle"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      return `
+        <!-- Username -->
+        <div class="mb-4">
+          <label class="block text-white font-medium mb-2">${this.t('auth_username')}</label>
+          <input 
+            type="text" 
+            id="username" 
+            name="username"
+            placeholder="${this.t('auth_username_login_placeholder')}"
+            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="username"
+          >
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4 relative">
+          <label class="block text-white font-medium mb-2">${this.t('auth_password')}</label>
+          <input 
+            type="password" 
+            id="password" 
+            name="password"
+            placeholder="${this.t('auth_password_login_placeholder')}"
+            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            required
+            autocomplete="current-password"
+          >
+          <button 
+            type="button" 
+            onclick="authManager.togglePassword('password')"
+            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+          >
+            <i class="fas fa-eye" id="password-toggle"></i>
+          </button>
+        </div>
+
+        <!-- Trust Device -->
+        <div class="mb-4 flex items-center space-x-2">
+          <input 
+            type="checkbox" 
+            id="trust-device" 
+            name="trust-device"
+            class="w-5 h-5 rounded border-purple-700 bg-black/40 text-purple-600 focus:ring-purple-500"
+          >
+          <label for="trust-device" class="text-white">
+            <span class="font-medium">${this.t('auth_trust_device')}</span>
+            <span class="block text-sm text-purple-300">${this.t('auth_trust_device_desc')}</span>
+          </label>
+        </div>
+
+        <!-- Forgot Password -->
+        <div class="mb-4 text-right">
+          <a href="#" onclick="authManager.forgotPassword(); return false;" class="text-purple-300 hover:text-purple-200 text-sm">
+            ${this.t('auth_forgot_password')}
+          </a>
+        </div>
+      `;
     }
+  }
+
+  renderOAuthProviders() {
+    const providers = [
+      { id: 'google', icon: 'fab fa-google', color: 'hover:bg-red-500' },
+      { id: 'apple', icon: 'fab fa-apple', color: 'hover:bg-gray-800' },
+      { id: 'facebook', icon: 'fab fa-facebook-f', color: 'hover:bg-blue-600' },
+      { id: 'x', icon: 'fab fa-x-twitter', color: 'hover:bg-black' },
+      { id: 'github', icon: 'fab fa-github', color: 'hover:bg-gray-700' }
+    ];
+
+    return providers.map(provider => `
+      <button 
+        type="button"
+        onclick="authManager.oauthLogin('${provider.id}')" 
+        class="w-full aspect-square bg-black/40 ${provider.color} rounded-xl flex items-center justify-center text-white text-xl transition-all duration-300 hover:scale-105 border border-purple-700/50"
+        title="${this.t('auth_continue_with')} ${provider.id}"
+      >
+        <i class="${provider.icon}"></i>
+      </button>
+    `).join('');
+  }
+
+  switchView(view) {
+    this.currentView = view;
+    this.render();
+    this.attachEventListeners();
+  }
+
+  attachEventListeners() {
+    // Form is handled by inline onsubmit
+  }
+
+  async handleSubmit(event) {
+    event.preventDefault();
     
-    closeLoginModal() {
-        const modal = document.getElementById('login-modal');
-        if (modal) {
-            modal.remove();
-        }
+    const formData = new FormData(event.target);
+    const data = {
+      username: formData.get('username'),
+      password: formData.get('password'),
+    };
+
+    if (this.currentView === 'register') {
+      data.email = formData.get('email');
+      data.confirmPassword = formData.get('confirm-password');
+
+      if (data.password !== data.confirmPassword) {
+        this.showMessage(this.t('auth_passwords_not_match'), 'error');
+        return;
+      }
+    } else {
+      data.trustDevice = formData.get('trust-device') === 'on';
     }
-    
-    showPremiumUpgrade() {
-        this.toggleUserMenu();
-        alert(i18n.t('onboarding_premium_coming_soon') || 'Premium features coming soon! Stay tuned.');
-    }
-    
-    requirePremium(featureName) {
-        if (!this.isAuthenticated) {
-            this.showLoginModal();
-            return false;
-        }
-        
-        if (!this.user.isPremium) {
-            this.showNotification(
-                i18n.t('auth_premium_required') || `${featureName} requires Premium subscription`,
-                'warning'
-            );
-            return false;
-        }
-        
-        return true;
-    }
-    
-    showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
-            type === 'error' ? 'bg-red-500' : 
-            type === 'warning' ? 'bg-yellow-500' :
-            'bg-green-500'
-        } text-white`;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
+
+    try {
+      const endpoint = this.currentView === 'register' ? '/api/auth/register' : '/api/auth/login';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        this.showMessage(
+          this.currentView === 'register' 
+            ? this.t('auth_account_created') 
+            : this.t('auth_login_success'),
+          'success'
+        );
         
         setTimeout(() => {
-            notification.style.opacity = '0';
-            notification.style.transition = 'opacity 0.3s';
-            setTimeout(() => notification.remove(), 300);
-        }, 3000);
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        this.showMessage(result.error || this.t('auth_error_occurred'), 'error');
+      }
+    } catch (error) {
+      console.error('Auth error:', error);
+      this.showMessage(this.t('auth_error_occurred'), 'error');
     }
-}
+  }
 
-// Global instance
-const authManager = new AuthManager();
-
-// Initialize when DOM loads
-if (typeof window !== 'undefined') {
-    window.addEventListener('load', () => {
-        // Wait for i18n to load
-        function waitForI18n(callback) {
-            if (typeof i18n !== 'undefined' && i18n.translations) {
-                callback();
-            } else {
-                setTimeout(() => waitForI18n(callback), 50);
-            }
-        }
-        
-        waitForI18n(() => {
-            authManager.initialize();
-        });
-    });
+  togglePassword(inputId) {
+    const input = document.getElementById(inputId);
+    const toggle = document.getElementById(`${inputId}-toggle`);
     
-    // Close user menu when clicking outside
-    document.addEventListener('click', (e) => {
-        const menu = document.getElementById('user-menu');
-        const profileContainer = document.getElementById('user-profile-container');
-        if (menu && !menu.classList.contains('hidden') && 
-            !profileContainer?.contains(e.target)) {
-            menu.classList.add('hidden');
-        }
-    });
+    if (input.type === 'password') {
+      input.type = 'text';
+      toggle.classList.remove('fa-eye');
+      toggle.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      toggle.classList.remove('fa-eye-slash');
+      toggle.classList.add('fa-eye');
+    }
+  }
+
+  async oauthLogin(provider) {
+    this.showMessage(this.t('auth_redirecting_provider').replace('{provider}', provider), 'info');
+    
+    // In production, this would redirect to OAuth flow
+    window.location.href = `/api/auth/oauth/${provider}`;
+  }
+
+  async signInWithKey() {
+    if (!window.PublicKeyCredential) {
+      this.showMessage(this.t('auth_webauthn_not_supported'), 'error');
+      return;
+    }
+
+    try {
+      this.showMessage(this.t('auth_preparing_webauthn'), 'info');
+      
+      // Get challenge from server
+      const challengeResponse = await fetch('/api/auth/webauthn/login/challenge');
+      const challengeData = await challengeResponse.json();
+
+      // Request authentication
+      const credential = await navigator.credentials.get({
+        publicKey: challengeData.publicKey
+      });
+
+      // Verify with server
+      const verifyResponse = await fetch('/api/auth/webauthn/login/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          credential: {
+            id: credential.id,
+            rawId: this.arrayBufferToBase64(credential.rawId),
+            response: {
+              authenticatorData: this.arrayBufferToBase64(credential.response.authenticatorData),
+              clientDataJSON: this.arrayBufferToBase64(credential.response.clientDataJSON),
+              signature: this.arrayBufferToBase64(credential.response.signature),
+              userHandle: credential.response.userHandle ? this.arrayBufferToBase64(credential.response.userHandle) : null
+            },
+            type: credential.type
+          }
+        })
+      });
+
+      if (verifyResponse.ok) {
+        this.showMessage(this.t('auth_webauthn_success'), 'success');
+        setTimeout(() => window.location.href = '/', 1000);
+      } else {
+        this.showMessage(this.t('auth_webauthn_failed'), 'error');
+      }
+    } catch (error) {
+      console.error('WebAuthn error:', error);
+      this.showMessage(this.t('auth_webauthn_error'), 'error');
+    }
+  }
+
+  async useBiometrics() {
+    if (!window.PublicKeyCredential) {
+      this.showMessage(this.t('auth_biometrics_not_supported'), 'error');
+      return;
+    }
+
+    // Use same WebAuthn flow but with platform authenticator
+    await this.signInWithKey();
+  }
+
+  async forgotPassword() {
+    const email = prompt(this.t('auth_forgot_password_prompt'));
+    if (!email) return;
+
+    try {
+      const response = await fetch('/api/auth/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      if (response.ok) {
+        this.showMessage(this.t('auth_password_reset_sent'), 'success');
+      } else {
+        this.showMessage(this.t('auth_password_reset_failed'), 'error');
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      this.showMessage(this.t('auth_error_occurred'), 'error');
+    }
+  }
+
+  showMessage(message, type = 'info') {
+    const messageEl = document.getElementById('auth-message');
+    if (!messageEl) return;
+
+    const colors = {
+      success: 'bg-green-500/20 border-green-500 text-green-200',
+      error: 'bg-red-500/20 border-red-500 text-red-200',
+      info: 'bg-blue-500/20 border-blue-500 text-blue-200'
+    };
+
+    messageEl.className = `mt-4 p-4 rounded-xl border ${colors[type]}`;
+    messageEl.textContent = message;
+    messageEl.classList.remove('hidden');
+
+    setTimeout(() => {
+      messageEl.classList.add('hidden');
+    }, 5000);
+  }
+
+  arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  t(key) {
+    return this.i18n?.t(key) || key;
+  }
 }
+
+// Initialize auth manager
+let authManager;
+document.addEventListener('DOMContentLoaded', () => {
+  authManager = new MoodMashAuth();
+});

@@ -1,16 +1,32 @@
 // MoodMash Service Worker
-// Version 2.0.0 - Fixed i18n caching
+// Version 7.0.0 - Authentication system
 
-const CACHE_NAME = 'moodmash-v2.0.0';
+const CACHE_NAME = 'moodmash-v7.0.0';
 const ASSETS_TO_CACHE = [
     '/',
+    '/login',
+    '/register',
     '/log',
     '/activities',
+    '/express',
+    '/insights',
+    '/quick-select',
+    '/wellness-tips',
+    '/challenges',
+    '/color-psychology',
+    '/social-feed',
     '/about',
     '/static/styles.css',
     '/static/app.js',
     '/static/log.js',
     '/static/activities.js',
+    '/static/express.js',
+    '/static/insights.js',
+    '/static/quick-select.js',
+    '/static/wellness-tips.js',
+    '/static/challenges.js',
+    '/static/color-psychology.js',
+    '/static/social-feed.js',
     '/static/i18n.js',
     '/static/utils.js',
     '/static/onboarding.js',
