@@ -12,8 +12,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "moodmash-production",
-      "database_id": "your-database-id-here"
+      "database_name": "moodmash",
+      "database_id": "0483fe1c-facc-4e05-8123-48205b4561f4"
     }
   ]
 }
