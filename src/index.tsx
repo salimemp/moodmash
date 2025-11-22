@@ -661,13 +661,16 @@ app.get('/manifest.json', async (c) => {
 // Service Worker
 app.get('/sw.js', (c) => {
   return c.text(`
-// MoodMash Service Worker - Version 3.0.0 - Full page support
-const CACHE_NAME = 'moodmash-v3.0.0';
+// MoodMash Service Worker - Version 4.0.0 - New features support
+const CACHE_NAME = 'moodmash-v4.0.0';
 const ASSETS = [
   '/static/styles.css',
   '/static/app.js',
   '/static/log.js',
   '/static/activities.js',
+  '/static/express.js',
+  '/static/insights.js',
+  '/static/quick-select.js',
   '/static/i18n.js',
   '/static/utils.js',
   '/static/onboarding.js',
@@ -677,7 +680,7 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  console.log('SW v3.0.0: Installing...');
+  console.log('SW v4.0.0: Installing...');
   e.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(ASSETS))
@@ -686,7 +689,7 @@ self.addEventListener('install', e => {
 });
 
 self.addEventListener('activate', e => {
-  console.log('SW v3.0.0: Activating and cleaning old caches...');
+  console.log('SW v4.0.0: Activating and cleaning old caches...');
   e.waitUntil(
     caches.keys().then(keys => 
       Promise.all(keys.map(key => {
@@ -705,7 +708,7 @@ self.addEventListener('fetch', e => {
   
   // Network-first for all JS/HTML files (always get fresh)
   if (e.request.url.includes('/static/') || 
-      e.request.url.match(/\\/(log|activities|about)$/)) {
+      e.request.url.match(/\\/(log|activities|express|insights|quick-select|about)$/)) {
     e.respondWith(
       fetch(e.request)
         .then(r => {
@@ -755,6 +758,33 @@ app.get('/activities', (c) => {
     <script src="/static/activities.js"></script>
   `;
   return c.html(renderHTML('Wellness Activities', content, 'activities'));
+});
+
+// Express Your Mood page
+app.get('/express', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/express.js"></script>
+  `;
+  return c.html(renderHTML('Express Your Mood', content, 'express'));
+});
+
+// Daily Mood Insights page
+app.get('/insights', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/insights.js"></script>
+  `;
+  return c.html(renderHTML('Mood Insights', content, 'insights'));
+});
+
+// Quick Select (can be embedded or standalone)
+app.get('/quick-select', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/quick-select.js"></script>
+  `;
+  return c.html(renderHTML('Quick Mood Select', content, 'quick-select'));
 });
 
 // About page
