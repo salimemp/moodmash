@@ -13,10 +13,12 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
-- **🚀 Production**: https://007a35c1.moodmash.pages.dev (LIVE! v4.0)
-- **Sandbox Demo**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai
-- **API Health**: https://007a35c1.moodmash.pages.dev/api/health
+- **🚀 Production**: https://f4c6804f.moodmash.pages.dev (LIVE! v5.0)
+- **Login**: https://f4c6804f.moodmash.pages.dev/login
+- **Register**: https://f4c6804f.moodmash.pages.dev/register
+- **API Health**: https://f4c6804f.moodmash.pages.dev/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
+- **Custom Domain**: moodmash.win (pending configuration)
 
 ## ✨ Current Features (MVP v1.0)
 
@@ -167,6 +169,27 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Engagement metrics tracking
     - Time-based feed display
 
+19. **Authentication System (NEW! 🔐)**
+    - Complete user registration and login flow
+    - Beautiful gradient UI matching modern design patterns
+    - Login and Register pages with tab switching
+    - Email-based authentication with password hashing
+    - Password visibility toggle for UX
+    - Session management with "Trust Device" option (30-day sessions)
+    - Security audit logging for all auth events
+    - Failed login attempt tracking and account protection
+    - IP address and user agent logging
+    - OAuth integration placeholders (Google, GitHub, Facebook, Apple, X)
+    - WebAuthn/Passkeys support structure
+    - Biometric authentication framework
+    - Password reset flow with email tokens
+    - HttpOnly secure cookies for session tokens
+    - 10 new database tables for comprehensive auth
+    - Full i18n support with 40+ translation keys
+    - CSRF protection ready
+    - Account verification system
+    - Trusted devices management
+
 ### 📋 Functional Entry URIs
 
 **API Endpoints:**
@@ -179,9 +202,19 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - `GET /api/stats?days=30` - Get mood statistics
 - `GET /api/activities?emotion=anxious` - Get wellness activities (with optional filter)
 - `POST /api/activities/:id/log` - Log activity completion
+- 🔐 `GET /api/auth/me` - Get current session
+- 🔐 `POST /api/auth/register` - User registration
+- 🔐 `POST /api/auth/login` - User login
+- 🔐 `POST /api/auth/logout` - User logout
+- 🔐 `GET /api/auth/oauth/:provider` - OAuth redirect (Google, GitHub, Facebook, Apple, X)
+- 🔐 `GET /api/auth/webauthn/login/challenge` - WebAuthn challenge
+- 🔐 `POST /api/auth/webauthn/login/verify` - WebAuthn verification
+- 🔐 `POST /api/auth/password-reset/request` - Password reset request
 
 **Web Pages:**
 - `/` - Dashboard (mood stats and recent entries)
+- `/login` - 🔐 NEW! User Login (beautiful auth UI)
+- `/register` - 🔐 NEW! User Registration (create account)
 - `/log` - Log new mood entry
 - `/express` - 🎉 Express Your Mood (multi-modal interface)
 - `/insights` - 📊 Daily Mood Insights (analytics dashboard)
@@ -189,7 +222,7 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - `/wellness-tips` - 🤖 AI Wellness Tips (personalized recommendations)
 - `/challenges` - 🏆 Challenges & Achievements (gamification)
 - `/color-psychology` - 🎨 Color Psychology (analysis tool)
-- `/social-feed` - 🌐 NEW! Social Feed (community mood sharing)
+- `/social-feed` - 🌐 Social Feed (community mood sharing)
 - `/activities` - Browse wellness activities
 - `/about` - About MoodMash and future vision
 
@@ -372,7 +405,8 @@ npx wrangler pages secret put API_KEY --project-name moodmash
 ```
 
 **Deployment URLs:**
-- Production: `https://moodmash.pages.dev`
+- Production: `https://f4c6804f.moodmash.pages.dev` (v5.0 - Authentication System)
+- Custom Domain: `https://moodmash.win` (pending DNS configuration)
 - Branch: `https://main.moodmash.pages.dev`
 
 ## 🔮 Features Not Yet Implemented (Future Vision)
@@ -561,5 +595,10 @@ For questions or feedback, contact the development team.
 **Built with ❤️ using Hono + Cloudflare Pages**
 
 *Last Updated: 2025-11-22*  
-**Production Status**: ✅ LIVE at https://007a35c1.moodmash.pages.dev  
-**Version**: 4.0.0 with Social Feed - Community mood sharing feature
+**Production Status**: ✅ LIVE at https://f4c6804f.moodmash.pages.dev  
+**Version**: 5.0.0 with Complete Authentication System  
+**Service Worker**: v7.0.0  
+**Bundle Size**: 92.04 kB  
+**Database Tables**: 30+ (including 10 auth tables)  
+**API Endpoints**: 36+ (including 8 auth endpoints)  
+**Features**: 19 complete features with full authentication
