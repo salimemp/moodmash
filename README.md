@@ -13,9 +13,9 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
-- **🚀 Production**: https://91e12bcf.moodmash.pages.dev (LIVE!)
+- **🚀 Production**: https://fb118ec2.moodmash.pages.dev (LIVE! v3.0)
 - **Sandbox Demo**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai
-- **API Health**: https://91e12bcf.moodmash.pages.dev/api/health
+- **API Health**: https://fb118ec2.moodmash.pages.dev/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
 
 ## ✨ Current Features (MVP v1.0)
@@ -131,6 +131,32 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Timestamp tracking
     - Lightweight and responsive
 
+15. **AI-Powered Wellness Tips (NEW! 🤖)**
+    - Personalized recommendations based on mood
+    - 5 wellness categories (Mindfulness, Exercise, Sleep, Nutrition, Social)
+    - AI-generated contextual advice
+    - Feedback system (helpful/not helpful)
+    - Save favorite tips
+    - Ready for OpenAI integration
+
+16. **Challenges & Achievements (NEW! 🏆)**
+    - Gamification system with points and levels
+    - 10 pre-configured challenges (weekly/monthly)
+    - Progress tracking with visual indicators
+    - Streak counting system
+    - Achievement unlocking
+    - 3 difficulty levels (easy/medium/hard)
+    - Badge system with icons and colors
+
+17. **Color Psychology Analysis (NEW! 🎨)**
+    - 15 colors with comprehensive psychology data
+    - Psychological effects and attributes
+    - Cultural perspectives and interpretations
+    - Mood associations
+    - Usage recommendations (when to use/avoid)
+    - Personal color preference tracking
+    - Interactive color selection
+
 ### 📋 Functional Entry URIs
 
 **API Endpoints:**
@@ -147,9 +173,12 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 **Web Pages:**
 - `/` - Dashboard (mood stats and recent entries)
 - `/log` - Log new mood entry
-- `/express` - 🎉 NEW! Express Your Mood (multi-modal interface)
-- `/insights` - 📊 NEW! Daily Mood Insights (analytics dashboard)
-- `/quick-select` - ⚡ NEW! Quick Mood Select (fast logging)
+- `/express` - 🎉 Express Your Mood (multi-modal interface)
+- `/insights` - 📊 Daily Mood Insights (analytics dashboard)
+- `/quick-select` - ⚡ Quick Mood Select (fast logging)
+- `/wellness-tips` - 🤖 NEW! AI Wellness Tips (personalized recommendations)
+- `/challenges` - 🏆 NEW! Challenges & Achievements (gamification)
+- `/color-psychology` - 🎨 NEW! Color Psychology (analysis tool)
 - `/activities` - Browse wellness activities
 - `/about` - About MoodMash and future vision
 
@@ -521,5 +550,5 @@ For questions or feedback, contact the development team.
 **Built with ❤️ using Hono + Cloudflare Pages**
 
 *Last Updated: 2025-11-22*  
-**Production Status**: ✅ LIVE at https://91e12bcf.moodmash.pages.dev  
-**Version**: 2.0.0 with Express, Insights, and Quick Select features
+**Production Status**: ✅ LIVE at https://fb118ec2.moodmash.pages.dev  
+**Version**: 3.0.0 with AI Wellness, Gamification, and Color Psychology features
