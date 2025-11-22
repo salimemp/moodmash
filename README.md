@@ -13,9 +13,9 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
-- **🚀 Production**: https://fb118ec2.moodmash.pages.dev (LIVE! v3.0)
+- **🚀 Production**: https://007a35c1.moodmash.pages.dev (LIVE! v4.0)
 - **Sandbox Demo**: https://3000-ivyhev2bykdm8jd3g25um-5634da27.sandbox.novita.ai
-- **API Health**: https://fb118ec2.moodmash.pages.dev/api/health
+- **API Health**: https://007a35c1.moodmash.pages.dev/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
 
 ## ✨ Current Features (MVP v1.0)
@@ -157,6 +157,16 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Personal color preference tracking
     - Interactive color selection
 
+18. **Social Feed - Community Mood Sharing (NEW! 🌐)**
+    - Share mood updates with community
+    - Like and comment on posts
+    - Privacy controls (Public, Friends, Private)
+    - Emotion-based feed filtering
+    - User profiles and interactions
+    - Content moderation system
+    - Engagement metrics tracking
+    - Time-based feed display
+
 ### 📋 Functional Entry URIs
 
 **API Endpoints:**
@@ -176,9 +186,10 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - `/express` - 🎉 Express Your Mood (multi-modal interface)
 - `/insights` - 📊 Daily Mood Insights (analytics dashboard)
 - `/quick-select` - ⚡ Quick Mood Select (fast logging)
-- `/wellness-tips` - 🤖 NEW! AI Wellness Tips (personalized recommendations)
-- `/challenges` - 🏆 NEW! Challenges & Achievements (gamification)
-- `/color-psychology` - 🎨 NEW! Color Psychology (analysis tool)
+- `/wellness-tips` - 🤖 AI Wellness Tips (personalized recommendations)
+- `/challenges` - 🏆 Challenges & Achievements (gamification)
+- `/color-psychology` - 🎨 Color Psychology (analysis tool)
+- `/social-feed` - 🌐 NEW! Social Feed (community mood sharing)
 - `/activities` - Browse wellness activities
 - `/about` - About MoodMash and future vision
 
@@ -550,5 +561,5 @@ For questions or feedback, contact the development team.
 **Built with ❤️ using Hono + Cloudflare Pages**
 
 *Last Updated: 2025-11-22*  
-**Production Status**: ✅ LIVE at https://fb118ec2.moodmash.pages.dev  
-**Version**: 3.0.0 with AI Wellness, Gamification, and Color Psychology features
+**Production Status**: ✅ LIVE at https://007a35c1.moodmash.pages.dev  
+**Version**: 4.0.0 with Social Feed - Community mood sharing feature
