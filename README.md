@@ -7,15 +7,15 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 ## 🎯 Project Overview
 
 - **Name**: MoodMash
-- **Version**: 8.12.0 (Service Worker Cache Fix - No HTML Caching)
+- **Version**: 8.13.0 (Onboarding Fix - Don't Show Again Checkbox)
 - **Goal**: Help users understand, track, and improve emotional wellbeing through data-driven insights
 - **Tech Stack**: Hono + TypeScript + Cloudflare Pages + D1 Database + TailwindCSS + Chart.js
-- **Status**: ✅ All systems operational - Navigation works without cache clearing
+- **Status**: ✅ All systems operational - Onboarding with user control
 
 ## 🌐 Live URLs
 
 - **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE v8.7!)
-- **🚀 Production**: https://03c5de60.moodmash.pages.dev (v8.12)
+- **🚀 Production**: https://d63db528.moodmash.pages.dev (v8.13)
 - **📊 Admin Dashboard**: https://moodmash.win/admin (Analytics & Monitoring)
 - **🔗 Legacy URLs**: v7.0 (https://5b2d3cf4.moodmash.pages.dev) | v5.0 (https://f4c6804f.moodmash.pages.dev)
 - **Login**: https://moodmash.win/login
