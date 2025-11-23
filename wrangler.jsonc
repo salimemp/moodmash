@@ -15,5 +15,12 @@
       "database_name": "moodmash",
       "database_id": "0483fe1c-facc-4e05-8123-48205b4561f4"
     }
+  ],
+  // R2 Storage for file uploads
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "moodmash-storage"
+    }
   ]
 }

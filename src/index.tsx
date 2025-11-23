@@ -1580,6 +1580,322 @@ app.get('/api/auth/magic-link/verify', async (c) => {
 });
 
 // =============================================================================
+// API TOKEN MANAGEMENT
+// =============================================================================
+
+// Create user API token
+app.post('/api/tokens/user', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    // Verify session
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { name, description, permissions, scopes, expires_in_days } = await c.req.json();
+
+    // Generate token
+    const token = `moodmash_user_${crypto.randomUUID().replace(/-/g, '')}`;
+    const tokenHash = await bcrypt.hash(token, 10);
+
+    // Calculate expiration
+    const expiresAt = expires_in_days 
+      ? new Date(Date.now() + expires_in_days * 24 * 60 * 60 * 1000)
+      : null;
+
+    // Insert token
+    const result = await DB.prepare(`
+      INSERT INTO user_api_tokens (
+        user_id, name, description, token, token_hash, 
+        permissions, scopes, expires_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      session.user_id,
+      name || 'Personal Access Token',
+      description || '',
+      token,
+      tokenHash,
+      JSON.stringify(permissions || ['read', 'write']),
+      JSON.stringify(scopes || ['moods', 'activities', 'profile']),
+      expiresAt ? expiresAt.toISOString() : null
+    ).run();
+
+    return c.json({
+      success: true,
+      token_id: result.meta.last_row_id,
+      token, // Only shown once!
+      name,
+      permissions,
+      scopes,
+      expires_at: expiresAt
+    });
+  } catch (error) {
+    console.error('Create token error:', error);
+    return c.json({ error: 'Failed to create token' }, 500);
+  }
+});
+
+// List user's API tokens (without showing actual tokens)
+app.get('/api/tokens/user', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const tokens = await DB.prepare(`
+      SELECT id, name, description, permissions, scopes, is_active, 
+             last_used_at, usage_count, expires_at, created_at
+      FROM user_api_tokens
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `).bind(session.user_id).all();
+
+    return c.json({ tokens: tokens.results });
+  } catch (error) {
+    console.error('List tokens error:', error);
+    return c.json({ error: 'Failed to list tokens' }, 500);
+  }
+});
+
+// Revoke user API token
+app.delete('/api/tokens/user/:id', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const tokenId = c.req.param('id');
+
+    await DB.prepare(`
+      DELETE FROM user_api_tokens WHERE id = ? AND user_id = ?
+    `).bind(tokenId, session.user_id).run();
+
+    return c.json({ success: true, message: 'Token revoked' });
+  } catch (error) {
+    console.error('Revoke token error:', error);
+    return c.json({ error: 'Failed to revoke token' }, 500);
+  }
+});
+
+// =============================================================================
+// R2 FILE STORAGE APIs
+// =============================================================================
+
+// Upload file to R2
+app.post('/api/files/upload', async (c) => {
+  const { DB, R2 } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    // Get form data
+    const formData = await c.req.formData();
+    const file = formData.get('file');
+    const fileType = formData.get('type') || 'document';
+    
+    if (!file) {
+      return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Generate unique file key
+    const timestamp = Date.now();
+    const randomStr = crypto.randomUUID().substring(0, 8);
+    const fileExtension = file.name.split('.').pop();
+    const fileKey = `${session.user_id}/${timestamp}-${randomStr}.${fileExtension}`;
+
+    // Upload to R2
+    const arrayBuffer = await file.arrayBuffer();
+    await R2.put(fileKey, arrayBuffer, {
+      httpMetadata: {
+        contentType: file.type
+      }
+    });
+
+    // Record in database
+    const result = await DB.prepare(`
+      INSERT INTO file_uploads (
+        user_id, filename, original_filename, file_key, 
+        file_size, mime_type, file_type
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      session.user_id,
+      fileKey,
+      file.name,
+      fileKey,
+      arrayBuffer.byteLength,
+      file.type,
+      fileType
+    ).run();
+
+    return c.json({
+      success: true,
+      file_id: result.meta.last_row_id,
+      file_key: fileKey,
+      filename: file.name,
+      size: arrayBuffer.byteLength,
+      mime_type: file.type,
+      access_url: `/api/files/${fileKey}`
+    });
+  } catch (error) {
+    console.error('File upload error:', error);
+    return c.json({ error: 'Failed to upload file' }, 500);
+  }
+});
+
+// Download file from R2
+app.get('/api/files/:key{.+}', async (c) => {
+  const { DB, R2 } = c.env;
+  
+  try {
+    const fileKey = c.req.param('key');
+    
+    // Get file metadata from database
+    const file = await DB.prepare(`
+      SELECT * FROM file_uploads WHERE file_key = ? AND deleted_at IS NULL
+    `).bind(fileKey).first();
+
+    if (!file) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Get file from R2
+    const object = await R2.get(fileKey);
+    
+    if (!object) {
+      return c.json({ error: 'File not found in storage' }, 404);
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || file.mime_type,
+        'Content-Length': object.size.toString(),
+        'Content-Disposition': `inline; filename="${file.original_filename}"`,
+        'Cache-Control': 'public, max-age=31536000'
+      }
+    });
+  } catch (error) {
+    console.error('File download error:', error);
+    return c.json({ error: 'Failed to download file' }, 500);
+  }
+});
+
+// List user's uploaded files
+app.get('/api/files', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const files = await DB.prepare(`
+      SELECT id, filename, original_filename, file_key, file_size, 
+             mime_type, file_type, uploaded_at
+      FROM file_uploads
+      WHERE user_id = ? AND deleted_at IS NULL
+      ORDER BY uploaded_at DESC
+      LIMIT 100
+    `).bind(session.user_id).all();
+
+    return c.json({ 
+      files: files.results.map(f => ({
+        ...f,
+        access_url: `/api/files/${f.file_key}`
+      }))
+    });
+  } catch (error) {
+    console.error('List files error:', error);
+    return c.json({ error: 'Failed to list files' }, 500);
+  }
+});
+
+// Delete file
+app.delete('/api/files/:id', async (c) => {
+  const { DB, R2 } = c.env;
+  
+  try {
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    const session = await DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const fileId = c.req.param('id');
+
+    // Get file info
+    const file = await DB.prepare(`
+      SELECT file_key FROM file_uploads WHERE id = ? AND user_id = ?
+    `).bind(fileId, session.user_id).first();
+
+    if (!file) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    // Delete from R2
+    await R2.delete(file.file_key);
+
+    // Mark as deleted in database
+    await DB.prepare(`
+      UPDATE file_uploads SET deleted_at = datetime('now') WHERE id = ?
+    `).bind(fileId).run();
+
+    return c.json({ success: true, message: 'File deleted' });
+  } catch (error) {
+    console.error('Delete file error:', error);
+    return c.json({ error: 'Failed to delete file' }, 500);
+  }
+});
+
+// =============================================================================
 // SOCIAL FEED APIS
 // =============================================================================
 
@@ -2069,6 +2385,11 @@ app.get('/social-feed', (c) => {
     <script src="/static/social-feed.js"></script>
   `;
   return c.html(renderHTML('Social Feed', content, 'social-feed'));
+});
+
+// API Documentation page
+app.get('/api-docs', (c) => {
+  return c.redirect('/static/api-docs.html');
 });
 
 // About page
