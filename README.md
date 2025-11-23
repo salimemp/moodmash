@@ -14,8 +14,8 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
-- **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE v8.5!)
-- **🚀 Production**: https://f2c30eae.moodmash.pages.dev (v8.5)
+- **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE v8.6!)
+- **🚀 Production**: https://7e006d38.moodmash.pages.dev (v8.6)
 - **📊 Admin Dashboard**: https://moodmash.win/admin (Analytics & Monitoring)
 - **🔗 Legacy URLs**: v7.0 (https://5b2d3cf4.moodmash.pages.dev) | v5.0 (https://f4c6804f.moodmash.pages.dev)
 - **Login**: https://moodmash.win/login
