@@ -33,24 +33,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png">
         
         <!-- Stylesheets -->
-        <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
-        
-        <!-- Tailwind Config -->
-        <script>
-          tailwind.config = {
-            darkMode: 'class',
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
-                }
-              }
-            }
-          }
-        </script>
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
         <!-- Load i18n and utils first -->
@@ -66,6 +50,22 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+        
+        <!-- Load Tailwind AFTER our scripts so it can scan dynamically rendered content -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+          tailwind.config = {
+            darkMode: 'class',
+            theme: {
+              extend: {
+                colors: {
+                  primary: '#6366f1',
+                  secondary: '#8b5cf6',
+                }
+              }
+            }
+          }
+        </script>
         
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>

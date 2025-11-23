@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodMash Diagnostic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <h1 class="text-3xl mb-6">MoodMash Diagnostic Test</h1>
+    
+    <div id="results" class="space-y-4"></div>
+    
+    <script src="/static/i18n.js"></script>
+    <script>
+        const results = [];
+        
+        // Test 1: Check if i18n is loaded
+        results.push({
+            test: 'i18n loaded',
+            passed: typeof i18n !== 'undefined',
+            details: typeof i18n
+        });
+        
+        // Test 2: Check if window.i18n is available
+        results.push({
+            test: 'window.i18n available',
+            passed: typeof window.i18n !== 'undefined',
+            details: typeof window.i18n
+        });
+        
+        // Test 3: Try to translate a key
+        let translationResult = 'ERROR';
+        try {
+            if (typeof i18n !== 'undefined') {
+                translationResult = i18n.t('auth_welcome_back');
+            }
+        } catch (e) {
+            translationResult = e.message;
+        }
+        results.push({
+            test: 'Translation test (auth_welcome_back)',
+            passed: translationResult === 'Welcome Back',
+            details: translationResult
+        });
+        
+        // Test 4: Check if i18n.translations exists
+        results.push({
+            test: 'i18n.translations exists',
+            passed: typeof i18n !== 'undefined' && i18n.translations !== undefined,
+            details: typeof i18n !== 'undefined' ? Object.keys(i18n.translations || {}).length + ' languages' : 'N/A'
+        });
+        
+        // Display results
+        const resultsDiv = document.getElementById('results');
+        results.forEach(result => {
+            const div = document.createElement('div');
+            div.className = `p-4 rounded ${result.passed ? 'bg-green-900' : 'bg-red-900'}`;
+            div.innerHTML = `
+                <div class="font-bold">${result.passed ? '✅' : '❌'} ${result.test}</div>
+                <div class="text-sm mt-2">Details: ${result.details}</div>
+            `;
+            resultsDiv.appendChild(div);
+        });
+        
+        // Test 5: Check if auth.js can load
+        fetch('/static/auth.js')
+            .then(r => {
+                const div = document.createElement('div');
+                div.className = `p-4 rounded ${r.ok ? 'bg-green-900' : 'bg-red-900'}`;
+                div.innerHTML = `
+                    <div class="font-bold">${r.ok ? '✅' : '❌'} auth.js HTTP status</div>
+                    <div class="text-sm mt-2">Status: ${r.status}</div>
+                `;
+                resultsDiv.appendChild(div);
+            });
+            
+        // Test 6: Check if log.js can load
+        fetch('/static/log.js')
+            .then(r => {
+                const div = document.createElement('div');
+                div.className = `p-4 rounded ${r.ok ? 'bg-green-900' : 'bg-red-900'}`;
+                div.innerHTML = `
+                    <div class="font-bold">${r.ok ? '✅' : '❌'} log.js HTTP status</div>
+                    <div class="text-sm mt-2">Status: ${r.status}</div>
+                `;
+                resultsDiv.appendChild(div);
+            });
+    </script>
+</body>
+</html>

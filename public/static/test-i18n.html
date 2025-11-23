@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>i18n Test</title>
+</head>
+<body style="font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0;">
+    <h1>MoodMash i18n Diagnostic Test</h1>
+    <div id="results"></div>
+    
+    <script src="/static/i18n.js"></script>
+    <script>
+        const log = (msg, color = '#0f0') => {
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.style.padding = '5px';
+            div.style.borderBottom = '1px solid #333';
+            div.textContent = msg;
+            document.getElementById('results').appendChild(div);
+        };
+        
+        setTimeout(() => {
+            log('=== TEST RESULTS ===', '#ff0');
+            log('');
+            
+            // Test 1
+            log(`1. typeof i18n: ${typeof i18n}`);
+            log(`2. typeof window.i18n: ${typeof window.i18n}`);
+            
+            // Test 2
+            if (typeof i18n !== 'undefined') {
+                log(`3. i18n exists: YES`, '#0f0');
+                log(`4. i18n.translations exists: ${!!i18n.translations}`);
+                log(`5. i18n.currentLanguage: ${i18n.currentLanguage}`);
+                
+                // Test 3
+                const result = i18n.t('auth_welcome_back');
+                log(`6. i18n.t('auth_welcome_back'): "${result}"`, result === 'Welcome Back' ? '#0f0' : '#f00');
+                
+                if (result === 'Welcome Back') {
+                    log('✅ SUCCESS: Translations working!', '#0f0');
+                } else {
+                    log('❌ FAILURE: Translation returned raw key!', '#f00');
+                }
+            } else {
+                log('❌ CRITICAL: i18n not loaded!', '#f00');
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
