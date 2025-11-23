@@ -7,15 +7,16 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 ## 🎯 Project Overview
 
 - **Name**: MoodMash
-- **Version**: 7.0.0 (Production Ready - Public API)
+- **Version**: 8.0.0 (Enterprise - Analytics, Security & Media)
 - **Goal**: Help users understand, track, and improve emotional wellbeing through data-driven insights
 - **Tech Stack**: Hono + TypeScript + Cloudflare Pages + D1 Database + TailwindCSS + Chart.js
 
 ## 🌐 Live URLs
 
-- **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE!)
-- **🚀 Production**: https://5b2d3cf4.moodmash.pages.dev (v7.0)
-- **🔗 Legacy URL**: https://f4c6804f.moodmash.pages.dev (v5.0)
+- **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE v8.0!)
+- **🚀 Production**: https://366951f3.moodmash.pages.dev (v8.0)
+- **📊 Admin Dashboard**: https://moodmash.win/admin (Analytics & Monitoring)
+- **🔗 Legacy URLs**: v7.0 (https://5b2d3cf4.moodmash.pages.dev) | v5.0 (https://f4c6804f.moodmash.pages.dev)
 - **Login**: https://moodmash.win/login
 - **Register**: https://moodmash.win/register
 - **Magic Link Auth**: https://moodmash.win/auth/magic
@@ -216,7 +217,7 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Content type detection
     - File size validation
 
-22. **API Token System (NEW! 🔑)**
+22. **API Token System 🔑**
     - User API tokens (`moodmash_user_xxx`)
     - Account API tokens (`moodmash_acct_xxx`)
     - Bcrypt token hashing for security
@@ -227,6 +228,52 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - IP whitelist support
     - Comprehensive API documentation at `/api-docs`
     - RESTful token management endpoints
+
+23. **Analytics Engine (NEW! 📊)**
+    - Real-time API call tracking
+    - Page view analytics with device detection
+    - User behavior analytics and engagement metrics
+    - Error logging with severity levels
+    - Conversion funnel tracking
+    - Performance monitoring (response times)
+    - Comprehensive event tracking
+    - Admin dashboard with charts and visualizations
+    - 24-hour analytics windows
+    - User session tracking
+
+24. **Application Security (NEW! 🛡️)**
+    - Rate limiting (100 requests/hour per IP)
+    - SQL injection detection and prevention
+    - XSS (Cross-Site Scripting) prevention
+    - CSRF token protection
+    - IP blacklist management
+    - Security incident logging
+    - Content Security Policy (CSP) headers
+    - Input sanitization
+    - Secure HTTP headers (X-Frame-Options, HSTS, etc.)
+    - Threat detection and automatic blocking
+
+25. **Media Processing (NEW! 🎬)**
+    - R2 cloud storage integration
+    - File upload API (images, videos, audio, documents)
+    - File metadata tracking
+    - Image processing queue (thumbnail, resize, compress)
+    - Video processing queue (transcode, compress, trim)
+    - Media access control (private, public, friends)
+    - File size validation (50MB limit)
+    - MIME type detection
+    - Processing status tracking
+    - Variant generation support
+
+26. **Secrets Management (NEW! 🔐)**
+    - Encrypted secrets storage (AES-256)
+    - Environment-specific configuration
+    - Cloudflare Secrets integration
+    - Secret rotation tracking
+    - Access audit logging
+    - Master key encryption
+    - Category-based organization
+    - Secret expiration support
 
 ### 📋 Functional Entry URIs
 
@@ -260,6 +307,14 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - 🔑 `POST /api/tokens/account` - Create account API token (admin)
 - 🔑 `GET /api/tokens/account` - List account API tokens (admin)
 - 🔑 `DELETE /api/tokens/account/:token` - Delete account API token (admin)
+- 📊 `GET /api/analytics/dashboard` - Analytics overview (admin only)
+- 📊 `GET /api/analytics/users/:userId` - User-specific analytics
+- 🎬 `POST /api/media/upload` - Upload file to R2 storage
+- 🎬 `GET /api/media/:id` - Download media file
+- 🎬 `GET /api/media?type=image` - List user's media files
+- 🎬 `DELETE /api/media/:id` - Delete media file
+- 🔐 `GET /api/secrets/:key` - Retrieve secret (admin, requires master key)
+- 🔐 `POST /api/secrets` - Store secret (admin, requires master key)
 
 **Web Pages:**
 - `/` - Dashboard (mood stats and recent entries)
@@ -267,6 +322,7 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - `/register` - 🔐 User Registration (create account)
 - `/auth/magic` - 🪄 Magic Link Verification (passwordless login)
 - `/api-docs` - 🔑 API Documentation (for developers)
+- `/admin` - 📊 Admin Dashboard (Analytics & Monitoring)
 - `/log` - Log new mood entry
 - `/express` - 🎉 Express Your Mood (multi-modal interface)
 - `/insights` - 📊 Daily Mood Insights (analytics dashboard)
