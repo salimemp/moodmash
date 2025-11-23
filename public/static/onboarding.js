@@ -120,6 +120,9 @@ class OnboardingManager {
         const isLast = this.currentSlide === slides.length - 1;
         const isFirst = this.currentSlide === 0;
         
+        // Get checkbox state
+        const dontShowAgain = localStorage.getItem('onboarding_dont_show') === 'true';
+        
         let featuresHTML = slide.features.map(f => `
             <div class="flex items-start mb-3">
                 <i class="fas fa-check-circle text-green-500 mt-1 mr-3 flex-shrink-0"></i>
@@ -203,6 +206,19 @@ class OnboardingManager {
                         </button>
                     </div>
                     
+                    
+                    <!-- Don't show again checkbox -->
+                    <div class="mt-4 flex items-center justify-center">
+                        <label class="flex items-center cursor-pointer text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
+                            <input type="checkbox" 
+                                   id="dont-show-again" 
+                                   ${dontShowAgain ? 'checked' : ''}
+                                   onchange="onboardingManager.toggleDontShow(this.checked)"
+                                   class="mr-2 w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary">
+                            ${i18n.t('onboarding_dont_show_again') || "Don't show again"}
+                        </label>
+                    </div>
+                    
                     ${isLast ? `
                         <button onclick="onboardingManager.complete()" 
                                 class="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -243,15 +259,31 @@ class OnboardingManager {
     }
     
     complete() {
+        // Mark as completed
         localStorage.setItem('onboarding_completed', 'true');
         this.hasSeenOnboarding = true;
         this.close();
     }
     
     close() {
+        // When closing via X button, respect the "don't show again" checkbox
+        const dontShow = localStorage.getItem('onboarding_dont_show') === 'true';
+        if (dontShow) {
+            localStorage.setItem('onboarding_completed', 'true');
+            this.hasSeenOnboarding = true;
+        }
+        
         const modal = document.getElementById('onboarding-modal');
         if (modal) {
             modal.remove();
+        }
+    }
+    
+    toggleDontShow(checked) {
+        if (checked) {
+            localStorage.setItem('onboarding_dont_show', 'true');
+        } else {
+            localStorage.removeItem('onboarding_dont_show');
         }
     }
     
@@ -262,6 +294,7 @@ class OnboardingManager {
     
     reset() {
         localStorage.removeItem('onboarding_completed');
+        localStorage.removeItem('onboarding_dont_show');
         this.hasSeenOnboarding = false;
     }
 }
