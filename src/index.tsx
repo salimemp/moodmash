@@ -15,7 +15,52 @@ import {
   type Session
 } from './auth';
 
+// Analytics and Security
+import { 
+  analyticsMiddleware, 
+  trackPageView, 
+  trackEvent, 
+  logError 
+} from './middleware/analytics';
+import { 
+  securityMiddleware, 
+  rateLimiter, 
+  sanitizeInput,
+  isValidEmail,
+  isStrongPassword
+} from './middleware/security';
+
+// Media Processing
+import {
+  uploadToR2,
+  downloadFromR2,
+  deleteFromR2,
+  generateFileKey,
+  detectFileType,
+  validateFileUpload,
+  saveMediaFile,
+  getMediaFile,
+  listUserMediaFiles,
+  deleteMediaFile,
+  type MediaFile
+} from './utils/media';
+
+// Secrets Management
+import {
+  getSecret,
+  storeSecret,
+  getEnvVar,
+  setEnvVar,
+  getCloudflareSecret
+} from './utils/secrets';
+
 const app = new Hono<{ Bindings: Bindings }>();
+
+// Global Security Middleware (applies to all routes)
+app.use('*', securityMiddleware);
+
+// Analytics Middleware (track all API calls)
+app.use('/api/*', analyticsMiddleware);
 
 // Enable CORS for API routes
 app.use('/api/*', cors());
@@ -1896,6 +1941,340 @@ app.delete('/api/files/:id', async (c) => {
 });
 
 // =============================================================================
+// =============================================================================
+// ANALYTICS & MONITORING APIS
+// =============================================================================
+
+// Get analytics dashboard data (admin only)
+app.get('/api/analytics/dashboard', async (c) => {
+  try {
+    const { env } = c;
+    
+    // TODO: Add admin authentication check
+    
+    const [stats, recentErrors, topEndpoints] = await Promise.all([
+      // Overall stats
+      env.DB.prepare(`
+        SELECT 
+          COUNT(*) as total_events,
+          COUNT(DISTINCT user_id) as unique_users,
+          COUNT(CASE WHEN event_type = 'error' THEN 1 END) as error_count
+        FROM analytics_events
+        WHERE created_at > datetime('now', '-24 hours')
+      `).first(),
+      
+      // Recent errors
+      env.DB.prepare(`
+        SELECT error_type, severity, error_message, created_at
+        FROM error_logs
+        WHERE resolved = 0
+        ORDER BY created_at DESC
+        LIMIT 10
+      `).all(),
+      
+      // Top API endpoints by call count
+      env.DB.prepare(`
+        SELECT 
+          endpoint, 
+          COUNT(*) as call_count,
+          AVG(response_time_ms) as avg_response_time
+        FROM api_metrics
+        WHERE created_at > datetime('now', '-24 hours')
+        GROUP BY endpoint
+        ORDER BY call_count DESC
+        LIMIT 10
+      `).all()
+    ]);
+
+    return c.json({
+      stats: stats || {},
+      recentErrors: recentErrors.results,
+      topEndpoints: topEndpoints.results
+    });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'medium', { endpoint: '/api/analytics/dashboard' });
+    return c.json({ error: 'Failed to fetch analytics' }, 500);
+  }
+});
+
+// Get user analytics
+app.get('/api/analytics/users/:userId', async (c) => {
+  try {
+    const userId = parseInt(c.req.param('userId'));
+    const { env } = c;
+    
+    const userAnalytics = await env.DB.prepare(`
+      SELECT * FROM user_analytics WHERE user_id = ?
+    `).bind(userId).first();
+
+    if (!userAnalytics) {
+      return c.json({ error: 'User analytics not found' }, 404);
+    }
+
+    return c.json({ analytics: userAnalytics });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'low');
+    return c.json({ error: 'Failed to fetch user analytics' }, 500);
+  }
+});
+
+// =============================================================================
+// MEDIA MANAGEMENT APIS
+// =============================================================================
+
+// Upload media file
+app.post('/api/media/upload', async (c) => {
+  try {
+    const { env } = c;
+    const formData = await c.req.formData();
+    const file = formData.get('file') as File;
+    const visibility = (formData.get('visibility') as string) || 'private';
+    
+    if (!file) {
+      return c.json({ error: 'No file provided' }, 400);
+    }
+
+    // Get user from session
+    const sessionToken = getCookie(c, 'session');
+    if (!sessionToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const session = await env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+
+    if (!session) {
+      return c.json({ error: 'Invalid session' }, 401);
+    }
+
+    const userId = session.user_id as number;
+
+    // Validate file
+    const validation = validateFileUpload(file, 50);
+    if (!validation.valid) {
+      return c.json({ error: validation.error }, 400);
+    }
+
+    // Generate file key and upload to R2
+    const fileKey = generateFileKey(userId, file.name);
+    const arrayBuffer = await file.arrayBuffer();
+    
+    await uploadToR2(env.R2, fileKey, arrayBuffer, {
+      'content-type': file.type
+    });
+
+    // Save metadata to database
+    const mediaFile: MediaFile = {
+      userId,
+      fileKey,
+      originalFilename: file.name,
+      fileType: detectFileType(file.type),
+      mimeType: file.type,
+      fileSizeBytes: file.size,
+      processingStatus: 'completed',
+      visibility: visibility as 'private' | 'public' | 'friends'
+    };
+
+    const fileId = await saveMediaFile(env.DB, mediaFile);
+
+    // Track event
+    await trackEvent(c, 'user_action', 'file_upload', {
+      fileType: mediaFile.fileType,
+      fileSize: file.size
+    }, userId);
+
+    return c.json({
+      id: fileId,
+      fileKey,
+      url: `https://moodmash.win/api/media/${fileId}`,
+      message: 'File uploaded successfully'
+    });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'high', { endpoint: '/api/media/upload' });
+    return c.json({ error: 'Failed to upload file' }, 500);
+  }
+});
+
+// Get media file
+app.get('/api/media/:id', async (c) => {
+  try {
+    const fileId = parseInt(c.req.param('id'));
+    const { env } = c;
+
+    // Get user from session (optional for public files)
+    const sessionToken = getCookie(c, 'session');
+    let userId: number | undefined;
+    
+    if (sessionToken) {
+      const session = await env.DB.prepare(`
+        SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+      `).bind(sessionToken).first();
+      userId = session?.user_id as number | undefined;
+    }
+
+    // Get file metadata
+    const mediaFile = await getMediaFile(env.DB, fileId, userId);
+    if (!mediaFile) {
+      return c.json({ error: 'File not found or access denied' }, 404);
+    }
+
+    // Download from R2
+    const object = await downloadFromR2(env.R2, mediaFile.fileKey);
+    if (!object) {
+      return c.json({ error: 'File not found in storage' }, 404);
+    }
+
+    // Return file
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': mediaFile.mimeType,
+        'Content-Disposition': `inline; filename="${mediaFile.originalFilename}"`
+      }
+    });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'medium');
+    return c.json({ error: 'Failed to retrieve file' }, 500);
+  }
+});
+
+// List user's media files
+app.get('/api/media', async (c) => {
+  try {
+    const { env } = c;
+    const fileType = c.req.query('type');
+    
+    // Get user from session
+    const sessionToken = getCookie(c, 'session');
+    if (!sessionToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const session = await env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+
+    if (!session) {
+      return c.json({ error: 'Invalid session' }, 401);
+    }
+
+    const userId = session.user_id as number;
+    const files = await listUserMediaFiles(env.DB, userId, fileType);
+
+    return c.json({ files });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'low');
+    return c.json({ error: 'Failed to list files' }, 500);
+  }
+});
+
+// Delete media file
+app.delete('/api/media/:id', async (c) => {
+  try {
+    const fileId = parseInt(c.req.param('id'));
+    const { env } = c;
+    
+    // Get user from session
+    const sessionToken = getCookie(c, 'session');
+    if (!sessionToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const session = await env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+
+    if (!session) {
+      return c.json({ error: 'Invalid session' }, 401);
+    }
+
+    const userId = session.user_id as number;
+    const deleted = await deleteMediaFile(env.DB, env.R2, fileId, userId);
+
+    if (!deleted) {
+      return c.json({ error: 'File not found or access denied' }, 404);
+    }
+
+    // Track event
+    await trackEvent(c, 'user_action', 'file_delete', { fileId }, userId);
+
+    return c.json({ message: 'File deleted successfully' });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'medium');
+    return c.json({ error: 'Failed to delete file' }, 500);
+  }
+});
+
+// =============================================================================
+// SECRETS MANAGEMENT APIS (Admin only)
+// =============================================================================
+
+// Get secret (requires master key)
+app.get('/api/secrets/:key', async (c) => {
+  try {
+    const keyName = c.req.param('key');
+    const masterKey = c.req.header('X-Master-Key');
+    
+    if (!masterKey) {
+      return c.json({ error: 'Master key required' }, 401);
+    }
+
+    const { env } = c;
+    const value = await getSecret(env.DB, keyName, masterKey);
+    
+    if (!value) {
+      return c.json({ error: 'Secret not found' }, 404);
+    }
+
+    return c.json({ value });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'critical', { endpoint: '/api/secrets/:key' });
+    return c.json({ error: 'Failed to retrieve secret' }, 500);
+  }
+});
+
+// Store secret (requires master key and admin auth)
+app.post('/api/secrets', async (c) => {
+  try {
+    const { keyName, value, description, category } = await c.req.json();
+    const masterKey = c.req.header('X-Master-Key');
+    
+    if (!masterKey) {
+      return c.json({ error: 'Master key required' }, 401);
+    }
+
+    // Get user from session
+    const sessionToken = getCookie(c, 'session');
+    if (!sessionToken) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const { env } = c;
+    const session = await env.DB.prepare(`
+      SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
+    `).bind(sessionToken).first();
+
+    if (!session) {
+      return c.json({ error: 'Invalid session' }, 401);
+    }
+
+    await storeSecret(
+      env.DB,
+      keyName,
+      value,
+      description || '',
+      category || 'general',
+      session.user_id as number,
+      masterKey
+    );
+
+    return c.json({ message: 'Secret stored successfully' });
+  } catch (error: any) {
+    await logError(c, 'api', error.message, 'critical');
+    return c.json({ error: 'Failed to store secret' }, 500);
+  }
+});
+
 // SOCIAL FEED APIS
 // =============================================================================
 
@@ -2393,6 +2772,12 @@ app.get('/api-docs', (c) => {
 });
 
 // About page
+// Admin Dashboard Route
+app.get('/admin', (c) => {
+  // TODO: Add admin authentication check
+  return c.redirect('/static/admin-dashboard.html');
+});
+
 app.get('/about', (c) => {
   return c.html(`
     <!DOCTYPE html>

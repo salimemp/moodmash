@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoodMash Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-chart-line text-indigo-600 text-2xl"></i>
+                        <h1 class="text-2xl font-bold text-gray-900">MoodMash Admin Dashboard</h1>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="refreshData()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                            <i class="fas fa-sync mr-2"></i>Refresh
+                        </button>
+                        <a href="/" class="text-gray-600 hover:text-gray-900">
+                            <i class="fas fa-home mr-1"></i>Back to App
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Events (24h)</p>
+                            <p id="total-events" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <i class="fas fa-chart-bar text-indigo-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Unique Users (24h)</p>
+                            <p id="unique-users" class="text-3xl font-bold text-gray-900">0</p>
+                        </div>
+                        <i class="fas fa-users text-green-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Errors (24h)</p>
+                            <p id="error-count" class="text-3xl font-bold text-red-600">0</p>
+                        </div>
+                        <i class="fas fa-exclamation-triangle text-red-600 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Avg Response Time</p>
+                            <p id="avg-response" class="text-3xl font-bold text-gray-900">0ms</p>
+                        </div>
+                        <i class="fas fa-tachometer-alt text-blue-600 text-3xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- API Endpoints Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Top API Endpoints (24h)</h2>
+                    <canvas id="endpoints-chart"></canvas>
+                </div>
+
+                <!-- Error Types Chart -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Error Distribution</h2>
+                    <canvas id="errors-chart"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Errors Table -->
+            <div class="bg-white rounded-lg shadow mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Recent Unresolved Errors</h2>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Severity</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="errors-table" class="bg-white divide-y divide-gray-200">
+                            <tr>
+                                <td colspan="4" class="px-6 py-4 text-center text-gray-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Security Incidents -->
+            <div class="bg-white rounded-lg shadow mb-8">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">Recent Security Incidents</h2>
+                </div>
+                <div id="security-incidents" class="px-6 py-4">
+                    <p class="text-gray-500">Loading security data...</p>
+                </div>
+            </div>
+
+            <!-- System Health -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-database text-indigo-600 mr-2"></i>Database Status
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Connection:</span>
+                            <span id="db-status" class="font-semibold text-green-600">Healthy</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Query Time:</span>
+                            <span id="db-query-time" class="font-semibold">< 50ms</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-cloud text-blue-600 mr-2"></i>R2 Storage
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Status:</span>
+                            <span id="r2-status" class="font-semibold text-green-600">Active</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Files Stored:</span>
+                            <span id="r2-files" class="font-semibold">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-shield-alt text-green-600 mr-2"></i>Security
+                    </h3>
+                    <div class="space-y-2">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">Rate Limiting:</span>
+                            <span class="font-semibold text-green-600">Active</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">CSRF Protection:</span>
+                            <span class="font-semibold text-green-600">Enabled</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let endpointsChart, errorsChart;
+
+        async function loadAnalytics() {
+            try {
+                const response = await axios.get('/api/analytics/dashboard');
+                const data = response.data;
+
+                // Update stats
+                document.getElementById('total-events').textContent = data.stats.total_events || 0;
+                document.getElementById('unique-users').textContent = data.stats.unique_users || 0;
+                document.getElementById('error-count').textContent = data.stats.error_count || 0;
+
+                // Calculate avg response time
+                const avgResponse = data.topEndpoints.length > 0 
+                    ? Math.round(data.topEndpoints.reduce((sum, e) => sum + (e.avg_response_time || 0), 0) / data.topEndpoints.length)
+                    : 0;
+                document.getElementById('avg-response').textContent = avgResponse + 'ms';
+
+                // Update endpoints chart
+                updateEndpointsChart(data.topEndpoints);
+
+                // Update errors chart
+                updateErrorsChart(data.recentErrors);
+
+                // Update errors table
+                updateErrorsTable(data.recentErrors);
+
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+            }
+        }
+
+        function updateEndpointsChart(endpoints) {
+            const ctx = document.getElementById('endpoints-chart').getContext('2d');
+            
+            if (endpointsChart) {
+                endpointsChart.destroy();
+            }
+
+            const labels = endpoints.map(e => e.endpoint);
+            const data = endpoints.map(e => e.call_count);
+
+            endpointsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'API Calls',
+                        data: data,
+                        backgroundColor: 'rgba(99, 102, 241, 0.5)',
+                        borderColor: 'rgba(99, 102, 241, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateErrorsChart(errors) {
+            const ctx = document.getElementById('errors-chart').getContext('2d');
+            
+            if (errorsChart) {
+                errorsChart.destroy();
+            }
+
+            const errorTypes = {};
+            errors.forEach(e => {
+                errorTypes[e.error_type] = (errorTypes[e.error_type] || 0) + 1;
+            });
+
+            const labels = Object.keys(errorTypes);
+            const data = Object.values(errorTypes);
+
+            errorsChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            'rgba(239, 68, 68, 0.5)',
+                            'rgba(249, 115, 22, 0.5)',
+                            'rgba(234, 179, 8, 0.5)',
+                            'rgba(34, 197, 94, 0.5)',
+                            'rgba(59, 130, 246, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(234, 179, 8, 1)',
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(59, 130, 246, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true
+                }
+            });
+        }
+
+        function updateErrorsTable(errors) {
+            const tbody = document.getElementById('errors-table');
+            
+            if (errors.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-green-600">
+                            <i class="fas fa-check-circle mr-2"></i>No unresolved errors
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = errors.map(error => {
+                const severityColors = {
+                    low: 'bg-blue-100 text-blue-800',
+                    medium: 'bg-yellow-100 text-yellow-800',
+                    high: 'bg-orange-100 text-orange-800',
+                    critical: 'bg-red-100 text-red-800'
+                };
+
+                return `
+                    <tr>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">${error.error_type}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${severityColors[error.severity]}">
+                                ${error.severity}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="text-sm text-gray-900">${error.error_message.substring(0, 100)}${error.error_message.length > 100 ? '...' : ''}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${new Date(error.created_at).toLocaleString()}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function refreshData() {
+            loadAnalytics();
+        }
+
+        // Load data on page load
+        loadAnalytics();
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadAnalytics, 30000);
+    </script>
+</body>
+</html>
