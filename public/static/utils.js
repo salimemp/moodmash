@@ -172,8 +172,17 @@ function renderNavigation(currentPage = '') {
                             </div>
                         </button>
                         
-                        <!-- User Profile -->
-                        <div id="user-profile-container"></div>
+                        <!-- Auth Buttons -->
+                        <div class="flex items-center space-x-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
+                            <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                                <i class="fas fa-sign-in-alt mr-1"></i>
+                                <span class="hidden sm:inline">Login</span>
+                            </a>
+                            <a href="/register" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md">
+                                <i class="fas fa-user-plus mr-1"></i>
+                                <span class="hidden sm:inline">Sign Up</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
