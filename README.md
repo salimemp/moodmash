@@ -7,16 +7,19 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 ## 🎯 Project Overview
 
 - **Name**: MoodMash
-- **Version**: 1.0.0 (MVP)
+- **Version**: 7.0.0 (Production Ready - Public API)
 - **Goal**: Help users understand, track, and improve emotional wellbeing through data-driven insights
 - **Tech Stack**: Hono + TypeScript + Cloudflare Pages + D1 Database + TailwindCSS + Chart.js
 
 ## 🌐 Live URLs
 
-- **🚀 Production**: https://f4c6804f.moodmash.pages.dev (LIVE! v5.0)
-- **Login**: https://f4c6804f.moodmash.pages.dev/login
-- **Register**: https://f4c6804f.moodmash.pages.dev/register
-- **API Health**: https://f4c6804f.moodmash.pages.dev/api/health
+- **🚀 Production**: https://5b2d3cf4.moodmash.pages.dev (LIVE! v7.0)
+- **🔗 Legacy URL**: https://f4c6804f.moodmash.pages.dev (v5.0)
+- **Login**: https://5b2d3cf4.moodmash.pages.dev/login
+- **Register**: https://5b2d3cf4.moodmash.pages.dev/register
+- **Magic Link Auth**: https://5b2d3cf4.moodmash.pages.dev/auth/magic
+- **API Documentation**: https://5b2d3cf4.moodmash.pages.dev/api-docs
+- **API Health**: https://5b2d3cf4.moodmash.pages.dev/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
 - **Custom Domain**: moodmash.win (pending configuration)
 
@@ -169,11 +172,11 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - Engagement metrics tracking
     - Time-based feed display
 
-19. **Authentication System (NEW! 🔐)**
+19. **Authentication System 🔐**
     - Complete user registration and login flow
     - Beautiful gradient UI matching modern design patterns
     - Login and Register pages with tab switching
-    - Email-based authentication with password hashing
+    - Email-based authentication with bcrypt password hashing (production-ready)
     - Password visibility toggle for UX
     - Session management with "Trust Device" option (30-day sessions)
     - Security audit logging for all auth events
@@ -189,6 +192,41 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
     - CSRF protection ready
     - Account verification system
     - Trusted devices management
+
+20. **Magic Link Authentication (NEW! 🪄)**
+    - Passwordless email-based login
+    - One-click authentication via email link
+    - 15-minute expiring tokens
+    - Single-use link security
+    - Auto-registration for new users
+    - UUID v4 token generation
+    - IP address and user agent tracking
+    - Comprehensive audit logging
+    - HttpOnly/Secure/SameSite=Strict cookies
+    - Beautiful verification page with loading states
+    - Mobile-friendly quick access
+
+21. **R2 Object Storage (NEW! 📦)**
+    - Cloudflare R2 bucket integration
+    - File upload API (avatars, mood images, voice notes)
+    - File download API with streaming
+    - File metadata tracking
+    - User file management
+    - Secure file access control
+    - Content type detection
+    - File size validation
+
+22. **API Token System (NEW! 🔑)**
+    - User API tokens (`moodmash_user_xxx`)
+    - Account API tokens (`moodmash_acct_xxx`)
+    - Bcrypt token hashing for security
+    - Configurable permissions (read, write, delete)
+    - Rate limiting (100/hour, 1000/day for user tokens)
+    - Token expiration support
+    - Usage tracking and analytics
+    - IP whitelist support
+    - Comprehensive API documentation at `/api-docs`
+    - RESTful token management endpoints
 
 ### 📋 Functional Entry URIs
 
@@ -210,11 +248,25 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - 🔐 `GET /api/auth/webauthn/login/challenge` - WebAuthn challenge
 - 🔐 `POST /api/auth/webauthn/login/verify` - WebAuthn verification
 - 🔐 `POST /api/auth/password-reset/request` - Password reset request
+- 🪄 `POST /api/auth/magic-link/request` - Request magic link
+- 🪄 `GET /api/auth/magic-link/verify?token=xxx` - Verify magic link token
+- 📦 `POST /api/files/upload` - Upload file to R2
+- 📦 `GET /api/files` - List user files
+- 📦 `GET /api/files/:key` - Download file
+- 📦 `DELETE /api/files/:id` - Delete file
+- 🔑 `POST /api/tokens/user` - Create user API token
+- 🔑 `GET /api/tokens/user` - List user API tokens
+- 🔑 `DELETE /api/tokens/user/:token` - Delete user API token
+- 🔑 `POST /api/tokens/account` - Create account API token (admin)
+- 🔑 `GET /api/tokens/account` - List account API tokens (admin)
+- 🔑 `DELETE /api/tokens/account/:token` - Delete account API token (admin)
 
 **Web Pages:**
 - `/` - Dashboard (mood stats and recent entries)
-- `/login` - 🔐 NEW! User Login (beautiful auth UI)
-- `/register` - 🔐 NEW! User Registration (create account)
+- `/login` - 🔐 User Login (beautiful auth UI)
+- `/register` - 🔐 User Registration (create account)
+- `/auth/magic` - 🪄 Magic Link Verification (passwordless login)
+- `/api-docs` - 🔑 API Documentation (for developers)
 - `/log` - Log new mood entry
 - `/express` - 🎉 Express Your Mood (multi-modal interface)
 - `/insights` - 📊 Daily Mood Insights (analytics dashboard)
