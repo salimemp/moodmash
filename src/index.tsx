@@ -1408,6 +1408,178 @@ app.post('/api/auth/password-reset/request', async (c) => {
 });
 
 // =============================================================================
+// MAGIC LINK AUTHENTICATION
+// =============================================================================
+
+// Request magic link (passwordless login)
+app.post('/api/auth/magic-link/request', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { email } = await c.req.json();
+    
+    if (!email) {
+      return c.json({ error: 'Email is required' }, 400);
+    }
+
+    // Check if user exists, if not create account
+    let user = await DB.prepare(`
+      SELECT id, email, username FROM users WHERE email = ?
+    `).bind(email).first();
+
+    if (!user) {
+      // Create new user account (magic link registration)
+      const username = email.split('@')[0] + Math.floor(Math.random() * 1000);
+      const result = await DB.prepare(`
+        INSERT INTO users (username, email, is_verified, is_active)
+        VALUES (?, ?, 1, 1)
+      `).bind(username, email).run();
+      
+      user = {
+        id: result.meta.last_row_id,
+        email,
+        username
+      };
+
+      // Log registration event
+      await DB.prepare(`
+        INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+        VALUES (?, 'magic_link_register', ?, ?, 1)
+      `).bind(
+        user.id,
+        JSON.stringify({ email }),
+        c.req.header('CF-Connecting-IP') || 'unknown'
+      ).run();
+    }
+
+    // Generate magic link token
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Store magic link
+    await DB.prepare(`
+      INSERT INTO magic_links (user_id, email, token, expires_at, ip_address, user_agent)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(
+      user.id,
+      email,
+      token,
+      expiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+
+    // In production, send email with magic link
+    const magicLink = `https://f4c6804f.moodmash.pages.dev/auth/magic?token=${token}`;
+    console.log(`Magic link for ${email}: ${magicLink}`);
+    console.log(`Token: ${token}`);
+
+    // Log magic link request
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'magic_link_request', ?, ?, 1)
+    `).bind(
+      user.id,
+      JSON.stringify({ email }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+
+    return c.json({ 
+      success: true, 
+      message: 'Magic link sent to your email',
+      // Development only - remove in production
+      debug: {
+        token,
+        link: magicLink,
+        expires_in_minutes: 15
+      }
+    });
+  } catch (error) {
+    console.error('Magic link request error:', error);
+    return c.json({ error: 'Failed to send magic link' }, 500);
+  }
+});
+
+// Verify magic link and create session
+app.get('/api/auth/magic-link/verify', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const token = c.req.query('token');
+    
+    if (!token) {
+      return c.json({ error: 'Token is required' }, 400);
+    }
+
+    // Find magic link
+    const magicLink = await DB.prepare(`
+      SELECT ml.*, u.id as user_id, u.username, u.email, u.name, u.avatar_url
+      FROM magic_links ml
+      JOIN users u ON ml.user_id = u.id
+      WHERE ml.token = ? AND ml.used_at IS NULL
+    `).bind(token).first();
+
+    if (!magicLink) {
+      return c.json({ error: 'Invalid or already used magic link' }, 401);
+    }
+
+    // Check if expired
+    const expiresAt = new Date(magicLink.expires_at);
+    if (expiresAt < new Date()) {
+      return c.json({ error: 'Magic link has expired' }, 401);
+    }
+
+    // Mark magic link as used
+    await DB.prepare(`
+      UPDATE magic_links SET used_at = datetime('now') WHERE id = ?
+    `).bind(magicLink.id).run();
+
+    // Create session
+    const sessionToken = crypto.randomUUID();
+    const sessionExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+
+    await DB.prepare(`
+      INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
+      VALUES (?, ?, 1, ?, ?, ?)
+    `).bind(
+      magicLink.user_id,
+      sessionToken,
+      sessionExpiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+
+    // Log successful magic link login
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'magic_link_login', ?, ?, 1)
+    `).bind(
+      magicLink.user_id,
+      JSON.stringify({ email: magicLink.email }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+
+    // Set session cookie
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
+
+    return c.json({
+      success: true,
+      user: {
+        id: magicLink.user_id,
+        username: magicLink.username,
+        email: magicLink.email,
+        name: magicLink.name,
+        avatar_url: magicLink.avatar_url
+      },
+      sessionToken
+    });
+  } catch (error) {
+    console.error('Magic link verification error:', error);
+    return c.json({ error: 'Failed to verify magic link' }, 500);
+  }
+});
+
+// =============================================================================
 // SOCIAL FEED APIS
 // =============================================================================
 
@@ -1660,6 +1832,30 @@ app.get('/register', (c) => {
           window.initialAuthView = 'register';
         </script>
         <script src="/static/auth.js"></script>
+    </body>
+    </html>
+  `);
+});
+
+// Magic link verification page
+app.get('/auth/magic', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Magic Link - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="magic-link-container"></div>
+        
+        <script src="/static/i18n.js"></script>
+        <script src="/static/utils.js"></script>
+        <script src="/static/magic-link.js"></script>
     </body>
     </html>
   `);

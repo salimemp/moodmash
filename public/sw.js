@@ -1,11 +1,12 @@
 // MoodMash Service Worker
-// Version 7.0.0 - Authentication system
+// Version 8.0.0 - Magic Link Authentication
 
-const CACHE_NAME = 'moodmash-v7.0.0';
+const CACHE_NAME = 'moodmash-v8.0.0';
 const ASSETS_TO_CACHE = [
     '/',
     '/login',
     '/register',
+    '/auth/magic',
     '/log',
     '/activities',
     '/express',
@@ -33,6 +34,7 @@ const ASSETS_TO_CACHE = [
     '/static/chatbot.js',
     '/static/accessibility.js',
     '/static/auth.js',
+    '/static/magic-link.js',
     '/manifest.json',
     // CDN resources (cached separately)
     'https://cdn.tailwindcss.com',

@@ -264,8 +264,12 @@ class MoodMashAuth {
           </label>
         </div>
 
-        <!-- Forgot Password -->
-        <div class="mb-4 text-right">
+        <!-- Forgot Password & Magic Link -->
+        <div class="mb-4 flex justify-between items-center">
+          <a href="#" onclick="authManager.useMagicLink(); return false;" class="text-purple-300 hover:text-purple-200 text-sm">
+            <i class="fas fa-magic mr-1"></i>
+            ${this.t('auth_magic_link')}
+          </a>
           <a href="#" onclick="authManager.forgotPassword(); return false;" class="text-purple-300 hover:text-purple-200 text-sm">
             ${this.t('auth_forgot_password')}
           </a>
@@ -437,6 +441,47 @@ class MoodMashAuth {
     await this.signInWithKey();
   }
 
+  async useMagicLink() {
+    const email = prompt(this.t('auth_magic_link_prompt'));
+    if (!email) return;
+
+    try {
+      this.showMessage(this.t('auth_magic_link_sending'), 'info');
+      
+      const response = await fetch('/api/auth/magic-link/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        this.showMessage(this.t('auth_magic_link_sent'), 'success');
+        
+        // In development, show debug info
+        if (data.debug) {
+          console.log('Magic Link:', data.debug.link);
+          console.log('Token:', data.debug.token);
+          console.log('Expires in:', data.debug.expires_in_minutes, 'minutes');
+          
+          // Show clickable link in development
+          setTimeout(() => {
+            this.showMessage(
+              `Development: Click here to login → <a href="${data.debug.link}" class="underline">Magic Link</a>`, 
+              'info'
+            );
+          }, 1000);
+        }
+      } else {
+        this.showMessage(data.error || this.t('auth_magic_link_failed'), 'error');
+      }
+    } catch (error) {
+      console.error('Magic link error:', error);
+      this.showMessage(this.t('auth_error_occurred'), 'error');
+    }
+  }
+
   async forgotPassword() {
     const email = prompt(this.t('auth_forgot_password_prompt'));
     if (!email) return;
@@ -470,12 +515,12 @@ class MoodMashAuth {
     };
 
     messageEl.className = `mt-4 p-4 rounded-xl border ${colors[type]}`;
-    messageEl.textContent = message;
+    messageEl.innerHTML = message; // Use innerHTML to support HTML links
     messageEl.classList.remove('hidden');
 
     setTimeout(() => {
       messageEl.classList.add('hidden');
-    }, 5000);
+    }, 8000); // Longer timeout for magic links
   }
 
   arrayBufferToBase64(buffer) {

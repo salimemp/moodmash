@@ -431,6 +431,22 @@ const translations = {
         auth_forgot_password_prompt: 'Enter your email address:',
         auth_password_reset_sent: 'Password reset link sent to your email',
         auth_password_reset_failed: 'Failed to send password reset link',
+        
+        // Magic Link Authentication
+        auth_magic_link: 'Magic Link',
+        auth_magic_link_prompt: 'Enter your email for a magic link:',
+        auth_magic_link_sending: 'Sending magic link...',
+        auth_magic_link_sent: 'Magic link sent! Check your email.',
+        auth_magic_link_failed: 'Failed to send magic link',
+        magic_link_verifying: 'Verifying Magic Link',
+        magic_link_please_wait: 'Please wait while we verify your magic link...',
+        magic_link_success: 'Login Successful!',
+        magic_link_redirecting: 'Redirecting to your dashboard...',
+        magic_link_error: 'Verification Failed',
+        magic_link_invalid: 'Invalid or expired magic link',
+        magic_link_no_token: 'No token provided',
+        magic_link_network_error: 'Network error. Please try again.',
+        magic_link_back_to_login: 'Back to Login',
     },
     
     es: {
