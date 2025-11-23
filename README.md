@@ -13,15 +13,15 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 
 ## 🌐 Live URLs
 
-- **🚀 Production**: https://5b2d3cf4.moodmash.pages.dev (LIVE! v7.0)
+- **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE!)
+- **🚀 Production**: https://5b2d3cf4.moodmash.pages.dev (v7.0)
 - **🔗 Legacy URL**: https://f4c6804f.moodmash.pages.dev (v5.0)
-- **Login**: https://5b2d3cf4.moodmash.pages.dev/login
-- **Register**: https://5b2d3cf4.moodmash.pages.dev/register
-- **Magic Link Auth**: https://5b2d3cf4.moodmash.pages.dev/auth/magic
-- **API Documentation**: https://5b2d3cf4.moodmash.pages.dev/api-docs
-- **API Health**: https://5b2d3cf4.moodmash.pages.dev/api/health
+- **Login**: https://moodmash.win/login
+- **Register**: https://moodmash.win/register
+- **Magic Link Auth**: https://moodmash.win/auth/magic
+- **API Documentation**: https://moodmash.win/api-docs
+- **API Health**: https://moodmash.win/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
-- **Custom Domain**: moodmash.win (pending configuration)
 
 ## ✨ Current Features (MVP v1.0)
 
