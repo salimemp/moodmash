@@ -91,6 +91,9 @@ function renderDashboard() {
             <!-- Insights Section -->
             ${renderInsights()}
             
+            <!-- More Features Section -->
+            ${renderMoreFeatures()}
+            
             <!-- Recent Moods -->
             ${renderRecentMoods()}
         </div>
@@ -294,6 +297,94 @@ function renderInsights() {
                         <i class="fas fa-check-circle text-primary mt-1 mr-3"></i>
                         <p class="text-gray-700">${insight}</p>
                     </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+// Render more features
+function renderMoreFeatures() {
+    const features = [
+        {
+            title: 'Express Your Mood',
+            description: 'Share your emotions creatively',
+            icon: 'fa-paint-brush',
+            color: 'purple',
+            url: '/express'
+        },
+        {
+            title: 'Daily Mood Insights',
+            description: 'Get personalized insights',
+            icon: 'fa-chart-line',
+            color: 'blue',
+            url: '/insights'
+        },
+        {
+            title: 'Quick Mood Select',
+            description: 'Log mood in seconds',
+            icon: 'fa-bolt',
+            color: 'yellow',
+            url: '/quick-select'
+        },
+        {
+            title: 'AI-Powered Wellness Tips',
+            description: 'Personalized wellness advice',
+            icon: 'fa-robot',
+            color: 'green',
+            url: '/wellness-tips'
+        },
+        {
+            title: 'Challenges & Achievements',
+            description: 'Track your progress',
+            icon: 'fa-trophy',
+            color: 'orange',
+            url: '/challenges'
+        },
+        {
+            title: 'Color Psychology',
+            description: 'Explore mood colors',
+            icon: 'fa-palette',
+            color: 'pink',
+            url: '/color-psychology'
+        },
+        {
+            title: 'Social Feed',
+            description: 'Connect with community',
+            icon: 'fa-users',
+            color: 'indigo',
+            url: '/social-feed'
+        }
+    ];
+    
+    const colorClasses = {
+        purple: 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700',
+        blue: 'from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700',
+        yellow: 'from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700',
+        green: 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
+        orange: 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700',
+        pink: 'from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700',
+        indigo: 'from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700'
+    };
+    
+    return `
+        <div class="mb-8">
+            <h3 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+                <i class="fas fa-star text-yellow-500 mr-2"></i>
+                More Features
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                ${features.map(feature => `
+                    <a href="${feature.url}" 
+                       class="block bg-gradient-to-br ${colorClasses[feature.color]} text-white rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition-all duration-200 p-6">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0">
+                                <i class="fas ${feature.icon} text-3xl mb-3"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-lg font-semibold mb-2">${feature.title}</h4>
+                        <p class="text-sm opacity-90">${feature.description}</p>
+                    </a>
                 `).join('')}
             </div>
         </div>
