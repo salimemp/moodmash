@@ -1,7 +1,7 @@
 // MoodMash Service Worker
-// Version 8.0.0 - Magic Link Authentication
+// Version 8.11.0 - Tailwind CSS Fix
 
-const CACHE_NAME = 'moodmash-v8.0.0';
+const CACHE_NAME = 'moodmash-v8.11.0';
 const ASSETS_TO_CACHE = [
     '/',
     '/login',
@@ -131,7 +131,27 @@ self.addEventListener('fetch', (event) => {
         return;
     }
     
-    // Cache-first strategy for other assets
+    // Network-first strategy for HTML pages (always get latest)
+    if (event.request.headers.get('accept').includes('text/html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Clone and cache the response
+                    const responseToCache = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseToCache);
+                    });
+                    return response;
+                })
+                .catch(() => {
+                    // Fallback to cache if network fails
+                    return caches.match(event.request);
+                })
+        );
+        return;
+    }
+    
+    // Cache-first strategy for other assets (CSS, images, fonts)
     event.respondWith(
         caches.match(event.request)
             .then((cachedResponse) => {
