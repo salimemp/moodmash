@@ -7,7 +7,8 @@
 class MoodMashAuth {
   constructor() {
     this.currentView = window.initialAuthView || 'register'; // register or login
-    this.i18n = window.i18n || window.i18nManager;
+    // Wait for i18n to be available
+    this.i18n = typeof i18n !== 'undefined' ? i18n : null;
     this.init();
   }
 
@@ -533,6 +534,10 @@ class MoodMashAuth {
   }
 
   t(key) {
+    // Try to get i18n if not set yet
+    if (!this.i18n && typeof i18n !== 'undefined') {
+      this.i18n = i18n;
+    }
     return this.i18n?.t(key) || key;
   }
 }
