@@ -23,15 +23,36 @@ let moodChart = null;
 
 // Initialize dashboard
 async function init() {
+    console.log('[Dashboard] Initializing...');
+    console.log('[Dashboard] axios available:', typeof axios !== 'undefined');
+    console.log('[Dashboard] i18n available:', typeof i18n !== 'undefined');
+    console.log('[Dashboard] Chart available:', typeof Chart !== 'undefined');
+    
     try {
-        await Promise.all([
-            loadStats(),
-            loadRecentMoods()
-        ]);
+        console.log('[Dashboard] Loading stats...');
+        await loadStats();
+        console.log('[Dashboard] Stats loaded:', statsData);
+        
+        console.log('[Dashboard] Loading moods...');
+        await loadRecentMoods();
+        console.log('[Dashboard] Moods loaded:', moodData.length, 'entries');
+        
+        console.log('[Dashboard] Rendering dashboard...');
         renderDashboard();
+        console.log('[Dashboard] Dashboard rendered successfully!');
     } catch (error) {
-        console.error('Failed to initialize dashboard:', error);
-        showError(i18n.t('error_loading_failed'));
+        console.error('[Dashboard] Failed to initialize:', error);
+        console.error('[Dashboard] Error details:', {
+            message: error.message,
+            stack: error.stack,
+            response: error.response
+        });
+        
+        // Safe error display with fallback
+        const errorMsg = (typeof i18n !== 'undefined' && i18n.t) 
+            ? i18n.t('error_loading_failed') 
+            : 'Failed to load dashboard data';
+        showError(errorMsg);
     }
 }
 
@@ -86,12 +107,21 @@ function renderDashboard() {
 function renderStatsCards() {
     if (!statsData) return '';
     
+    // Safely access i18n with fallbacks
+    const t = (key, fallback = key) => {
+        try {
+            return (typeof i18n !== 'undefined' && i18n.t) ? i18n.t(key) : fallback;
+        } catch (e) {
+            return fallback;
+        }
+    };
+    
     const trendIcon = statsData.recent_trend === 'improving' ? 'fa-arrow-up text-green-500' :
                      statsData.recent_trend === 'declining' ? 'fa-arrow-down text-red-500' :
                      'fa-minus text-gray-500';
     
-    const trendText = statsData.recent_trend === 'improving' ? i18n.t('trend_improving') :
-                     statsData.recent_trend === 'declining' ? i18n.t('trend_declining') : i18n.t('trend_stable');
+    const trendText = statsData.recent_trend === 'improving' ? t('trend_improving', 'Improving') :
+                     statsData.recent_trend === 'declining' ? t('trend_declining', 'Declining') : t('trend_stable', 'Stable');
     
     const emotionConfig = EMOTIONS[statsData.most_common_emotion] || EMOTIONS.neutral;
     
