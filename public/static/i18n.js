@@ -3408,3 +3408,8 @@ class I18n {
 
 // Export for use in other scripts
 const i18n = new I18n();
+
+// Make i18n globally available
+if (typeof window !== 'undefined') {
+    window.i18n = i18n;
+}
