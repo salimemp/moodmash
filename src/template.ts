@@ -70,14 +70,15 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>
         <script>
-            // Wait for i18n to be defined before rendering
-            if (typeof i18n !== 'undefined') {
-                document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
-            } else {
-                window.addEventListener('DOMContentLoaded', () => {
+            // Wait for i18n to be fully loaded before rendering navigation
+            function renderNav() {
+                if (typeof i18n !== 'undefined' && i18n.translations) {
                     document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
-                });
+                } else {
+                    setTimeout(renderNav, 50); // Check every 50ms
+                }
             }
+            renderNav();
         </script>
 
         <!-- Main Content -->
