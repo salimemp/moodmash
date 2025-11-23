@@ -1,22 +1,10 @@
 // MoodMash Service Worker
-// Version 8.11.0 - Tailwind CSS Fix
+// Version 8.12.0 - No HTML Caching (Network Only)
 
-const CACHE_NAME = 'moodmash-v8.11.0';
+const CACHE_NAME = 'moodmash-v8.12.0';
 const ASSETS_TO_CACHE = [
-    '/',
-    '/login',
-    '/register',
-    '/auth/magic',
-    '/log',
-    '/activities',
-    '/express',
-    '/insights',
-    '/quick-select',
-    '/wellness-tips',
-    '/challenges',
-    '/color-psychology',
-    '/social-feed',
-    '/about',
+    // NOTE: HTML pages are NOT cached - always fetched from network
+    // Only cache static assets (JS, CSS, fonts, icons)
     '/static/styles.css',
     '/static/app.js',
     '/static/log.js',
@@ -131,21 +119,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
     
-    // Network-first strategy for HTML pages (always get latest)
+    // NEVER cache HTML pages - always fetch from network
     if (event.request.headers.get('accept').includes('text/html')) {
         event.respondWith(
             fetch(event.request)
-                .then((response) => {
-                    // Clone and cache the response
-                    const responseToCache = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseToCache);
-                    });
-                    return response;
-                })
                 .catch(() => {
-                    // Fallback to cache if network fails
-                    return caches.match(event.request);
+                    // Fallback to a generic offline page if network fails
+                    return new Response(
+                        '<!DOCTYPE html><html><body><h1>Offline</h1><p>Please check your internet connection.</p></body></html>',
+                        {
+                            headers: { 'Content-Type': 'text/html' },
+                            status: 503
+                        }
+                    );
                 })
         );
         return;
