@@ -62,6 +62,11 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="/static/accessibility.js"></script>
         <script src="/static/cookie-consent.js"></script>
         
+        <!-- External Libraries (Load before app scripts) -->
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+        
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>
         <script>
@@ -79,11 +84,6 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             ${content}
         </div>
-        
-        <!-- Scripts -->
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
     </body>
     </html>
   `;
