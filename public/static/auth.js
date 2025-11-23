@@ -14,8 +14,24 @@ class MoodMashAuth {
 
   async init() {
     await this.checkSession();
+    await this.waitForI18n();
     this.render();
     this.attachEventListeners();
+  }
+
+  async waitForI18n() {
+    // Wait for i18n to be fully loaded
+    return new Promise((resolve) => {
+      const check = () => {
+        if (typeof i18n !== 'undefined' && i18n.translations) {
+          this.i18n = i18n;
+          resolve();
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+    });
   }
 
   async checkSession() {
