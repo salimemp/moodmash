@@ -60,6 +60,7 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="/static/onboarding.js"></script>
         <script src="/static/chatbot.js"></script>
         <script src="/static/accessibility.js"></script>
+        <script src="/static/cookie-consent.js"></script>
         
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>

@@ -2771,6 +2771,11 @@ app.get('/api-docs', (c) => {
   return c.redirect('/static/api-docs.html');
 });
 
+// Privacy Policy page
+app.get('/privacy-policy', (c) => {
+  return c.redirect('/static/privacy-policy.html');
+});
+
 // About page
 // Admin Dashboard Route
 app.get('/admin', (c) => {
