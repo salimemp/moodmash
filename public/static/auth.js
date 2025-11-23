@@ -25,8 +25,10 @@ class MoodMashAuth {
       const check = () => {
         if (typeof i18n !== 'undefined' && i18n.translations) {
           this.i18n = i18n;
+          console.log('[AUTH] i18n loaded successfully, test translation:', i18n.t('auth_welcome_back'));
           resolve();
         } else {
+          console.log('[AUTH] Waiting for i18n...', typeof i18n, typeof window.i18n);
           setTimeout(check, 50);
         }
       };
@@ -554,7 +556,19 @@ class MoodMashAuth {
     if (!this.i18n && typeof i18n !== 'undefined') {
       this.i18n = i18n;
     }
-    return this.i18n?.t(key) || key;
+    
+    // Debug logging
+    if (!this.i18n) {
+      console.error('[AUTH] t() called but i18n not available!', key);
+      return key;
+    }
+    
+    const result = this.i18n.t(key);
+    if (result === key) {
+      console.warn('[AUTH] Translation failed for:', key, '- i18n available:', !!this.i18n);
+    }
+    
+    return result;
   }
 }
 
