@@ -66,12 +66,11 @@ export class SecurityMonitoringService {
    */
   static async logFailedLogin(db: any, failedLogin: FailedLogin): Promise<void> {
     await db.prepare(`
-      INSERT INTO failed_logins (email, ip_address, user_agent, failure_reason)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO failed_logins (username_or_email, ip_address, failure_reason)
+      VALUES (?, ?, ?)
     `).bind(
       failedLogin.email,
       failedLogin.ip_address,
-      failedLogin.user_agent,
       failedLogin.failure_reason
     ).run();
     

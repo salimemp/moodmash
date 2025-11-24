@@ -382,6 +382,34 @@ function renderMoreFeatures() {
             icon: 'fa-hands-helping',
             color: 'red',
             url: '/support'
+        },
+        {
+            title: '🛡️ HIPAA Compliance',
+            description: 'Audit logs & BAA generation',
+            icon: 'fa-shield-alt',
+            color: 'orange',
+            url: '/hipaa-compliance'
+        },
+        {
+            title: '🔐 Security Monitoring',
+            description: 'Real-time threat detection',
+            icon: 'fa-lock',
+            color: 'red',
+            url: '/security-monitoring'
+        },
+        {
+            title: '🔬 Research Center',
+            description: 'Anonymized data & consents',
+            icon: 'fa-flask',
+            color: 'purple',
+            url: '/research-center'
+        },
+        {
+            title: '🎓 Privacy Education',
+            description: 'Learn about your rights',
+            icon: 'fa-graduation-cap',
+            color: 'blue',
+            url: '/privacy-education'
         }
     ];
     

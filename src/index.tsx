@@ -2752,6 +2752,25 @@ app.get('/security-monitoring', (c) => {
   return c.html(renderHTML('Security Monitoring', content, 'security-monitoring'));
 });
 
+// Research Center Dashboard (v9.5 Phase 2)
+app.get('/research-center', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/research-center.js"></script>
+  `;
+  return c.html(renderHTML('Research Center', content, 'research-center'));
+});
+
+// Privacy Education Center (v9.5 Phase 2)
+app.get('/privacy-education', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/privacy-education.js"></script>
+  `;
+  return c.html(renderHTML('Privacy Education', content, 'privacy-education'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -3375,6 +3394,135 @@ app.get('/api/security/rate-limits', async (c) => {
     return c.json({ success: true, data: rateLimits.results });
   } catch (error: any) {
     console.error('[Rate Limits] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// RESEARCH CENTER API ENDPOINTS (v9.5) - Phase 2
+// ============================================================================
+
+import { ResearchAnonymizationService } from './services/research-anonymization';
+
+// 1. Get research dashboard stats
+app.get('/api/research/dashboard', async (c) => {
+  try {
+    const { env } = c;
+    const stats = await ResearchAnonymizationService.getResearchDashboard(env.DB);
+    return c.json({ success: true, data: stats });
+  } catch (error: any) {
+    console.error('[Research Dashboard] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Get user consents
+app.get('/api/research/consents/:userId', async (c) => {
+  try {
+    const { env } = c;
+    const userId = parseInt(c.req.param('userId'));
+    const consents = await ResearchAnonymizationService.getUserConsents(env.DB, userId);
+    return c.json({ success: true, data: consents });
+  } catch (error: any) {
+    console.error('[Research Consents] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Manage consent (create/update)
+app.post('/api/research/consent', async (c) => {
+  try {
+    const { env } = c;
+    const { user_id, consent_type, consent_given, can_revoke, data_retention_days } = await c.req.json();
+    
+    if (!user_id || !consent_type || consent_given === undefined) {
+      return c.json({ success: false, error: 'Missing required fields' }, 400);
+    }
+    
+    await ResearchAnonymizationService.manageConsent(env.DB, {
+      user_id,
+      consent_type,
+      consent_given,
+      can_revoke: can_revoke ?? true,
+      data_retention_days
+    });
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('[Manage Consent] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 4. Anonymize mood data
+app.post('/api/research/anonymize/mood', async (c) => {
+  try {
+    const { env } = c;
+    const { user_id } = await c.req.json();
+    
+    if (!user_id) {
+      return c.json({ success: false, error: 'User ID required' }, 400);
+    }
+    
+    const result = await ResearchAnonymizationService.anonymizeMoodData(env.DB, user_id);
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[Anonymize Mood] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 5. Anonymize health metrics
+app.post('/api/research/anonymize/health', async (c) => {
+  try {
+    const { env } = c;
+    const { user_id } = await c.req.json();
+    
+    if (!user_id) {
+      return c.json({ success: false, error: 'User ID required' }, 400);
+    }
+    
+    const result = await ResearchAnonymizationService.anonymizeHealthMetrics(env.DB, user_id);
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[Anonymize Health] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 6. Get aggregated research statistics
+app.get('/api/research/stats', async (c) => {
+  try {
+    const { env } = c;
+    const stats = await ResearchAnonymizationService.getAggregatedStats(env.DB);
+    return c.json({ success: true, data: stats });
+  } catch (error: any) {
+    console.error('[Research Stats] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 7. Create export request
+app.post('/api/research/export', async (c) => {
+  try {
+    const { env } = c;
+    const { export_type, requester_name, requester_email, purpose, irb_approval } = await c.req.json();
+    
+    if (!export_type || !requester_name || !requester_email || !purpose) {
+      return c.json({ success: false, error: 'Missing required fields' }, 400);
+    }
+    
+    const exportId = await ResearchAnonymizationService.createExportRequest(env.DB, {
+      export_type,
+      requester_name,
+      requester_email,
+      purpose,
+      irb_approval
+    });
+    
+    return c.json({ success: true, data: { export_id: exportId } });
+  } catch (error: any) {
+    console.error('[Create Export] Error:', error);
     return c.json({ success: false, error: error.message }, 500);
   }
 });
