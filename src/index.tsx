@@ -2732,6 +2732,16 @@ app.get('/support', (c) => {
   return c.html(renderHTML('Support Resources', content, 'support'));
 });
 
+// HIPAA Compliance Dashboard (v9.5 Phase 2)
+app.get('/hipaa-compliance', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/hipaa-compliance.js"></script>
+  `;
+  return c.html(renderHTML('HIPAA Compliance Dashboard', content, 'hipaa-compliance'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -3039,6 +3049,165 @@ app.get('/api/health/history', async (c) => {
     return c.json({ success: true, data: history.results });
   } catch (error: any) {
     console.error('[Health History] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// HIPAA COMPLIANCE API ENDPOINTS (v9.5) - Phase 2
+// ============================================================================
+
+import { HIPAAComplianceService } from './services/hipaa-compliance';
+
+// 1. Get compliance status
+app.get('/api/hipaa/status', async (c) => {
+  try {
+    const { env } = c;
+    const status = await HIPAAComplianceService.getComplianceStatus(env.DB);
+    return c.json({ success: true, data: status });
+  } catch (error: any) {
+    console.error('[HIPAA Status] Error:', error);
+    await HIPAAComplianceService.logAudit(env.DB, {
+      action: 'GET_HIPAA_STATUS',
+      contains_phi: false,
+      success: false,
+      failure_reason: error.message
+    });
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Get audit logs
+app.get('/api/hipaa/audit-logs', async (c) => {
+  try {
+    const { env } = c;
+    const userId = c.req.query('user_id');
+    const limit = parseInt(c.req.query('limit') || '100');
+    const offset = parseInt(c.req.query('offset') || '0');
+    
+    let query = `
+      SELECT * FROM hipaa_audit_logs 
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+    
+    if (userId) {
+      query += ' AND user_id = ?';
+      params.push(userId);
+    }
+    
+    query += ' ORDER BY timestamp DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+    
+    const logs = await env.DB.prepare(query).bind(...params).all();
+    
+    await HIPAAComplianceService.logAudit(env.DB, {
+      action: 'VIEW_AUDIT_LOGS',
+      contains_phi: true,
+      phi_fields: ['user_id'],
+      success: true
+    });
+    
+    return c.json({ success: true, data: logs.results, count: logs.results.length });
+  } catch (error: any) {
+    console.error('[HIPAA Audit Logs] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Generate BAA template
+app.post('/api/hipaa/baa', async (c) => {
+  try {
+    const { env } = c;
+    const { organization_name, effective_date } = await c.req.json();
+    
+    if (!organization_name) {
+      return c.json({ success: false, error: 'Organization name required' }, 400);
+    }
+    
+    const baaContent = HIPAAComplianceService.generateBAATemplate(
+      organization_name,
+      effective_date || new Date().toISOString().split('T')[0]
+    );
+    
+    await HIPAAComplianceService.logAudit(env.DB, {
+      action: 'GENERATE_BAA',
+      resource_type: 'baa_template',
+      contains_phi: false,
+      success: true
+    });
+    
+    return c.json({ 
+      success: true, 
+      data: { 
+        content: baaContent,
+        organization_name,
+        effective_date: effective_date || new Date().toISOString().split('T')[0]
+      }
+    });
+  } catch (error: any) {
+    console.error('[BAA Generation] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 4. Get security incidents
+app.get('/api/hipaa/incidents', async (c) => {
+  try {
+    const { env } = c;
+    const status = c.req.query('status');
+    
+    let query = 'SELECT * FROM security_incidents WHERE 1=1';
+    const params: any[] = [];
+    
+    if (status) {
+      query += ' AND incident_status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY detected_at DESC LIMIT 50';
+    
+    const incidents = await env.DB.prepare(query).bind(...params).all();
+    
+    await HIPAAComplianceService.logAudit(env.DB, {
+      action: 'VIEW_SECURITY_INCIDENTS',
+      contains_phi: true,
+      success: true
+    });
+    
+    return c.json({ success: true, data: incidents.results });
+  } catch (error: any) {
+    console.error('[Security Incidents] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 5. Create HIPAA policy
+app.post('/api/hipaa/policies', async (c) => {
+  try {
+    const { env } = c;
+    const { policy_type, title, version, content, effective_date } = await c.req.json();
+    
+    if (!policy_type || !title || !version || !content) {
+      return c.json({ success: false, error: 'Missing required fields' }, 400);
+    }
+    
+    const result = await env.DB.prepare(`
+      INSERT INTO hipaa_policies (policy_type, title, version, content, effective_date, policy_status)
+      VALUES (?, ?, ?, ?, ?, 'active')
+    `).bind(policy_type, title, version, content, effective_date || new Date().toISOString()).run();
+    
+    await HIPAAComplianceService.logAudit(env.DB, {
+      action: 'CREATE_HIPAA_POLICY',
+      resource_type: 'hipaa_policy',
+      resource_id: result.meta.last_row_id?.toString(),
+      contains_phi: false,
+      success: true
+    });
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id } });
+  } catch (error: any) {
+    console.error('[Create Policy] Error:', error);
     return c.json({ success: false, error: error.message }, 500);
   }
 });
