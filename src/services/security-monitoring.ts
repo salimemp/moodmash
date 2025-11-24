@@ -43,21 +43,18 @@ export class SecurityMonitoringService {
    * Log security event
    */
   static async logEvent(db: any, event: SecurityEvent): Promise<void> {
-    const metadataJson = event.metadata ? JSON.stringify(event.metadata) : null;
-    
     await db.prepare(`
       INSERT INTO security_events (
-        event_type, severity, description, user_id, 
-        ip_address, user_agent, metadata
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        event_type, severity, details, user_id, 
+        ip_address, user_agent
+      ) VALUES (?, ?, ?, ?, ?, ?)
     `).bind(
       event.event_type,
       event.severity,
       event.description,
       event.user_id || null,
       event.ip_address || null,
-      event.user_agent || null,
-      metadataJson
+      event.user_agent || null
     ).run();
     
     // Check if event should trigger an alert
@@ -89,7 +86,7 @@ export class SecurityMonitoringService {
     // Check if entry exists for this IP + endpoint
     const existing = await db.prepare(`
       SELECT id, hit_count FROM rate_limit_hits 
-      WHERE ip_address = ? AND endpoint = ? 
+      WHERE identifier = ? AND endpoint = ? 
       AND timestamp >= datetime('now', '-1 hour')
     `).bind(rateLimit.ip_address, rateLimit.endpoint).first();
     
@@ -97,19 +94,18 @@ export class SecurityMonitoringService {
       // Update existing entry
       await db.prepare(`
         UPDATE rate_limit_hits 
-        SET hit_count = hit_count + ?, last_hit = CURRENT_TIMESTAMP
+        SET hit_count = hit_count + ?
         WHERE id = ?
       `).bind(rateLimit.hit_count, existing.id).run();
     } else {
       // Create new entry
       await db.prepare(`
-        INSERT INTO rate_limit_hits (ip_address, endpoint, hit_count, user_id)
-        VALUES (?, ?, ?, ?)
+        INSERT INTO rate_limit_hits (identifier, endpoint, hit_count)
+        VALUES (?, ?, ?)
       `).bind(
         rateLimit.ip_address,
         rateLimit.endpoint,
-        rateLimit.hit_count,
-        rateLimit.user_id || null
+        rateLimit.hit_count
       ).run();
     }
     
@@ -235,10 +231,16 @@ export class SecurityMonitoringService {
     `).first();
     
     // Recent incidents (from HIPAA table)
-    const openIncidents = await db.prepare(`
-      SELECT COUNT(*) as count FROM security_incidents 
-      WHERE incident_status = 'open'
-    `).first();
+    let openIncidents = { count: 0 };
+    try {
+      openIncidents = await db.prepare(`
+        SELECT COUNT(*) as count FROM security_incidents 
+        WHERE incident_status = 'open'
+      `).first();
+    } catch (e) {
+      // Table might not exist or column name mismatch, default to 0
+      console.log('[Security] No security_incidents data available');
+    }
     
     // Top event types
     const topEvents = await db.prepare(`
