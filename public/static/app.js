@@ -361,6 +361,27 @@ function renderMoreFeatures() {
             icon: 'fa-brain',
             color: 'purple',
             url: '/ai-insights'
+        },
+        {
+            title: '🏥 Health Dashboard',
+            description: 'Comprehensive health metrics',
+            icon: 'fa-heartbeat',
+            color: 'pink',
+            url: '/health-dashboard'
+        },
+        {
+            title: '🔒 Privacy Center',
+            description: 'Manage your data & privacy',
+            icon: 'fa-shield-alt',
+            color: 'green',
+            url: '/privacy-center'
+        },
+        {
+            title: '📞 Support Resources',
+            description: 'Get help & guidance',
+            icon: 'fa-hands-helping',
+            color: 'red',
+            url: '/support'
         }
     ];
     
@@ -371,7 +392,8 @@ function renderMoreFeatures() {
         green: 'from-green-500 to-green-600 hover:from-green-600 hover:to-green-700',
         orange: 'from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700',
         pink: 'from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700',
-        indigo: 'from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700'
+        indigo: 'from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700',
+        red: 'from-red-500 to-red-600 hover:from-red-600 hover:to-red-700'
     };
     
     return `

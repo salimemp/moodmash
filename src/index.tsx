@@ -2723,6 +2723,15 @@ app.get('/privacy-center', (c) => {
   return c.html(renderHTML('Privacy Center', content, 'privacy-center'));
 });
 
+// Support Resources page (v9.0)
+app.get('/support', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/support.js"></script>
+  `;
+  return c.html(renderHTML('Support Resources', content, 'support'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -3225,6 +3234,80 @@ function convertToCSV(data: any): string {
   
   return csv;
 }
+
+// ============================================================================
+// SUPPORT RESOURCES API ENDPOINTS (v9.0)
+// ============================================================================
+
+import { allSupportResources, searchResources, filterByType, filterByCountry } from './data/support-resources';
+
+// Get all support resources or search/filter
+app.get('/api/support/resources', async (c) => {
+  try {
+    const query = c.req.query('q');
+    const type = c.req.query('type');
+    const country = c.req.query('country');
+    
+    let resources = allSupportResources;
+    
+    if (query) {
+      resources = searchResources(query, resources);
+    }
+    
+    if (type) {
+      resources = filterByType(type, resources);
+    }
+    
+    if (country) {
+      resources = filterByCountry(country, resources);
+    }
+    
+    return c.json({ success: true, data: resources, count: resources.length });
+  } catch (error: any) {
+    console.error('[Support Resources] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Get crisis hotlines specifically
+app.get('/api/support/hotlines', async (c) => {
+  try {
+    const country = c.req.query('country');
+    
+    let hotlines = filterByType('crisis_hotline');
+    
+    if (country) {
+      hotlines = filterByCountry(country, hotlines);
+    }
+    
+    return c.json({ success: true, data: hotlines, count: hotlines.length });
+  } catch (error: any) {
+    console.error('[Crisis Hotlines] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Log support resource access (for analytics - respects privacy)
+app.post('/api/support/log-access', async (c) => {
+  try {
+    const { env } = c;
+    const { resource_type, resource_id, resource_title, accessed_from } = await c.req.json();
+    
+    // Optional: only log if user is logged in
+    const userId = 1; // TODO: Get from session, or null for anonymous
+    
+    await env.DB.prepare(`
+      INSERT INTO support_access_log (user_id, resource_type, resource_id, resource_title, accessed_from)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(userId, resource_type, resource_id, resource_title, accessed_from).run();
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('[Log Support Access] Error:', error);
+    // Don't fail if logging fails
+    return c.json({ success: true });
+  }
+});
 
 // AI Insights Dashboard Page
 app.get('/ai-insights', (c) => {
