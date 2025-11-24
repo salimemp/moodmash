@@ -5,7 +5,8 @@
 -- ============================================================================
 
 -- Performance Metrics Tracking
-CREATE TABLE IF NOT EXISTS performance_metrics (
+DROP TABLE IF EXISTS performance_metrics;
+CREATE TABLE performance_metrics (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   endpoint TEXT NOT NULL,
   method TEXT NOT NULL,
@@ -14,8 +15,7 @@ CREATE TABLE IF NOT EXISTS performance_metrics (
   user_id INTEGER,
   error_message TEXT,
   cache_hit INTEGER DEFAULT 0,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+  timestamp TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_performance_endpoint ON performance_metrics(endpoint);
@@ -23,7 +23,8 @@ CREATE INDEX IF NOT EXISTS idx_performance_timestamp ON performance_metrics(time
 CREATE INDEX IF NOT EXISTS idx_performance_status ON performance_metrics(status_code);
 
 -- Performance Alerts
-CREATE TABLE IF NOT EXISTS performance_alerts (
+DROP TABLE IF EXISTS performance_alerts;
+CREATE TABLE performance_alerts (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   alert_type TEXT NOT NULL,
   title TEXT NOT NULL,
@@ -33,7 +34,7 @@ CREATE TABLE IF NOT EXISTS performance_alerts (
   status_code INTEGER,
   error_message TEXT,
   acknowledged INTEGER DEFAULT 0,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  timestamp TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_alerts_severity ON performance_alerts(severity);
@@ -41,13 +42,14 @@ CREATE INDEX IF NOT EXISTS idx_alerts_timestamp ON performance_alerts(timestamp)
 CREATE INDEX IF NOT EXISTS idx_alerts_acknowledged ON performance_alerts(acknowledged);
 
 -- System Health Checks
-CREATE TABLE IF NOT EXISTS system_health_checks (
+DROP TABLE IF EXISTS system_health_checks;
+CREATE TABLE system_health_checks (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   check_name TEXT NOT NULL,
   status TEXT NOT NULL CHECK (status IN ('healthy', 'degraded', 'unhealthy')),
   response_time_ms INTEGER,
   details TEXT,
-  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+  timestamp TEXT NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_health_checks_name ON system_health_checks(check_name);
