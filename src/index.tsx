@@ -2714,6 +2714,15 @@ app.get('/health-dashboard', (c) => {
   return c.html(renderHTML('Health Dashboard', content, 'health-dashboard'));
 });
 
+// Privacy Center page (v9.0)
+app.get('/privacy-center', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/privacy-center.js"></script>
+  `;
+  return c.html(renderHTML('Privacy Center', content, 'privacy-center'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -3024,6 +3033,198 @@ app.get('/api/health/history', async (c) => {
     return c.json({ success: false, error: error.message }, 500);
   }
 });
+
+// ============================================================================
+// PRIVACY CENTER API ENDPOINTS (v9.0) - GDPR Compliance
+// ============================================================================
+
+// 1. Get user data summary
+app.get('/api/user/data-summary', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    
+    // Count all user data
+    const moodCount = await env.DB.prepare('SELECT COUNT(*) as count FROM mood_entries WHERE user_id = ?').bind(userId).first();
+    const activityCount = await env.DB.prepare('SELECT COUNT(*) as count FROM activities WHERE user_id = ?').bind(userId).first();
+    const healthMetricsCount = await env.DB.prepare('SELECT COUNT(*) as count FROM health_metrics WHERE user_id = ?').bind(userId).first();
+    const exportCount = await env.DB.prepare('SELECT COUNT(*) as count FROM data_exports WHERE user_id = ?').bind(userId).first();
+    
+    // Get account info
+    const user = await env.DB.prepare('SELECT id, email, name, created_at FROM users WHERE id = ?').bind(userId).first();
+    
+    // Get consent status
+    const consents = await env.DB.prepare('SELECT * FROM user_consents WHERE user_id = ?').bind(userId).all();
+    
+    const summary = {
+      account: {
+        user_id: user?.id,
+        email: user?.email,
+        name: user?.name,
+        created_at: user?.created_at
+      },
+      data_counts: {
+        mood_entries: moodCount?.count || 0,
+        activities: activityCount?.count || 0,
+        health_metrics: healthMetricsCount?.count || 0,
+        data_exports: exportCount?.count || 0
+      },
+      consents: consents.results || [],
+      total_storage_estimate: '~2 MB' // Rough estimate
+    };
+    
+    return c.json({ success: true, data: summary });
+  } catch (error: any) {
+    console.error('[Data Summary] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Export all user data (GDPR Article 20 - Right to Data Portability)
+app.get('/api/user/export-data', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const format = c.req.query('format') || 'json'; // json, csv
+    
+    // Fetch all user data
+    const user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first();
+    const moods = await env.DB.prepare('SELECT * FROM mood_entries WHERE user_id = ?').bind(userId).all();
+    const activities = await env.DB.prepare('SELECT * FROM activities WHERE user_id = ?').bind(userId).all();
+    const healthMetrics = await env.DB.prepare('SELECT * FROM health_metrics WHERE user_id = ?').bind(userId).all();
+    const professionalConnections = await env.DB.prepare('SELECT * FROM professional_connections WHERE user_id = ?').bind(userId).all();
+    const consents = await env.DB.prepare('SELECT * FROM user_consents WHERE user_id = ?').bind(userId).all();
+    
+    const exportData = {
+      export_date: new Date().toISOString(),
+      export_version: '9.0.0',
+      user_account: user,
+      mood_entries: moods.results,
+      activities: activities.results,
+      health_metrics: healthMetrics.results,
+      professional_connections: professionalConnections.results,
+      consents: consents.results
+    };
+    
+    // Log export request
+    await env.DB.prepare(`
+      INSERT INTO data_exports (user_id, export_type, export_scope, status, records_count)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(userId, format, 'all_data', 'completed', moods.results.length).run();
+    
+    if (format === 'csv') {
+      // Convert to CSV (simplified)
+      const csv = convertToCSV(exportData);
+      return c.text(csv, 200, { 'Content-Type': 'text/csv', 'Content-Disposition': 'attachment; filename="moodmash-data.csv"' });
+    }
+    
+    // Return JSON
+    return c.json({ success: true, data: exportData }, 200, {
+      'Content-Disposition': 'attachment; filename="moodmash-data.json"'
+    });
+  } catch (error: any) {
+    console.error('[Data Export] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Delete specific mood entry
+app.delete('/api/moods/:id', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const moodId = c.req.param('id');
+    
+    // Verify ownership and delete
+    const result = await env.DB.prepare('DELETE FROM mood_entries WHERE id = ? AND user_id = ?').bind(moodId, userId).run();
+    
+    if (result.meta.changes === 0) {
+      return c.json({ success: false, error: 'Mood entry not found or unauthorized' }, 404);
+    }
+    
+    return c.json({ success: true, message: 'Mood entry deleted successfully' });
+  } catch (error: any) {
+    console.error('[Delete Mood] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 4. Delete all user data (GDPR Article 17 - Right to Erasure)
+app.delete('/api/user/delete-account', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const confirmation = c.req.query('confirm');
+    
+    if (confirmation !== 'DELETE_MY_ACCOUNT') {
+      return c.json({ success: false, error: 'Confirmation required. Pass ?confirm=DELETE_MY_ACCOUNT' }, 400);
+    }
+    
+    // Delete all user data (cascade deletes handled by foreign keys)
+    await env.DB.prepare('DELETE FROM mood_entries WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM activities WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM health_metrics WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM professional_connections WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM user_consents WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM data_exports WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM support_access_log WHERE user_id = ?').bind(userId).run();
+    await env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId).run();
+    
+    return c.json({ success: true, message: 'Account and all data permanently deleted' });
+  } catch (error: any) {
+    console.error('[Delete Account] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 5. Update user consent preferences
+app.post('/api/consent/update', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const { consent_type, consent_given } = await c.req.json();
+    
+    // Validate consent type
+    const validTypes = ['privacy_policy', 'terms_of_service', 'data_collection', 'ai_analysis', 'research_participation', 'marketing_emails'];
+    if (!validTypes.includes(consent_type)) {
+      return c.json({ success: false, error: 'Invalid consent type' }, 400);
+    }
+    
+    // Update or insert consent
+    await env.DB.prepare(`
+      INSERT INTO user_consents (user_id, consent_type, consent_given, consent_date, consent_version)
+      VALUES (?, ?, ?, datetime('now'), '9.0')
+      ON CONFLICT(user_id, consent_type) DO UPDATE SET
+        consent_given = excluded.consent_given,
+        consent_date = excluded.consent_date,
+        revoked_date = CASE WHEN excluded.consent_given = 0 THEN datetime('now') ELSE NULL END
+    `).bind(userId, consent_type, consent_given ? 1 : 0).run();
+    
+    return c.json({ success: true, message: 'Consent preference updated' });
+  } catch (error: any) {
+    console.error('[Update Consent] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Helper function to convert data to CSV
+function convertToCSV(data: any): string {
+  let csv = '# MoodMash Data Export\n';
+  csv += `# Export Date: ${data.export_date}\n\n`;
+  
+  // Mood Entries
+  if (data.mood_entries && data.mood_entries.length > 0) {
+    csv += '## Mood Entries\n';
+    const headers = Object.keys(data.mood_entries[0]).join(',');
+    csv += headers + '\n';
+    data.mood_entries.forEach((entry: any) => {
+      csv += Object.values(entry).join(',') + '\n';
+    });
+    csv += '\n';
+  }
+  
+  return csv;
+}
 
 // AI Insights Dashboard Page
 app.get('/ai-insights', (c) => {
