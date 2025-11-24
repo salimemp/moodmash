@@ -22,6 +22,7 @@ import {
   trackEvent, 
   logError 
 } from './middleware/analytics';
+import { HealthMetricsService } from './services/health-metrics';
 import { 
   securityMiddleware, 
   rateLimiter, 
@@ -2703,6 +2704,16 @@ app.get('/activities', (c) => {
   return c.html(renderHTML('Wellness Activities', content, 'activities'));
 });
 
+// Health Dashboard page (v9.0)
+app.get('/health-dashboard', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/health-dashboard.js"></script>
+  `;
+  return c.html(renderHTML('Health Dashboard', content, 'health-dashboard'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -2899,6 +2910,117 @@ app.post('/api/ai/analytics', async (c) => {
     return c.json({ success: true, data: result });
   } catch (error: any) {
     console.error('[AI Analytics] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// HEALTH DASHBOARD API ENDPOINTS (v9.0)
+// ============================================================================
+
+// 1. Get current health metrics
+app.get('/api/health/metrics', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    
+    // Get mood data for last 30 days
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      AND logged_at >= datetime('now', '-30 days')
+      ORDER BY logged_at DESC
+    `).bind(userId).all();
+    
+    const metrics = HealthMetricsService.calculateMetrics(moods.results as any[], 30);
+    
+    // Store metrics in database
+    await env.DB.prepare(`
+      INSERT INTO health_metrics (
+        user_id, mental_health_score, mood_stability_index, sleep_quality_score,
+        activity_consistency, stress_level, crisis_risk_level, mood_trend,
+        positive_emotion_ratio, negative_emotion_ratio, best_time_of_day,
+        worst_time_of_day, data_points_used, calculation_period_days
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      userId,
+      metrics.mental_health_score,
+      metrics.mood_stability_index,
+      metrics.sleep_quality_score,
+      metrics.activity_consistency,
+      metrics.stress_level,
+      metrics.crisis_risk_level,
+      metrics.mood_trend,
+      metrics.positive_emotion_ratio,
+      metrics.negative_emotion_ratio,
+      metrics.best_time_of_day,
+      metrics.worst_time_of_day,
+      metrics.data_points_used,
+      metrics.calculation_period_days
+    ).run();
+    
+    return c.json({ success: true, data: metrics });
+  } catch (error: any) {
+    console.error('[Health Metrics] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Get health trends (compare periods)
+app.get('/api/health/trends/:period', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const period = c.req.param('period'); // "7d", "30d", "90d"
+    
+    const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
+    
+    // Get current period data
+    const currentMoods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      AND logged_at >= datetime('now', '-${days} days')
+      ORDER BY logged_at DESC
+    `).bind(userId).all();
+    
+    // Get previous period data for comparison
+    const previousMoods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      AND logged_at >= datetime('now', '-${days * 2} days')
+      AND logged_at < datetime('now', '-${days} days')
+      ORDER BY logged_at DESC
+    `).bind(userId).all();
+    
+    const trends = HealthMetricsService.calculateTrends(
+      currentMoods.results as any[],
+      previousMoods.results as any[],
+      period
+    );
+    
+    return c.json({ success: true, data: trends });
+  } catch (error: any) {
+    console.error('[Health Trends] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Get historical health metrics
+app.get('/api/health/history', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    
+    const history = await env.DB.prepare(`
+      SELECT * FROM health_metrics 
+      WHERE user_id = ? 
+      ORDER BY calculated_at DESC 
+      LIMIT 90
+    `).bind(userId).all();
+    
+    return c.json({ success: true, data: history.results });
+  } catch (error: any) {
+    console.error('[Health History] Error:', error);
     return c.json({ success: false, error: error.message }, 500);
   }
 });
