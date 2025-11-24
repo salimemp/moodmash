@@ -4,9 +4,9 @@
 
 **Deployment Date**: January 24, 2025  
 **Version**: 8.15.0  
-**Production URL**: https://0f7244cc.moodmash.pages.dev  
+**Production URL**: https://50031e4d.moodmash.pages.dev  
 **Custom Domain**: https://moodmash.win (will auto-update)  
-**AI Dashboard**: https://0f7244cc.moodmash.pages.dev/ai-insights
+**AI Dashboard**: https://50031e4d.moodmash.pages.dev/ai-insights
 
 ---
 
@@ -420,7 +420,7 @@ echo "AIzaSyDlbwOrgsn62F7be7yILDgB5nRVW9gdXwo" | \
 ### **1. Visit AI Insights Dashboard**
 
 ```
-https://0f7244cc.moodmash.pages.dev/ai-insights
+https://50031e4d.moodmash.pages.dev/ai-insights
 ```
 
 **Expected**: Beautiful page with 8 feature cards
@@ -462,16 +462,16 @@ https://0f7244cc.moodmash.pages.dev/ai-insights
 
 ```bash
 # Test Pattern Recognition
-curl -X POST https://0f7244cc.moodmash.pages.dev/api/ai/patterns \
+curl -X POST https://50031e4d.moodmash.pages.dev/api/ai/patterns \
   -H "Content-Type: application/json"
 
 # Test Recommendations
-curl -X POST https://0f7244cc.moodmash.pages.dev/api/ai/recommend \
+curl -X POST https://50031e4d.moodmash.pages.dev/api/ai/recommend \
   -H "Content-Type: application/json" \
   -d '{"currentMood": "anxious", "intensity": 4}'
 
 # Test Crisis Check
-curl -X POST https://0f7244cc.moodmash.pages.dev/api/ai/crisis-check \
+curl -X POST https://50031e4d.moodmash.pages.dev/api/ai/crisis-check \
   -H "Content-Type: application/json"
 ```
 
@@ -631,12 +631,12 @@ npx wrangler pages secret put GEMINI_API_KEY --project-name moodmash
 ✅ Production-ready deployment  
 
 ### **Live URLs**
-- **Production**: https://0f7244cc.moodmash.pages.dev
-- **AI Dashboard**: https://0f7244cc.moodmash.pages.dev/ai-insights
+- **Production**: https://50031e4d.moodmash.pages.dev
+- **AI Dashboard**: https://50031e4d.moodmash.pages.dev/ai-insights
 - **Custom Domain**: https://moodmash.win (auto-updates)
 
 ### **Next Steps for You**
-1. ✅ Visit https://0f7244cc.moodmash.pages.dev/ai-insights
+1. ✅ Visit https://50031e4d.moodmash.pages.dev/ai-insights
 2. ✅ Test each AI feature by clicking the buttons
 3. ✅ Add more mood entries to get better AI insights
 4. ✅ Share feedback on AI accuracy and usefulness
