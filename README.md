@@ -7,15 +7,16 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 ## 🎯 Project Overview
 
 - **Name**: MoodMash
-- **Version**: 8.14.0 (Dashboard Feature Cards - All Modules Visible)
-- **Goal**: Help users understand, track, and improve emotional wellbeing through data-driven insights
-- **Tech Stack**: Hono + TypeScript + Cloudflare Pages + D1 Database + TailwindCSS + Chart.js
-- **Status**: ✅ All systems operational - All features now accessible
+- **Version**: 8.15.0 (AI-Powered Mood Intelligence with Gemini 2.0 Flash)
+- **Goal**: Help users understand, track, and improve emotional wellbeing through AI-driven insights
+- **Tech Stack**: Hono + TypeScript + Cloudflare Pages + D1 Database + TailwindCSS + Chart.js + Google Gemini AI
+- **Status**: ✅ All systems operational with 8 AI-powered features
 
 ## 🌐 Live URLs
 
 - **🎯 CUSTOM DOMAIN (ACTIVE)**: https://moodmash.win (✅ LIVE v8.7!)
-- **🚀 Production**: https://f857b8c3.moodmash.pages.dev (v8.14)
+- **🚀 Production**: https://0f7244cc.moodmash.pages.dev (v8.15 - AI-Powered)
+- **🤖 AI Insights**: https://0f7244cc.moodmash.pages.dev/ai-insights
 - **📊 Admin Dashboard**: https://moodmash.win/admin (Analytics & Monitoring)
 - **🔗 Legacy URLs**: v7.0 (https://5b2d3cf4.moodmash.pages.dev) | v5.0 (https://f4c6804f.moodmash.pages.dev)
 - **Login**: https://moodmash.win/login
@@ -25,9 +26,73 @@ MoodMash is a modern web application for tracking your emotional wellbeing, iden
 - **API Health**: https://moodmash.win/api/health
 - **GitHub**: https://github.com/salimemp/moodmash
 
-## ✨ Current Features (MVP v1.0)
+## ✨ Current Features (v8.15 - AI-Powered)
 
 ### ✅ Completed Features
+
+### 🤖 **NEW! AI-Powered Mood Intelligence (v8.15)**
+
+**8 Advanced AI Features powered by Google Gemini 2.0 Flash:**
+
+1. **🔍 Mood Pattern Recognition**
+   - Analyzes 30 days of mood data to identify recurring patterns
+   - Detects frequency of mood types
+   - Provides actionable insights and recommendations
+   - API: `POST /api/ai/patterns`
+
+2. **📈 Predictive Mood Forecasting**
+   - Predicts mood for next 7 days with confidence scores
+   - Early warning system for risk days
+   - Uses historical data and contextual factors
+   - API: `POST /api/ai/forecast`
+
+3. **🎯 Contextual Mood Analysis**
+   - Correlates mood with activities, sleep, weather
+   - Identifies high-impact factors
+   - Strength ratings (high/moderate/low)
+   - API: `POST /api/ai/context`
+
+4. **🧩 Causal Factor Identification**
+   - Identifies positive and negative triggers
+   - Impact scores for each factor
+   - Personalized recommendations to maximize positive triggers
+   - API: `POST /api/ai/causes`
+
+5. **💡 Personalized Recommendations**
+   - Activity suggestions based on current mood
+   - Effectiveness predictions for each recommendation
+   - Duration estimates and detailed reasoning
+   - API: `POST /api/ai/recommend`
+
+6. **🚨 Crisis Intervention System**
+   - Real-time risk level assessment (low/moderate/high/critical)
+   - Warning indicators detection
+   - Crisis resources and hotline numbers
+   - API: `POST /api/ai/crisis-check`
+
+7. **⚠️ Early Risk Detection**
+   - Trend analysis (improving/stable/declining/critical)
+   - Warning signs identification
+   - Proactive mental health recommendations
+   - API: `POST /api/ai/risk-detect`
+
+8. **📊 Advanced Mood Analytics**
+   - Best/worst times of day analysis
+   - Mood variance calculations
+   - Stress management effectiveness scoring
+   - Progress summaries and actionable tips
+   - API: `POST /api/ai/analytics`
+
+**AI Features Dashboard**: https://0f7244cc.moodmash.pages.dev/ai-insights
+
+**Technical Stack**:
+- **AI Provider**: Google Gemini 2.0 Flash Experimental
+- **Cost**: **FREE** (1M tokens/day limit)
+- **Response Time**: 500-2000ms average
+- **Security**: Server-side only, Cloudflare secrets
+- **Format**: Structured JSON responses
+
+---
 
 1. **Mood Logging**
    - 10 emotion types (happy, sad, anxious, calm, energetic, tired, angry, peaceful, stressed, neutral)
