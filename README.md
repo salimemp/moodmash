@@ -1,5 +1,9 @@
 # MoodMash
 
+[![CI](https://github.com/salimemp/moodmash/actions/workflows/ci.yml/badge.svg)](https://github.com/salimemp/moodmash/actions/workflows/ci.yml)
+[![CD](https://github.com/salimemp/moodmash/actions/workflows/deploy.yml/badge.svg)](https://github.com/salimemp/moodmash/actions/workflows/deploy.yml)
+[![Security Audit](https://github.com/salimemp/moodmash/actions/workflows/dependency-management.yml/badge.svg)](https://github.com/salimemp/moodmash/actions/workflows/dependency-management.yml)
+
 **Intelligent Mood Tracking & Emotional Wellness Platform**
 
 MoodMash is a modern web application for tracking your emotional wellbeing, identifying patterns, and discovering personalized wellness activities. Built with Hono, Cloudflare Pages, and D1 database.

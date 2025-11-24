@@ -1,0 +1,116 @@
+name: Dependency Management
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check-updates:
+    name: Check for Dependency Updates
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Check for outdated packages
+        run: |
+          echo "📦 Checking for outdated packages..."
+          npm outdated || true
+      
+      - name: Check for security updates
+        run: |
+          echo "🔒 Checking for security updates..."
+          npm audit || true
+      
+      - name: Generate update report
+        run: |
+          echo "📊 Dependency Update Report" > update-report.txt
+          echo "Generated: $(date)" >> update-report.txt
+          echo "" >> update-report.txt
+          echo "=== Outdated Packages ===" >> update-report.txt
+          npm outdated >> update-report.txt 2>&1 || true
+          echo "" >> update-report.txt
+          echo "=== Security Audit ===" >> update-report.txt
+          npm audit >> update-report.txt 2>&1 || true
+      
+      - name: Upload update report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-update-report
+          path: update-report.txt
+          retention-days: 30
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run security audit
+        run: |
+          echo "🔍 Running comprehensive security audit..."
+          npm audit --json > security-audit.json || true
+          
+          echo ""
+          echo "📊 Security Summary:"
+          npm audit || true
+      
+      - name: Check for critical vulnerabilities
+        run: |
+          if npm audit --audit-level=critical; then
+            echo "✅ No critical vulnerabilities found"
+          else
+            echo "⚠️ Critical vulnerabilities detected"
+            echo "Please review and update affected packages"
+          fi
+        continue-on-error: true
+      
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report
+          path: security-audit.json
+          retention-days: 90
+
+  license-check:
+    name: License Compliance Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Check licenses
+        run: |
+          echo "📜 Checking package licenses..."
+          npx license-checker --summary || echo "License checker not available, skipping..."
+        continue-on-error: true
