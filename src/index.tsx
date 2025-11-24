@@ -2742,6 +2742,16 @@ app.get('/hipaa-compliance', (c) => {
   return c.html(renderHTML('HIPAA Compliance Dashboard', content, 'hipaa-compliance'));
 });
 
+// Security Monitoring Dashboard (v9.5 Phase 2)
+app.get('/security-monitoring', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/security-monitoring.js"></script>
+  `;
+  return c.html(renderHTML('Security Monitoring', content, 'security-monitoring'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -3208,6 +3218,163 @@ app.post('/api/hipaa/policies', async (c) => {
     return c.json({ success: true, data: { id: result.meta.last_row_id } });
   } catch (error: any) {
     console.error('[Create Policy] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// SECURITY MONITORING API ENDPOINTS (v9.5) - Phase 2
+// ============================================================================
+
+import { SecurityMonitoringService } from './services/security-monitoring';
+
+// 1. Get security dashboard stats
+app.get('/api/security/dashboard', async (c) => {
+  try {
+    const { env } = c;
+    const stats = await SecurityMonitoringService.getDashboardStats(env.DB);
+    
+    await SecurityMonitoringService.logEvent(env.DB, {
+      event_type: 'VIEW_SECURITY_DASHBOARD',
+      severity: 'low',
+      description: 'Security dashboard accessed'
+    });
+    
+    return c.json({ success: true, data: stats });
+  } catch (error: any) {
+    console.error('[Security Dashboard] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Get security events
+app.get('/api/security/events', async (c) => {
+  try {
+    const { env } = c;
+    const severity = c.req.query('severity');
+    const limit = parseInt(c.req.query('limit') || '100');
+    
+    let query = 'SELECT * FROM security_events WHERE 1=1';
+    const params: any[] = [];
+    
+    if (severity) {
+      query += ' AND severity = ?';
+      params.push(severity);
+    }
+    
+    query += ' ORDER BY timestamp DESC LIMIT ?';
+    params.push(limit);
+    
+    const events = await env.DB.prepare(query).bind(...params).all();
+    
+    return c.json({ success: true, data: events.results });
+  } catch (error: any) {
+    console.error('[Security Events] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Get failed logins
+app.get('/api/security/failed-logins', async (c) => {
+  try {
+    const { env } = c;
+    const limit = parseInt(c.req.query('limit') || '100');
+    
+    const logins = await env.DB.prepare(`
+      SELECT * FROM failed_logins 
+      ORDER BY timestamp DESC 
+      LIMIT ?
+    `).bind(limit).all();
+    
+    return c.json({ success: true, data: logins.results });
+  } catch (error: any) {
+    console.error('[Failed Logins] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 4. Get security alerts
+app.get('/api/security/alerts', async (c) => {
+  try {
+    const { env } = c;
+    const status = c.req.query('status');
+    
+    let query = 'SELECT * FROM security_alerts WHERE 1=1';
+    const params: any[] = [];
+    
+    if (status) {
+      query += ' AND alert_status = ?';
+      params.push(status);
+    }
+    
+    query += ' ORDER BY created_at DESC LIMIT 50';
+    
+    const alerts = await env.DB.prepare(query).bind(...params).all();
+    
+    return c.json({ success: true, data: alerts.results });
+  } catch (error: any) {
+    console.error('[Security Alerts] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 5. Get compliance checklist
+app.get('/api/security/compliance-checklist', async (c) => {
+  try {
+    const { env } = c;
+    
+    // Check if checklist is empty and initialize if needed
+    const count = await env.DB.prepare('SELECT COUNT(*) as count FROM compliance_checklist').first();
+    if (count?.count === 0) {
+      await SecurityMonitoringService.initializeComplianceChecklist(env.DB);
+    }
+    
+    const checklist = await SecurityMonitoringService.getComplianceChecklist(env.DB);
+    
+    return c.json({ success: true, data: checklist });
+  } catch (error: any) {
+    console.error('[Compliance Checklist] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 6. Update compliance check
+app.put('/api/security/compliance-checklist/:id', async (c) => {
+  try {
+    const { env } = c;
+    const checkId = parseInt(c.req.param('id'));
+    const { is_compliant, notes } = await c.req.json();
+    
+    await SecurityMonitoringService.updateComplianceCheck(env.DB, checkId, is_compliant, notes);
+    
+    await SecurityMonitoringService.logEvent(env.DB, {
+      event_type: 'UPDATE_COMPLIANCE_CHECK',
+      severity: 'low',
+      description: `Compliance check ${checkId} updated: ${is_compliant ? 'compliant' : 'non-compliant'}`
+    });
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('[Update Compliance Check] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 7. Get rate limit hits
+app.get('/api/security/rate-limits', async (c) => {
+  try {
+    const { env } = c;
+    
+    const rateLimits = await env.DB.prepare(`
+      SELECT * FROM rate_limit_hits 
+      WHERE timestamp >= datetime('now', '-24 hours')
+      ORDER BY hit_count DESC 
+      LIMIT 50
+    `).all();
+    
+    return c.json({ success: true, data: rateLimits.results });
+  } catch (error: any) {
+    console.error('[Rate Limits] Error:', error);
     return c.json({ success: false, error: error.message }, 500);
   }
 });
