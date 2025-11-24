@@ -503,6 +503,116 @@ app.delete('/api/moods/:id', async (c) => {
   }
 });
 
+// ============================================================================
+// BULK MOOD OPERATIONS (v10.0) - Phase 3
+// ============================================================================
+
+// Bulk update moods
+app.put('/api/moods/bulk', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { ids, updates } = await c.req.json<{ ids: number[], updates: Partial<MoodEntry> }>();
+    
+    if (!ids || ids.length === 0) {
+      return c.json({ error: 'No mood IDs provided' }, 400);
+    }
+    
+    if (!updates || Object.keys(updates).length === 0) {
+      return c.json({ error: 'No updates provided' }, 400);
+    }
+    
+    // Validate intensity if provided
+    if (updates.intensity !== undefined && (updates.intensity < 1 || updates.intensity > 5)) {
+      return c.json({ error: 'Intensity must be between 1 and 5' }, 400);
+    }
+    
+    // Build dynamic update query
+    const updateFields: string[] = [];
+    const values: any[] = [];
+    
+    if (updates.emotion) {
+      updateFields.push('emotion = ?');
+      values.push(updates.emotion);
+    }
+    if (updates.intensity !== undefined) {
+      updateFields.push('intensity = ?');
+      values.push(updates.intensity);
+    }
+    if (updates.notes !== undefined) {
+      updateFields.push('notes = ?');
+      values.push(updates.notes);
+    }
+    if (updates.weather !== undefined) {
+      updateFields.push('weather = ?');
+      values.push(updates.weather);
+    }
+    if (updates.sleep_hours !== undefined) {
+      updateFields.push('sleep_hours = ?');
+      values.push(updates.sleep_hours);
+    }
+    if (updates.activities !== undefined) {
+      updateFields.push('activities = ?');
+      values.push(JSON.stringify(updates.activities));
+    }
+    if (updates.social_interaction !== undefined) {
+      updateFields.push('social_interaction = ?');
+      values.push(updates.social_interaction);
+    }
+    
+    if (updateFields.length === 0) {
+      return c.json({ error: 'No valid fields to update' }, 400);
+    }
+    
+    // Update all moods in a batch
+    const placeholders = ids.map(() => '?').join(',');
+    const query = `
+      UPDATE mood_entries 
+      SET ${updateFields.join(', ')} 
+      WHERE id IN (${placeholders}) AND user_id = ?
+    `;
+    
+    await DB.prepare(query).bind(...values, ...ids, 1).run();
+    
+    return c.json({ 
+      message: `${ids.length} mood entries updated successfully`,
+      updated_count: ids.length
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Bulk delete moods
+app.delete('/api/moods/bulk', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { ids } = await c.req.json<{ ids: number[] }>();
+    
+    if (!ids || ids.length === 0) {
+      return c.json({ error: 'No mood IDs provided' }, 400);
+    }
+    
+    const placeholders = ids.map(() => '?').join(',');
+    const result = await DB.prepare(`
+      DELETE FROM mood_entries 
+      WHERE id IN (${placeholders}) AND user_id = ?
+    `).bind(...ids, 1).run();
+    
+    return c.json({ 
+      message: `${ids.length} mood entries deleted successfully`,
+      deleted_count: ids.length
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// MOOD STATISTICS
+// ============================================================================
+
 // Get mood statistics
 app.get('/api/stats', async (c) => {
   const { DB } = c.env;
