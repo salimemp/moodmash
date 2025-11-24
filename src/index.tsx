@@ -63,6 +63,25 @@ app.use('*', securityMiddleware);
 // Analytics Middleware (track all API calls)
 app.use('/api/*', analyticsMiddleware);
 
+// Performance Tracking Middleware
+app.use('/api/*', async (c, next) => {
+  const startTime = Date.now();
+  const { trackPerformance } = await import('./services/performance-monitoring');
+
+  await next();
+
+  const responseTime = Date.now() - startTime;
+  
+  // Track in background (don't await)
+  trackPerformance(c.env, {
+    endpoint: c.req.path,
+    method: c.req.method,
+    response_time_ms: responseTime,
+    status_code: c.res.status,
+    timestamp: new Date().toISOString(),
+  }).catch(console.error);
+});
+
 // Enable CORS for API routes
 app.use('/api/*', cors());
 
@@ -3695,6 +3714,144 @@ app.get('/api/groups/:id/moods', async (c) => {
     return c.json({ success: true, data: moods.results });
   } catch (error: any) {
     return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
+// PRODUCTION MONITORING & PERFORMANCE API ENDPOINTS (v10.0) - Phase 3
+// ============================================================================
+
+import {
+  trackPerformance,
+  getEndpointStats,
+  getPerformanceDashboard,
+  getPerformanceAlerts,
+  type PerformanceMetric,
+} from './services/performance-monitoring';
+import * as CacheService from './services/cache';
+
+// Get performance dashboard
+app.get('/api/performance/dashboard', async (c) => {
+  try {
+    // Check cache first
+    const cached = CacheService.get(CacheService.CacheKeys.performanceDashboard());
+    if (cached) {
+      return c.json(cached, 200, CacheService.getCacheHeaders(CacheService.CacheTTL.SHORT));
+    }
+
+    const dashboard = await getPerformanceDashboard(c.env);
+
+    // Cache for 1 minute
+    CacheService.set(CacheService.CacheKeys.performanceDashboard(), dashboard, CacheService.CacheTTL.SHORT);
+
+    return c.json(dashboard, 200, CacheService.getCacheHeaders(CacheService.CacheTTL.SHORT));
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get endpoint-specific statistics
+app.get('/api/performance/endpoint-stats', async (c) => {
+  try {
+    const endpoint = c.req.query('endpoint');
+    const timeframe = (c.req.query('timeframe') || 'hour') as 'hour' | 'day' | 'week';
+
+    if (!endpoint) {
+      return c.json({ error: 'endpoint parameter required' }, 400);
+    }
+
+    const stats = await getEndpointStats(c.env, endpoint, timeframe);
+    return c.json({ success: true, stats }, 200, CacheService.getCacheHeaders(CacheService.CacheTTL.SHORT));
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get performance alerts
+app.get('/api/performance/alerts', async (c) => {
+  try {
+    const limit = parseInt(c.req.query('limit') || '50');
+    const alerts = await getPerformanceAlerts(c.env, limit);
+
+    return c.json({ success: true, alerts }, 200, CacheService.getCacheHeaders(CacheService.CacheTTL.SHORT));
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get cache statistics
+app.get('/api/performance/cache-stats', async (c) => {
+  try {
+    const stats = CacheService.getStats();
+    return c.json({ success: true, stats }, 200, CacheService.getNoCacheHeaders());
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Clear cache (admin only)
+app.post('/api/performance/clear-cache', async (c) => {
+  try {
+    const { pattern } = await c.req.json();
+
+    if (pattern) {
+      CacheService.delPattern(pattern);
+    } else {
+      CacheService.clear();
+    }
+
+    return c.json({ success: true, message: 'Cache cleared' }, 200, CacheService.getNoCacheHeaders());
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// System health check
+app.get('/api/health/status', async (c) => {
+  try {
+    const start = Date.now();
+
+    // Check database connection
+    const dbCheck = await c.env.DB.prepare('SELECT 1').first();
+    const dbResponseTime = Date.now() - start;
+
+    // Get cache stats
+    const cacheStats = CacheService.getStats();
+
+    // Get recent performance data
+    const recentMetrics = await c.env.DB.prepare(`
+      SELECT AVG(response_time_ms) as avg_time
+      FROM performance_metrics
+      WHERE timestamp > datetime('now', '-5 minutes')
+    `).first();
+
+    const health = {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      checks: {
+        database: {
+          status: dbCheck ? 'healthy' : 'unhealthy',
+          response_time_ms: dbResponseTime,
+        },
+        cache: {
+          status: 'healthy',
+          hit_rate: cacheStats.hit_rate.toFixed(2) + '%',
+          total_entries: cacheStats.total_entries,
+        },
+        performance: {
+          status: (recentMetrics?.avg_time || 0) < 500 ? 'healthy' : 'degraded',
+          avg_response_time_ms: recentMetrics?.avg_time || 0,
+        },
+      },
+    };
+
+    return c.json(health, 200, CacheService.getNoCacheHeaders());
+  } catch (error: any) {
+    return c.json({
+      status: 'unhealthy',
+      error: error.message,
+      timestamp: new Date().toISOString(),
+    }, 500);
   }
 });
 
