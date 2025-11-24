@@ -410,6 +410,20 @@ function renderMoreFeatures() {
             icon: 'fa-graduation-cap',
             color: 'blue',
             url: '/privacy-education'
+        },
+        {
+            title: '👥 Social Feed',
+            description: 'Share & connect with community',
+            icon: 'fa-users',
+            color: 'purple',
+            url: '/social-feed'
+        },
+        {
+            title: '🤝 Mood Groups',
+            description: 'Synchronized group experiences',
+            icon: 'fa-user-friends',
+            color: 'pink',
+            url: '/mood-groups'
         }
     ];
     

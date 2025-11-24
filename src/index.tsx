@@ -4165,6 +4165,15 @@ app.get('/social-feed', (c) => {
   return c.html(renderHTML('Social Feed', content, 'social-feed'));
 });
 
+// Mood-Synchronized Groups Dashboard (v10.0 Phase 3)
+app.get('/mood-groups', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/mood-groups.js"></script>
+  `;
+  return c.html(renderHTML('Mood Groups', content, 'mood-groups'));
+});
+
 // API Documentation page
 app.get('/api-docs', (c) => {
   return c.redirect('/static/api-docs.html');
