@@ -3509,6 +3509,196 @@ app.get('/api/security/rate-limits', async (c) => {
 });
 
 // ============================================================================
+// SOCIAL FEATURES & GROUPS API ENDPOINTS (v10.0) - Phase 3
+// ============================================================================
+
+// Get social feed
+app.get('/api/social/feed', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1; // TODO: Get from session
+    const limit = parseInt(c.req.query('limit') || '20');
+    
+    // Get mood shares from friends
+    const feed = await env.DB.prepare(`
+      SELECT ms.*, me.emotion, me.intensity, me.notes, me.logged_at,
+             u.name as user_name, up.display_name, up.avatar_url,
+             (SELECT COUNT(*) FROM mood_reactions WHERE mood_share_id = ms.id) as reaction_count,
+             (SELECT COUNT(*) FROM mood_comments WHERE mood_share_id = ms.id) as comment_count
+      FROM mood_shares ms
+      JOIN mood_entries me ON ms.mood_entry_id = me.id
+      JOIN users u ON ms.user_id = u.id
+      LEFT JOIN user_profiles up ON ms.user_id = up.user_id
+      WHERE ms.user_id IN (
+        SELECT friend_id FROM friendships 
+        WHERE user_id = ? AND friendship_status = 'accepted'
+      )
+      OR ms.share_type = 'public'
+      ORDER BY ms.shared_at DESC
+      LIMIT ?
+    `).bind(userId, limit).all();
+    
+    return c.json({ success: true, data: feed.results });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Share mood
+app.post('/api/social/share', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1;
+    const { mood_entry_id, share_type, caption, allow_comments } = await c.req.json();
+    
+    const result = await env.DB.prepare(`
+      INSERT INTO mood_shares (mood_entry_id, user_id, share_type, caption, allow_comments)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(mood_entry_id, userId, share_type || 'friends', caption || null, allow_comments !== false ? 1 : 0).run();
+    
+    return c.json({ success: true, data: { id: result.meta.last_row_id } });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Add friend request
+app.post('/api/social/friends/request', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1;
+    const { friend_id } = await c.req.json();
+    
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO friendships (user_id, friend_id, friendship_status)
+      VALUES (?, ?, 'pending')
+    `).bind(userId, friend_id).run();
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Get user's friends
+app.get('/api/social/friends', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1;
+    
+    const friends = await env.DB.prepare(`
+      SELECT f.*, u.name, u.email, up.display_name, up.avatar_url
+      FROM friendships f
+      JOIN users u ON f.friend_id = u.id
+      LEFT JOIN user_profiles up ON f.friend_id = up.user_id
+      WHERE f.user_id = ? AND f.friendship_status = 'accepted'
+      ORDER BY f.accepted_at DESC
+    `).bind(userId).all();
+    
+    return c.json({ success: true, data: friends.results });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Create mood group
+app.post('/api/groups', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1;
+    const { name, description, group_type } = await c.req.json();
+    
+    const result = await env.DB.prepare(`
+      INSERT INTO mood_groups (name, description, group_type, creator_id)
+      VALUES (?, ?, ?, ?)
+    `).bind(name, description || null, group_type || 'public', userId).run();
+    
+    const groupId = result.meta.last_row_id;
+    
+    // Add creator as admin
+    await env.DB.prepare(`
+      INSERT INTO group_members (group_id, user_id, member_role)
+      VALUES (?, ?, 'admin')
+    `).bind(groupId, userId).run();
+    
+    return c.json({ success: true, data: { id: groupId } });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Get all groups
+app.get('/api/groups', async (c) => {
+  try {
+    const { env } = c;
+    const type = c.req.query('type') || 'public';
+    
+    const groups = await env.DB.prepare(`
+      SELECT g.*, u.name as creator_name,
+             (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) as actual_member_count
+      FROM mood_groups g
+      JOIN users u ON g.creator_id = u.id
+      WHERE g.group_type = ?
+      ORDER BY g.created_at DESC
+      LIMIT 50
+    `).bind(type).all();
+    
+    return c.json({ success: true, data: groups.results });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Join group
+app.post('/api/groups/:id/join', async (c) => {
+  try {
+    const { env } = c;
+    const userId = 1;
+    const groupId = c.req.param('id');
+    
+    await env.DB.prepare(`
+      INSERT OR IGNORE INTO group_members (group_id, user_id, member_role)
+      VALUES (?, ?, 'member')
+    `).bind(groupId, userId).run();
+    
+    // Update member count
+    await env.DB.prepare(`
+      UPDATE mood_groups 
+      SET member_count = (SELECT COUNT(*) FROM group_members WHERE group_id = ?)
+      WHERE id = ?
+    `).bind(groupId, groupId).run();
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// Get group moods
+app.get('/api/groups/:id/moods', async (c) => {
+  try {
+    const { env } = c;
+    const groupId = c.req.param('id');
+    
+    const moods = await env.DB.prepare(`
+      SELECT gm.*, me.emotion, me.intensity, me.notes, me.logged_at,
+             u.name as user_name, up.display_name, up.avatar_url
+      FROM group_moods gm
+      JOIN mood_entries me ON gm.mood_entry_id = me.id
+      JOIN users u ON gm.user_id = u.id
+      LEFT JOIN user_profiles up ON gm.user_id = up.user_id
+      WHERE gm.group_id = ?
+      ORDER BY gm.created_at DESC
+      LIMIT 50
+    `).bind(groupId).all();
+    
+    return c.json({ success: true, data: moods.results });
+  } catch (error: any) {
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// ============================================================================
 // RESEARCH CENTER API ENDPOINTS (v9.5) - Phase 2
 // ============================================================================
 
