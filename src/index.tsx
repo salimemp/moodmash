@@ -3718,6 +3718,170 @@ app.get('/api/groups/:id/moods', async (c) => {
 });
 
 // ============================================================================
+// PREMIUM SUBSCRIPTIONS & CAPTCHA API ENDPOINTS (v10.1) - Premium Features
+// ============================================================================
+
+import {
+  getUserSubscription,
+  getSubscriptionPlans,
+  createSubscription,
+  cancelSubscription,
+  getSubscriptionStats,
+  checkFeatureAccess,
+  checkUsageLimit,
+} from './services/subscriptions';
+
+import {
+  verifyTurnstile,
+  logCaptchaVerification,
+  getCaptchaStats,
+} from './services/turnstile';
+
+import { requireFeature, PREMIUM_FEATURES } from './middleware/premium';
+
+// Get user's subscription details
+app.get('/api/subscription', async (c) => {
+  try {
+    const userId = parseInt(c.req.query('user_id') || '1');
+    const stats = await getSubscriptionStats(c.env, userId);
+
+    if (!stats) {
+      return c.json({ error: 'Subscription not found' }, 404);
+    }
+
+    return c.json({ success: true, data: stats });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get all available subscription plans
+app.get('/api/subscription/plans', async (c) => {
+  try {
+    const plans = await getSubscriptionPlans(c.env);
+    return c.json({ success: true, plans });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Create/upgrade subscription
+app.post('/api/subscription/subscribe', async (c) => {
+  try {
+    const { user_id, plan_id, billing_cycle, payment_method } = await c.req.json();
+
+    const subscription = await createSubscription(
+      c.env,
+      user_id,
+      plan_id,
+      billing_cycle,
+      payment_method
+    );
+
+    if (!subscription) {
+      return c.json({ error: 'Failed to create subscription' }, 500);
+    }
+
+    return c.json({ success: true, subscription });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Cancel subscription
+app.post('/api/subscription/cancel', async (c) => {
+  try {
+    const { user_id } = await c.req.json();
+
+    const success = await cancelSubscription(c.env, user_id);
+
+    if (!success) {
+      return c.json({ error: 'Failed to cancel subscription' }, 500);
+    }
+
+    return c.json({ success: true, message: 'Subscription cancelled' });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Check feature access
+app.get('/api/subscription/check-feature', async (c) => {
+  try {
+    const userId = parseInt(c.req.query('user_id') || '1');
+    const featureId = c.req.query('feature_id');
+
+    if (!featureId) {
+      return c.json({ error: 'feature_id required' }, 400);
+    }
+
+    const access = await checkFeatureAccess(c.env, userId, featureId);
+    return c.json({ success: true, access });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Check usage limits
+app.get('/api/subscription/usage-limit', async (c) => {
+  try {
+    const userId = parseInt(c.req.query('user_id') || '1');
+    const limitType = c.req.query('type') as 'moods' | 'groups' | 'friends';
+
+    if (!limitType) {
+      return c.json({ error: 'type required (moods, groups, or friends)' }, 400);
+    }
+
+    const usage = await checkUsageLimit(c.env, userId, limitType);
+    return c.json({ success: true, usage });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Verify Turnstile captcha
+app.post('/api/captcha/verify', async (c) => {
+  try {
+    const { token, action, user_id } = await c.req.json();
+
+    if (!token) {
+      return c.json({ error: 'token required' }, 400);
+    }
+
+    const ipAddress = c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For');
+    const result = await verifyTurnstile(c.env, token, ipAddress);
+
+    // Log verification
+    await logCaptchaVerification(
+      c.env,
+      user_id || null,
+      ipAddress || null,
+      action || 'unknown',
+      result.success,
+      result.challenge_ts,
+      result.hostname,
+      result.error_codes
+    );
+
+    return c.json({ success: result.success, result });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get captcha statistics
+app.get('/api/captcha/stats', async (c) => {
+  try {
+    const timeframe = (c.req.query('timeframe') || 'day') as 'hour' | 'day' | 'week';
+    const stats = await getCaptchaStats(c.env, timeframe);
+
+    return c.json({ success: true, stats });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================================================
 // PRODUCTION MONITORING & PERFORMANCE API ENDPOINTS (v10.0) - Phase 3
 // ============================================================================
 
@@ -4329,6 +4493,15 @@ app.get('/mood-groups', (c) => {
     <script src="/static/mood-groups.js"></script>
   `;
   return c.html(renderHTML('Mood Groups', content, 'mood-groups'));
+});
+
+// Subscription Management Dashboard (v10.1 Premium)
+app.get('/subscription', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/subscription.js"></script>
+  `;
+  return c.html(renderHTML('Subscription', content, 'subscription'));
 });
 
 // API Documentation page

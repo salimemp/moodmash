@@ -424,6 +424,13 @@ function renderMoreFeatures() {
             icon: 'fa-user-friends',
             color: 'pink',
             url: '/mood-groups'
+        },
+        {
+            title: '👑 Premium',
+            description: 'Upgrade & manage subscription',
+            icon: 'fa-crown',
+            color: 'yellow',
+            url: '/subscription'
         }
     ];
     
