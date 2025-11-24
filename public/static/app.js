@@ -354,6 +354,13 @@ function renderMoreFeatures() {
             icon: 'fa-users',
             color: 'indigo',
             url: '/social-feed'
+        },
+        {
+            title: '🤖 AI Insights',
+            description: 'Advanced mood intelligence',
+            icon: 'fa-brain',
+            color: 'purple',
+            url: '/ai-insights'
         }
     ];
     

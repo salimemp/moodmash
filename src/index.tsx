@@ -2703,6 +2703,215 @@ app.get('/activities', (c) => {
   return c.html(renderHTML('Wellness Activities', content, 'activities'));
 });
 
+// ========================================
+// AI-POWERED MOOD INTELLIGENCE API ROUTES
+// Using Gemini 2.0 Flash for advanced mood analysis
+// ========================================
+
+import { createAIService } from './services/gemini-ai';
+
+// 1. Mood Pattern Recognition
+app.post('/api/ai/patterns', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    // Get user's mood entries from database
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 30
+    `).bind(userId).all();
+    
+    const result = await aiService.analyzeMoodPatterns(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Patterns] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 2. Predictive Mood Forecasting
+app.post('/api/ai/forecast', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    const body = await c.req.json();
+    
+    // Get user's mood history
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 60
+    `).bind(userId).all();
+    
+    const result = await aiService.forecastMood(moods.results as any[], body.currentContext);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Forecast] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 3. Contextual Mood Analysis
+app.post('/api/ai/context', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 30
+    `).bind(userId).all();
+    
+    const result = await aiService.analyzeContext(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Context] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 4. Causal Factor Identification
+app.post('/api/ai/causes', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 45
+    `).bind(userId).all();
+    
+    const result = await aiService.identifyCausalFactors(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Causes] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 5. Personalized Recommendations
+app.post('/api/ai/recommend', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    const body = await c.req.json();
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 20
+    `).bind(userId).all();
+    
+    const result = await aiService.getRecommendations(
+      body.currentMood,
+      body.intensity,
+      moods.results as any[],
+      body.preferences
+    );
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Recommend] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 6. Crisis Intervention System
+app.post('/api/ai/crisis-check', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 21
+    `).bind(userId).all();
+    
+    const result = await aiService.checkCrisis(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Crisis] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 7. Early Risk Detection
+app.post('/api/ai/risk-detect', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 30
+    `).bind(userId).all();
+    
+    const result = await aiService.detectRisk(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Risk] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// 8. Advanced Mood Analytics
+app.post('/api/ai/analytics', async (c) => {
+  try {
+    const { env } = c;
+    const aiService = createAIService(env.GEMINI_API_KEY);
+    
+    const userId = 1; // TODO: Get from session
+    const moods = await env.DB.prepare(`
+      SELECT * FROM mood_entries 
+      WHERE user_id = ? 
+      ORDER BY logged_at DESC 
+      LIMIT 90
+    `).bind(userId).all();
+    
+    const result = await aiService.getAdvancedAnalytics(moods.results as any[]);
+    
+    return c.json({ success: true, data: result });
+  } catch (error: any) {
+    console.error('[AI Analytics] Error:', error);
+    return c.json({ success: false, error: error.message }, 500);
+  }
+});
+
+// AI Insights Dashboard Page
+app.get('/ai-insights', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/ai-insights.js"></script>
+  `;
+  return c.html(renderHTML('AI Insights', content, 'ai-insights'));
+});
+
 // Express Your Mood page
 app.get('/express', (c) => {
   const content = `

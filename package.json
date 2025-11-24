@@ -37,6 +37,7 @@
     "git:log": "git log --oneline"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@hono/oauth-providers": "^0.8.5",
     "arctic": "^3.7.0",
     "bcryptjs": "^3.0.3",
