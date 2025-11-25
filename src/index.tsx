@@ -1560,6 +1560,273 @@ app.post('/api/auth/logout', async (c) => {
 });
 
 // =============================================================================
+// CONTACT US SYSTEM (Authenticated Users Only)
+// =============================================================================
+
+// Submit contact form (authenticated users only)
+app.post('/api/contact', async (c) => {
+  const { DB, RESEND_API_KEY } = c.env;
+  
+  try {
+    // Get session token
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    if (!sessionToken) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Validate session and get user
+    const session = await DB.prepare(`
+      SELECT s.*, u.id, u.username, u.email, u.name
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Invalid or expired session' }, 401);
+    }
+    
+    const { subject, category, message, priority = 'normal' } = await c.req.json();
+    
+    // Validate input
+    if (!subject || !category || !message) {
+      return c.json({ 
+        error: 'Missing required fields',
+        required: ['subject', 'category', 'message']
+      }, 400);
+    }
+    
+    // Validate category
+    const validCategories = ['support', 'feedback', 'bug_report', 'feature_request', 'other'];
+    if (!validCategories.includes(category)) {
+      return c.json({ 
+        error: 'Invalid category',
+        validCategories
+      }, 400);
+    }
+    
+    // Validate priority
+    const validPriorities = ['low', 'normal', 'high', 'urgent'];
+    if (!validPriorities.includes(priority)) {
+      return c.json({ 
+        error: 'Invalid priority',
+        validPriorities
+      }, 400);
+    }
+    
+    // Validate subject length
+    if (subject.length < 5 || subject.length > 200) {
+      return c.json({ 
+        error: 'Subject must be between 5 and 200 characters'
+      }, 400);
+    }
+    
+    // Validate message length
+    if (message.length < 10 || message.length > 5000) {
+      return c.json({ 
+        error: 'Message must be between 10 and 5000 characters'
+      }, 400);
+    }
+    
+    // Insert contact submission
+    const result = await DB.prepare(`
+      INSERT INTO contact_submissions (
+        user_id, subject, category, message, priority, 
+        user_email, user_name, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pending')
+    `).bind(
+      session.user_id,
+      subject,
+      category,
+      message,
+      priority,
+      session.email,
+      session.name || session.username
+    ).run();
+    
+    const submissionId = result.meta.last_row_id;
+    
+    // Send confirmation email to user
+    try {
+      const { generateContactConfirmationEmail } = await import('./utils/email');
+      await sendEmail(RESEND_API_KEY, {
+        to: session.email,
+        subject: `Message Received - ${subject}`,
+        html: generateContactConfirmationEmail(
+          session.name || session.username,
+          subject,
+          category,
+          submissionId as number
+        )
+      });
+      console.log(`[Contact] Confirmation email sent to ${session.email}`);
+    } catch (emailError) {
+      console.error('[Contact] Failed to send confirmation email:', emailError);
+      // Continue even if email fails
+    }
+    
+    // Send notification email to admin (configure admin email in environment)
+    const adminEmail = 'support@moodmash.win'; // TODO: Make this configurable
+    try {
+      const { generateContactAdminNotificationEmail } = await import('./utils/email');
+      await sendEmail(RESEND_API_KEY, {
+        to: adminEmail,
+        subject: `[${priority.toUpperCase()}] New Contact: ${subject}`,
+        html: generateContactAdminNotificationEmail(
+          session.name || session.username,
+          session.email,
+          session.user_id as number,
+          subject,
+          category,
+          priority,
+          message,
+          submissionId as number
+        ),
+        replyTo: session.email
+      });
+      console.log(`[Contact] Admin notification sent to ${adminEmail}`);
+    } catch (emailError) {
+      console.error('[Contact] Failed to send admin notification:', emailError);
+      // Continue even if email fails
+    }
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'contact_submission', ?, ?, 1)
+    `).bind(
+      session.user_id,
+      JSON.stringify({ category, priority, submission_id: submissionId }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    return c.json({
+      success: true,
+      message: 'Your message has been submitted successfully. We\'ll get back to you soon!',
+      submission: {
+        id: submissionId,
+        subject,
+        category,
+        priority,
+        status: 'pending',
+        created_at: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Contact submission error:', error);
+    return c.json({ error: 'Failed to submit contact form' }, 500);
+  }
+});
+
+// Get user's contact submissions (authenticated users only)
+app.get('/api/contact/my-submissions', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    // Get session token
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    if (!sessionToken) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Validate session
+    const session = await DB.prepare(`
+      SELECT s.*, u.id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Invalid or expired session' }, 401);
+    }
+    
+    // Get user's submissions with response count
+    const submissions = await DB.prepare(`
+      SELECT 
+        cs.*,
+        COUNT(cr.id) as response_count
+      FROM contact_submissions cs
+      LEFT JOIN contact_responses cr ON cs.id = cr.submission_id AND cr.is_public = 1
+      WHERE cs.user_id = ?
+      GROUP BY cs.id
+      ORDER BY cs.created_at DESC
+    `).bind(session.user_id).all();
+    
+    return c.json({
+      success: true,
+      submissions: submissions.results
+    });
+  } catch (error) {
+    console.error('Get submissions error:', error);
+    return c.json({ error: 'Failed to retrieve submissions' }, 500);
+  }
+});
+
+// Get specific submission with responses (authenticated users only)
+app.get('/api/contact/submission/:id', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const submissionId = c.req.param('id');
+    
+    // Get session token
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        c.req.cookie('session_token');
+    
+    if (!sessionToken) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Validate session
+    const session = await DB.prepare(`
+      SELECT s.*, u.id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Invalid or expired session' }, 401);
+    }
+    
+    // Get submission (must belong to user)
+    const submission = await DB.prepare(`
+      SELECT * FROM contact_submissions
+      WHERE id = ? AND user_id = ?
+    `).bind(submissionId, session.user_id).first();
+    
+    if (!submission) {
+      return c.json({ error: 'Submission not found' }, 404);
+    }
+    
+    // Get public responses
+    const responses = await DB.prepare(`
+      SELECT 
+        cr.*,
+        u.username as responder_name
+      FROM contact_responses cr
+      LEFT JOIN users u ON cr.responder_id = u.id
+      WHERE cr.submission_id = ? AND cr.is_public = 1
+      ORDER BY cr.created_at ASC
+    `).bind(submissionId).all();
+    
+    return c.json({
+      success: true,
+      submission,
+      responses: responses.results
+    });
+  } catch (error) {
+    console.error('Get submission error:', error);
+    return c.json({ error: 'Failed to retrieve submission' }, 500);
+  }
+});
+
+// =============================================================================
 // BIOMETRIC AUTHENTICATION ROUTES (WebAuthn)
 // =============================================================================
 import biometricRoutes from './routes/biometrics';
@@ -3247,7 +3514,7 @@ app.get('/privacy-education', (c) => {
 // ========================================
 
 import { createAIService } from './services/gemini-ai';
-import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail, generateVerificationEmail } from './utils/email';
+import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail, generateVerificationEmail, generateContactConfirmationEmail, generateContactAdminNotificationEmail } from './utils/email';
 import { validatePasswordWithBreachCheck, getPasswordSuggestions } from './utils/password-validator';
 
 // 1. Mood Pattern Recognition
@@ -5001,6 +5268,292 @@ app.get('/about', (c) => {
     </body>
     </html>
   `);
+});
+
+// Contact Us Page
+app.get('/contact', (c) => {
+  const content = `
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Contact Us - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    </head>
+    <body class="bg-gradient-to-br from-purple-50 to-blue-50">
+        <div class="min-h-screen py-8 px-4">
+            <div class="max-w-4xl mx-auto">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-envelope text-purple-600"></i> Contact Us
+                    </h1>
+                    <p class="text-gray-600 text-lg">We'd love to hear from you! Share your feedback, report issues, or request features.</p>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+                    <form id="contactForm">
+                        <!-- Category Selection -->
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-semibold mb-3">
+                                <i class="fas fa-tag text-purple-600"></i> Category
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <button type="button" class="category-btn p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition" data-category="support">
+                                    <div class="text-3xl mb-2">🛟</div>
+                                    <div class="text-sm font-semibold">Support</div>
+                                </button>
+                                <button type="button" class="category-btn p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition" data-category="feedback">
+                                    <div class="text-3xl mb-2">💬</div>
+                                    <div class="text-sm font-semibold">Feedback</div>
+                                </button>
+                                <button type="button" class="category-btn p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition" data-category="bug_report">
+                                    <div class="text-3xl mb-2">🐛</div>
+                                    <div class="text-sm font-semibold">Bug Report</div>
+                                </button>
+                                <button type="button" class="category-btn p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition" data-category="feature_request">
+                                    <div class="text-3xl mb-2">💡</div>
+                                    <div class="text-sm font-semibold">Feature</div>
+                                </button>
+                                <button type="button" class="category-btn p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition" data-category="other">
+                                    <div class="text-3xl mb-2">📧</div>
+                                    <div class="text-sm font-semibold">Other</div>
+                                </button>
+                            </div>
+                            <input type="hidden" id="category" name="category" required>
+                            <p class="text-red-500 text-sm mt-2 hidden" id="categoryError">Please select a category</p>
+                        </div>
+
+                        <!-- Priority Selection -->
+                        <div class="mb-6">
+                            <label class="block text-gray-700 font-semibold mb-3">
+                                <i class="fas fa-flag text-purple-600"></i> Priority
+                            </label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <button type="button" class="priority-btn p-3 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition" data-priority="low">
+                                    <span class="text-green-600 font-semibold">🟢 Low</span>
+                                </button>
+                                <button type="button" class="priority-btn active p-3 border-2 border-blue-500 bg-blue-50 rounded-lg" data-priority="normal">
+                                    <span class="text-blue-600 font-semibold">🔵 Normal</span>
+                                </button>
+                                <button type="button" class="priority-btn p-3 border-2 border-gray-200 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition" data-priority="high">
+                                    <span class="text-orange-600 font-semibold">🟠 High</span>
+                                </button>
+                                <button type="button" class="priority-btn p-3 border-2 border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition" data-priority="urgent">
+                                    <span class="text-red-600 font-semibold">🔴 Urgent</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="priority" name="priority" value="normal" required>
+                        </div>
+
+                        <!-- Subject -->
+                        <div class="mb-6">
+                            <label for="subject" class="block text-gray-700 font-semibold mb-2">
+                                <i class="fas fa-heading text-purple-600"></i> Subject
+                            </label>
+                            <input 
+                                type="text" 
+                                id="subject" 
+                                name="subject" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                                placeholder="Brief description of your message"
+                                minlength="5"
+                                maxlength="200"
+                                required
+                            >
+                            <p class="text-gray-500 text-sm mt-1">5-200 characters</p>
+                        </div>
+
+                        <!-- Message -->
+                        <div class="mb-6">
+                            <label for="message" class="block text-gray-700 font-semibold mb-2">
+                                <i class="fas fa-message text-purple-600"></i> Message
+                            </label>
+                            <textarea 
+                                id="message" 
+                                name="message" 
+                                rows="6"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-purple-500 focus:outline-none"
+                                placeholder="Tell us more about your question, feedback, or issue..."
+                                minlength="10"
+                                maxlength="5000"
+                                required
+                            ></textarea>
+                            <p class="text-gray-500 text-sm mt-1">10-5000 characters</p>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button 
+                            type="submit" 
+                            id="submitBtn"
+                            class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold py-4 px-6 rounded-lg hover:from-purple-700 hover:to-blue-700 transition shadow-lg"
+                        >
+                            <i class="fas fa-paper-plane mr-2"></i> Send Message
+                        </button>
+
+                        <!-- Status Messages -->
+                        <div id="successMessage" class="hidden mt-4 p-4 bg-green-50 border-2 border-green-500 rounded-lg text-green-800">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            <span id="successText"></span>
+                        </div>
+                        <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border-2 border-red-500 rounded-lg text-red-800">
+                            <i class="fas fa-exclamation-circle mr-2"></i>
+                            <span id="errorText"></span>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- My Submissions -->
+                <div class="bg-white rounded-lg shadow-lg p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                        <i class="fas fa-history text-purple-600"></i> My Submissions
+                    </h2>
+                    <div id="submissionsList" class="space-y-4">
+                        <p class="text-gray-500 text-center py-8">Loading your submissions...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let selectedCategory = '';
+            let selectedPriority = 'normal';
+
+            // Category selection
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.category-btn').forEach(b => {
+                        b.classList.remove('border-purple-500', 'bg-purple-50');
+                        b.classList.add('border-gray-200');
+                    });
+                    btn.classList.remove('border-gray-200');
+                    btn.classList.add('border-purple-500', 'bg-purple-50');
+                    selectedCategory = btn.dataset.category;
+                    document.getElementById('category').value = selectedCategory;
+                    document.getElementById('categoryError').classList.add('hidden');
+                });
+            });
+
+            // Priority selection
+            document.querySelectorAll('.priority-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.priority-btn').forEach(b => {
+                        b.classList.remove('active', 'border-blue-500', 'bg-blue-50', 'border-green-500', 'bg-green-50', 'border-orange-500', 'bg-orange-50', 'border-red-500', 'bg-red-50');
+                        b.classList.add('border-gray-200');
+                    });
+                    const priority = btn.dataset.priority;
+                    selectedPriority = priority;
+                    document.getElementById('priority').value = priority;
+                    
+                    const colorMap = {
+                        low: ['border-green-500', 'bg-green-50'],
+                        normal: ['border-blue-500', 'bg-blue-50'],
+                        high: ['border-orange-500', 'bg-orange-50'],
+                        urgent: ['border-red-500', 'bg-red-50']
+                    };
+                    btn.classList.add('active', ...colorMap[priority]);
+                });
+            });
+
+            // Form submission
+            document.getElementById('contactForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                if (!selectedCategory) {
+                    document.getElementById('categoryError').classList.remove('hidden');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('submitBtn');
+                const successMsg = document.getElementById('successMessage');
+                const errorMsg = document.getElementById('errorMessage');
+                
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
+                successMsg.classList.add('hidden');
+                errorMsg.classList.add('hidden');
+
+                const formData = {
+                    subject: document.getElementById('subject').value,
+                    category: selectedCategory,
+                    message: document.getElementById('message').value,
+                    priority: selectedPriority
+                };
+
+                try {
+                    const response = await axios.post('/api/contact', formData);
+                    
+                    if (response.data.success) {
+                        document.getElementById('successText').textContent = response.data.message;
+                        successMsg.classList.remove('hidden');
+                        document.getElementById('contactForm').reset();
+                        selectedCategory = '';
+                        selectedPriority = 'normal';
+                        document.querySelectorAll('.category-btn').forEach(b => {
+                            b.classList.remove('border-purple-500', 'bg-purple-50');
+                            b.classList.add('border-gray-200');
+                        });
+                        loadSubmissions();
+                    }
+                } catch (error) {
+                    const message = error.response?.data?.error || 'Failed to submit. Please try again.';
+                    document.getElementById('errorText').textContent = message;
+                    errorMsg.classList.remove('hidden');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i> Send Message';
+                }
+            });
+
+            // Load submissions
+            async function loadSubmissions() {
+                try {
+                    const response = await axios.get('/api/contact/my-submissions');
+                    const submissions = response.data.submissions;
+                    const list = document.getElementById('submissionsList');
+                    
+                    if (submissions.length === 0) {
+                        list.innerHTML = '<p class="text-gray-500 text-center py-8">No submissions yet. Submit your first message above!</p>';
+                        return;
+                    }
+
+                    const statusColors = {
+                        pending: 'bg-yellow-100 text-yellow-800',
+                        in_progress: 'bg-blue-100 text-blue-800',
+                        resolved: 'bg-green-100 text-green-800',
+                        closed: 'bg-gray-100 text-gray-800'
+                    };
+
+                    list.innerHTML = submissions.map(s => \`
+                        <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-purple-300 transition">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-semibold text-gray-800 text-lg">\${s.subject}</h3>
+                                <span class="px-3 py-1 rounded-full text-sm font-semibold \${statusColors[s.status]}">\${s.status}</span>
+                            </div>
+                            <p class="text-gray-600 text-sm mb-2">\${s.message.substring(0, 150)}\${s.message.length > 150 ? '...' : ''}</p>
+                            <div class="flex justify-between items-center text-sm text-gray-500">
+                                <span><i class="fas fa-tag"></i> \${s.category.replace(/_/g, ' ')}</span>
+                                <span><i class="fas fa-calendar"></i> \${new Date(s.created_at).toLocaleDateString()}</span>
+                                <span><i class="fas fa-comments"></i> \${s.response_count} responses</span>
+                            </div>
+                        </div>
+                    \`).join('');
+                } catch (error) {
+                    console.error('Failed to load submissions:', error);
+                    document.getElementById('submissionsList').innerHTML = '<p class="text-red-500 text-center py-8">Failed to load submissions. Please try again.</p>';
+                }
+            }
+
+            // Load submissions on page load
+            loadSubmissions();
+        </script>
+    </body>
+    </html>
+  `;
+  return c.html(content);
 });
 
 export default app;

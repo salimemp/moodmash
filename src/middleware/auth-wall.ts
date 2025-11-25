@@ -23,7 +23,7 @@ const PUBLIC_ROUTES = [
   '/terms-of-service',
   '/about',
   '/static/',
-  '/api/auth/',
+  '/api/', // All API routes bypass authWall and use apiAuthWall instead
   '/auth/',
 ];
 
@@ -72,14 +72,16 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
   const path = c.req.path;
 
   // Allow public API routes
-  if (path.startsWith('/api/auth/') || path === '/api/health/status') {
+  if (path.startsWith('/api/auth/') || path === '/api/health/status' || path === '/api/health') {
     return await next();
   }
 
-  // Check if user is authenticated
-  const session = await getSession(c);
+  // Check if user is authenticated from database (not in-memory sessions)
+  const { DB } = c.env;
+  const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                      c.req.cookie('session_token');
 
-  if (!session || !session.user_id) {
+  if (!sessionToken) {
     return c.json({
       error: 'Authentication required',
       message: 'Please log in to access this resource',
@@ -87,11 +89,36 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
     }, 401);
   }
 
-  // Attach user info to context
-  c.set('user_id', session.user_id);
-  c.set('session', session);
+  try {
+    // Validate session from database
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id, u.username, u.email
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
+    `).bind(sessionToken).first();
 
-  await next();
+    if (!session) {
+      return c.json({
+        error: 'Authentication required',
+        message: 'Invalid or expired session',
+        code: 'UNAUTHENTICATED',
+      }, 401);
+    }
+
+    // Attach user info to context
+    c.set('user_id', session.user_id);
+    c.set('session', session);
+
+    await next();
+  } catch (error) {
+    console.error('[apiAuthWall] Database error:', error);
+    return c.json({
+      error: 'Authentication error',
+      message: 'Failed to validate session',
+      code: 'AUTH_ERROR',
+    }, 500);
+  }
 }
 
 /**

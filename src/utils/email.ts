@@ -673,3 +673,301 @@ export function generateWelcomeEmail(userName: string): string {
 </html>
   `;
 }
+
+/**
+ * Generate contact submission confirmation email (to user)
+ */
+export function generateContactConfirmationEmail(
+  userName: string,
+  subject: string,
+  category: string,
+  submissionId: number
+): string {
+  const categoryEmoji: Record<string, string> = {
+    'support': '🛟',
+    'feedback': '💬',
+    'bug_report': '🐛',
+    'feature_request': '💡',
+    'other': '📧'
+  };
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Message Received - MoodMash</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 40px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    h1 {
+      color: #1f2937;
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    .info-box {
+      background-color: #f0f9ff;
+      border-left: 4px solid #3b82f6;
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+    .info-box strong {
+      color: #1f2937;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .response-time {
+      background-color: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">${categoryEmoji[category] || '📧'}</div>
+      <h1>We Got Your Message!</h1>
+    </div>
+    
+    <p>Hi ${userName},</p>
+    
+    <p>Thank you for reaching out to MoodMash. We've received your message and our team will review it shortly.</p>
+    
+    <div class="info-box">
+      <strong>Submission Details:</strong><br>
+      <strong>Reference ID:</strong> #${submissionId}<br>
+      <strong>Category:</strong> ${category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}<br>
+      <strong>Subject:</strong> ${subject}
+    </div>
+    
+    <div class="response-time">
+      <strong>⏱️ Expected Response Time:</strong><br>
+      We typically respond within 24-48 hours during business days. For urgent issues, we'll prioritize your request.
+    </div>
+    
+    <p><strong>What happens next?</strong></p>
+    <ul>
+      <li>Our support team will review your message</li>
+      <li>You'll receive a response via email</li>
+      <li>You can track your request status in your MoodMash dashboard</li>
+    </ul>
+    
+    <p>If you need to add more information to your submission, please reply to this email with your reference ID (#${submissionId}).</p>
+    
+    <p>Thank you for helping us improve MoodMash!</p>
+    
+    <p>Best regards,<br>
+    <strong>The MoodMash Team</strong></p>
+    
+    <div class="footer">
+      <p>Reference ID: #${submissionId}<br>
+      <a href="https://moodmash.win/contact">Submit Another Message</a></p>
+      <p>&copy; 2025 MoodMash. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
+
+/**
+ * Generate contact submission notification email (to admin)
+ */
+export function generateContactAdminNotificationEmail(
+  userName: string,
+  userEmail: string,
+  userId: number,
+  subject: string,
+  category: string,
+  priority: string,
+  message: string,
+  submissionId: number
+): string {
+  const categoryEmoji: Record<string, string> = {
+    'support': '🛟',
+    'feedback': '💬',
+    'bug_report': '🐛',
+    'feature_request': '💡',
+    'other': '📧'
+  };
+
+  const priorityColor: Record<string, string> = {
+    'low': '#10b981',
+    'normal': '#3b82f6',
+    'high': '#f59e0b',
+    'urgent': '#ef4444'
+  };
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Contact Submission - MoodMash</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    .container {
+      background-color: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 25px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 22px;
+    }
+    .priority-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      margin-left: 10px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: 12px;
+      margin: 20px 0;
+      padding: 20px;
+      background-color: #f9fafb;
+      border-radius: 6px;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #6b7280;
+    }
+    .info-value {
+      color: #1f2937;
+    }
+    .message-box {
+      background-color: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 20px 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .action-button {
+      display: inline-block;
+      padding: 12px 24px;
+      background-color: #3b82f6;
+      color: #ffffff !important;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 600;
+      margin: 10px 5px;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 12px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>${categoryEmoji[category] || '📧'} New Contact Submission 
+        <span class="priority-badge" style="background-color: ${priorityColor[priority] || '#3b82f6'};">
+          ${priority.toUpperCase()}
+        </span>
+      </h1>
+    </div>
+    
+    <div class="info-grid">
+      <div class="info-label">Submission ID:</div>
+      <div class="info-value">#${submissionId}</div>
+      
+      <div class="info-label">User:</div>
+      <div class="info-value">${userName} (ID: ${userId})</div>
+      
+      <div class="info-label">Email:</div>
+      <div class="info-value"><a href="mailto:${userEmail}">${userEmail}</a></div>
+      
+      <div class="info-label">Category:</div>
+      <div class="info-value">${category.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</div>
+      
+      <div class="info-label">Priority:</div>
+      <div class="info-value" style="color: ${priorityColor[priority]}; font-weight: 600;">
+        ${priority.toUpperCase()}
+      </div>
+      
+      <div class="info-label">Subject:</div>
+      <div class="info-value"><strong>${subject}</strong></div>
+    </div>
+    
+    <h3 style="margin-top: 30px; color: #1f2937;">Message:</h3>
+    <div class="message-box">${message}</div>
+    
+    <div style="text-align: center; margin-top: 30px;">
+      <a href="https://moodmash.win/admin/contact/${submissionId}" class="action-button">
+        View in Dashboard
+      </a>
+      <a href="mailto:${userEmail}?subject=Re: ${encodeURIComponent(subject)}" class="action-button" style="background-color: #10b981;">
+        Reply to User
+      </a>
+    </div>
+    
+    <div class="footer">
+      <p>This is an automated notification from MoodMash Contact System.<br>
+      Submission received at ${new Date().toLocaleString()}</p>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+}
