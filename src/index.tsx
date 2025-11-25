@@ -1350,8 +1350,17 @@ app.post('/api/auth/register', async (c) => {
       return c.json({ error: 'All fields are required' }, 400);
     }
     
-    if (password.length < 8) {
-      return c.json({ error: 'Password must be at least 8 characters' }, 400);
+    // Validate password strength and check breaches
+    const passwordValidation = await validatePasswordWithBreachCheck(password);
+    
+    if (!passwordValidation.valid) {
+      return c.json({ 
+        error: 'Password does not meet security requirements',
+        errors: passwordValidation.errors,
+        suggestions: getPasswordSuggestions(passwordValidation.errors),
+        strength: passwordValidation.strength,
+        score: passwordValidation.score
+      }, 400);
     }
     
     // Check if username or email already exists
@@ -1793,6 +1802,117 @@ app.post('/api/auth/password-reset/request', async (c) => {
   } catch (error) {
     console.error('Password reset error:', error);
     return c.json({ error: 'Password reset failed' }, 500);
+  }
+});
+
+// Password reset completion (set new password)
+app.post('/api/auth/password-reset/complete', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { token, newPassword } = await c.req.json();
+    
+    if (!token || !newPassword) {
+      return c.json({ error: 'Token and new password are required' }, 400);
+    }
+    
+    // Validate new password strength and check breaches
+    const passwordValidation = await validatePasswordWithBreachCheck(newPassword);
+    
+    if (!passwordValidation.valid) {
+      return c.json({ 
+        error: 'Password does not meet security requirements',
+        errors: passwordValidation.errors,
+        suggestions: getPasswordSuggestions(passwordValidation.errors),
+        strength: passwordValidation.strength,
+        score: passwordValidation.score
+      }, 400);
+    }
+    
+    // Find reset token
+    const reset = await DB.prepare(`
+      SELECT pr.*, u.email
+      FROM password_resets pr
+      JOIN users u ON pr.user_id = u.id
+      WHERE pr.reset_token = ? AND pr.used_at IS NULL
+    `).bind(token).first();
+    
+    if (!reset) {
+      return c.json({ error: 'Invalid or already used reset token' }, 400);
+    }
+    
+    // Check if token is expired
+    const now = new Date();
+    const expiresAt = new Date(reset.expires_at);
+    
+    if (now > expiresAt) {
+      return c.json({ error: 'Reset token has expired. Please request a new password reset.' }, 400);
+    }
+    
+    // Hash new password
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    
+    // Update password
+    await DB.prepare(`
+      UPDATE users SET password_hash = ? WHERE id = ?
+    `).bind(passwordHash, reset.user_id).run();
+    
+    // Mark reset token as used
+    await DB.prepare(`
+      UPDATE password_resets SET used_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(reset.id).run();
+    
+    // Invalidate all existing sessions for security
+    await DB.prepare(`
+      DELETE FROM sessions WHERE user_id = ?
+    `).bind(reset.user_id).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'password_reset_completed', ?, ?, 1)
+    `).bind(
+      reset.user_id,
+      JSON.stringify({ email: reset.email }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    return c.json({
+      success: true,
+      message: 'Password reset successful! You can now log in with your new password.',
+      passwordStrength: passwordValidation.strength,
+      passwordScore: passwordValidation.score
+    });
+  } catch (error) {
+    console.error('Password reset completion error:', error);
+    return c.json({ error: 'Password reset failed' }, 500);
+  }
+});
+
+// Check password strength (for real-time validation)
+app.post('/api/auth/check-password-strength', async (c) => {
+  try {
+    const { password } = await c.req.json();
+    
+    if (!password) {
+      return c.json({ error: 'Password is required' }, 400);
+    }
+    
+    // Validate password (with breach check)
+    const validation = await validatePasswordWithBreachCheck(password);
+    
+    return c.json({
+      valid: validation.valid,
+      errors: validation.errors,
+      suggestions: getPasswordSuggestions(validation.errors),
+      strength: validation.strength,
+      score: validation.score,
+      breached: validation.breachCheck?.breached || false,
+      breachCount: validation.breachCheck?.breachCount || 0
+    });
+  } catch (error) {
+    console.error('Password strength check error:', error);
+    return c.json({ error: 'Failed to check password strength' }, 500);
   }
 });
 
@@ -3128,6 +3248,7 @@ app.get('/privacy-education', (c) => {
 
 import { createAIService } from './services/gemini-ai';
 import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail, generateVerificationEmail } from './utils/email';
+import { validatePasswordWithBreachCheck, getPasswordSuggestions } from './utils/password-validator';
 
 // 1. Mood Pattern Recognition
 app.post('/api/ai/patterns', async (c) => {
