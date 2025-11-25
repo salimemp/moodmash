@@ -48,6 +48,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="/static/cookie-consent.js"></script>
         <script src="/static/bottom-nav.js"></script>
         <script src="/static/touch-gestures.js"></script>
+        <script src="/static/pwa-advanced.js"></script>
+        <script src="/static/onboarding-v2.js"></script>
         
         <!-- External Libraries (Load before app scripts) -->
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>

@@ -1,16 +1,19 @@
 /**
  * MoodMash Service Worker
- * Version: 10.2 (PWA + Offline Support)
+ * Version: 10.3 (Advanced PWA + Background Sync + Push Notifications)
  * 
  * Features:
  * - Cache-first for static assets
  * - Network-first for API calls
  * - Offline fallback
  * - Background sync for mood entries
+ * - Push notifications support
+ * - Periodic background sync
  */
 
-const CACHE_VERSION = 'v10.2.0';
+const CACHE_VERSION = 'v10.3.0';
 const CACHE_NAME = `moodmash-${CACHE_VERSION}`;
+const OFFLINE_QUEUE = 'offline-queue';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -307,5 +310,92 @@ self.addEventListener('message', (event) => {
     );
   }
 });
+
+// Background Sync - sync offline data
+self.addEventListener('sync', (event) => {
+  console.log('[SW] Background sync triggered:', event.tag);
+
+  if (event.tag === 'sync-data') {
+    event.waitUntil(
+      syncOfflineData()
+        .then(() => {
+          console.log('[SW] Background sync completed');
+          return sendMessageToClients({ type: 'BACKGROUND_SYNC_SUCCESS' });
+        })
+        .catch((error) => {
+          console.error('[SW] Background sync failed:', error);
+          return sendMessageToClients({ type: 'BACKGROUND_SYNC_FAILED', error: error.message });
+        })
+    );
+  }
+});
+
+// Periodic Background Sync - periodic data refresh
+self.addEventListener('periodicsync', (event) => {
+  console.log('[SW] Periodic sync triggered:', event.tag);
+
+  if (event.tag === 'sync-mood-data') {
+    event.waitUntil(
+      refreshMoodData().catch((error) => {
+        console.error('[SW] Periodic sync failed:', error);
+      })
+    );
+  }
+});
+
+// Sync offline data
+async function syncOfflineData() {
+  // Get offline queue from IndexedDB or cache
+  const cache = await caches.open(OFFLINE_QUEUE);
+  const requests = await cache.keys();
+
+  if (requests.length === 0) {
+    console.log('[SW] No offline data to sync');
+    return;
+  }
+
+  console.log('[SW] Syncing', requests.length, 'offline requests');
+
+  const results = await Promise.allSettled(
+    requests.map(async (request) => {
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          await cache.delete(request);
+          return { success: true, request: request.url };
+        }
+        throw new Error(`HTTP ${response.status}`);
+      } catch (error) {
+        console.error('[SW] Failed to sync:', request.url, error);
+        return { success: false, request: request.url, error: error.message };
+      }
+    })
+  );
+
+  const successful = results.filter(r => r.value?.success).length;
+  console.log('[SW] Synced', successful, 'of', requests.length, 'requests');
+}
+
+// Refresh mood data periodically
+async function refreshMoodData() {
+  try {
+    const response = await fetch('/api/moods?limit=10');
+    if (response.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      await cache.put('/api/moods?limit=10', response.clone());
+      console.log('[SW] Mood data refreshed');
+    }
+  } catch (error) {
+    console.error('[SW] Failed to refresh mood data:', error);
+  }
+}
+
+// Send message to all clients
+async function sendMessageToClients(message) {
+  const clients = await self.clients.matchAll({ type: 'window' });
+  clients.forEach(client => {
+    client.postMessage(message);
+  });
+}
 
 console.log('[SW] Service Worker loaded, version:', CACHE_VERSION);
