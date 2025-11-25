@@ -1366,7 +1366,7 @@ app.post('/api/auth/register', async (c) => {
     // Hash password with bcrypt (10 rounds)
     const passwordHash = await bcrypt.hash(password, 10);
     
-    // Insert user
+    // Insert user (not verified)
     const result = await DB.prepare(`
       INSERT INTO users (username, email, password_hash, is_verified, is_active)
       VALUES (?, ?, ?, 0, 1)
@@ -1374,20 +1374,15 @@ app.post('/api/auth/register', async (c) => {
     
     const userId = result.meta.last_row_id;
     
-    // Create session
-    const sessionToken = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    // Generate email verification token
+    const verificationToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
     
+    // Store verification token
     await DB.prepare(`
-      INSERT INTO sessions (user_id, session_token, expires_at, ip_address, user_agent)
-      VALUES (?, ?, ?, ?, ?)
-    `).bind(
-      userId,
-      sessionToken,
-      expiresAt.toISOString(),
-      c.req.header('CF-Connecting-IP') || c.req.header('X-Forwarded-For') || 'unknown',
-      c.req.header('User-Agent') || 'unknown'
-    ).run();
+      INSERT INTO email_verifications (user_id, email, verification_token, expires_at)
+      VALUES (?, ?, ?, ?)
+    `).bind(userId, email, verificationToken, expiresAt.toISOString()).run();
     
     // Log security event
     await DB.prepare(`
@@ -1395,30 +1390,29 @@ app.post('/api/auth/register', async (c) => {
       VALUES (?, 'register', ?, ?, 1)
     `).bind(
       userId,
-      JSON.stringify({ username, email }),
+      JSON.stringify({ username, email, requires_verification: true }),
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
     
-    // Set session cookie
-    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
-    
-    // Send welcome email
+    // Send verification email
+    const verificationLink = `https://moodmash.win/verify-email?token=${verificationToken}`;
     try {
       await sendEmail(c.env.RESEND_API_KEY, {
         to: email,
-        subject: '🌈 Welcome to MoodMash!',
-        html: generateWelcomeEmail(username)
+        subject: '✉️ Verify Your MoodMash Account',
+        html: generateVerificationEmail(verificationLink, username, 60)
       });
-      console.log(`[Email] Welcome email sent to ${email}`);
+      console.log(`[Email] Verification email sent to ${email}`);
     } catch (emailError) {
-      console.error('[Email] Failed to send welcome email:', emailError);
-      // Continue without failing - registration is still successful
+      console.error('[Email] Failed to send verification email:', emailError);
+      // Continue without failing - user can request new verification email
     }
     
     return c.json({
       success: true,
-      user: { id: userId, username, email },
-      sessionToken
+      message: 'Registration successful! Please check your email to verify your account.',
+      user: { id: userId, username, email, is_verified: false },
+      requires_verification: true
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -1454,6 +1448,15 @@ app.post('/api/auth/login', async (c) => {
       ).run();
       
       return c.json({ error: 'Invalid username or password' }, 401);
+    }
+    
+    // Check if email is verified
+    if (!user.is_verified) {
+      return c.json({ 
+        error: 'Email not verified. Please check your email for the verification link.',
+        code: 'EMAIL_NOT_VERIFIED',
+        email: user.email
+      }, 403);
     }
     
     // Verify password with bcrypt
@@ -1589,6 +1592,165 @@ app.post('/api/auth/webauthn/login/verify', async (c) => {
     error: 'WebAuthn not yet configured',
     message: 'Please configure WebAuthn/Passkeys'
   }, 501);
+});
+
+// =============================================================================
+// EMAIL VERIFICATION
+// =============================================================================
+
+// Verify email with token
+app.get('/api/auth/verify-email', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const token = c.req.query('token');
+    
+    if (!token) {
+      return c.json({ error: 'Verification token is required' }, 400);
+    }
+    
+    // Find verification record
+    const verification = await DB.prepare(`
+      SELECT ev.*, u.username, u.email
+      FROM email_verifications ev
+      JOIN users u ON ev.user_id = u.id
+      WHERE ev.verification_token = ? AND ev.verified_at IS NULL
+    `).bind(token).first();
+    
+    if (!verification) {
+      return c.json({ error: 'Invalid or already used verification token' }, 400);
+    }
+    
+    // Check if token is expired
+    const now = new Date();
+    const expiresAt = new Date(verification.expires_at);
+    
+    if (now > expiresAt) {
+      return c.json({ 
+        error: 'Verification token has expired',
+        code: 'TOKEN_EXPIRED',
+        email: verification.email
+      }, 400);
+    }
+    
+    // Mark user as verified
+    await DB.prepare(`
+      UPDATE users SET is_verified = 1 WHERE id = ?
+    `).bind(verification.user_id).run();
+    
+    // Mark verification as used
+    await DB.prepare(`
+      UPDATE email_verifications 
+      SET verified_at = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `).bind(verification.id).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'email_verified', ?, ?, 1)
+    `).bind(
+      verification.user_id,
+      JSON.stringify({ email: verification.email }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    // Send welcome email
+    try {
+      await sendEmail(c.env.RESEND_API_KEY, {
+        to: verification.email,
+        subject: '🌈 Welcome to MoodMash!',
+        html: generateWelcomeEmail(verification.username)
+      });
+      console.log(`[Email] Welcome email sent to ${verification.email}`);
+    } catch (emailError) {
+      console.error('[Email] Failed to send welcome email:', emailError);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Email verified successfully! You can now log in.',
+      username: verification.username
+    });
+  } catch (error) {
+    console.error('Email verification error:', error);
+    return c.json({ error: 'Email verification failed' }, 500);
+  }
+});
+
+// Resend verification email
+app.post('/api/auth/resend-verification', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const { email } = await c.req.json();
+    
+    if (!email) {
+      return c.json({ error: 'Email is required' }, 400);
+    }
+    
+    // Find user
+    const user = await DB.prepare(`
+      SELECT id, username, email, is_verified FROM users WHERE email = ?
+    `).bind(email).first();
+    
+    if (!user) {
+      // Don't reveal if user exists
+      return c.json({ 
+        success: true, 
+        message: 'If that email exists and is not verified, a verification link has been sent.'
+      });
+    }
+    
+    if (user.is_verified) {
+      return c.json({ error: 'Email is already verified' }, 400);
+    }
+    
+    // Check rate limiting (max 3 verification emails per hour)
+    const recentVerifications = await DB.prepare(`
+      SELECT COUNT(*) as count FROM email_verifications
+      WHERE user_id = ? AND created_at > datetime('now', '-1 hour')
+    `).bind(user.id).first();
+    
+    if (recentVerifications && recentVerifications.count >= 3) {
+      return c.json({ 
+        error: 'Too many verification requests. Please try again later.',
+        retry_after: 3600 // 1 hour in seconds
+      }, 429);
+    }
+    
+    // Generate new verification token
+    const verificationToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    
+    // Store new verification token
+    await DB.prepare(`
+      INSERT INTO email_verifications (user_id, email, verification_token, expires_at)
+      VALUES (?, ?, ?, ?)
+    `).bind(user.id, email, verificationToken, expiresAt.toISOString()).run();
+    
+    // Send verification email
+    const verificationLink = `https://moodmash.win/verify-email?token=${verificationToken}`;
+    try {
+      await sendEmail(c.env.RESEND_API_KEY, {
+        to: email,
+        subject: '📧 Verify Your MoodMash Account',
+        html: generateVerificationEmail(verificationLink, user.username, 60)
+      });
+      console.log(`[Email] Verification email resent to ${email}`);
+    } catch (emailError) {
+      console.error('[Email] Failed to resend verification email:', emailError);
+      return c.json({ error: 'Failed to send verification email' }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'Verification email sent! Please check your inbox.'
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    return c.json({ error: 'Failed to resend verification email' }, 500);
+  }
 });
 
 // Password reset request
@@ -2965,7 +3127,7 @@ app.get('/privacy-education', (c) => {
 // ========================================
 
 import { createAIService } from './services/gemini-ai';
-import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail } from './utils/email';
+import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail, generateVerificationEmail } from './utils/email';
 
 // 1. Mood Pattern Recognition
 app.post('/api/ai/patterns', async (c) => {
