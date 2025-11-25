@@ -1540,6 +1540,12 @@ app.post('/api/auth/logout', async (c) => {
 import biometricRoutes from './routes/biometrics';
 app.route('/api/biometrics', biometricRoutes);
 
+// =============================================================================
+// TWO-FACTOR AUTHENTICATION ROUTES (TOTP/HOTP)
+// =============================================================================
+import totpRoutes from './routes/totp';
+app.route('/api/2fa', totpRoutes);
+
 // OAuth redirect endpoints (placeholders)
 app.get('/api/auth/oauth/:provider', async (c) => {
   const provider = c.req.param('provider');
