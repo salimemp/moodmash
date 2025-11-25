@@ -1402,6 +1402,19 @@ app.post('/api/auth/register', async (c) => {
     // Set session cookie
     c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${30 * 24 * 60 * 60}`);
     
+    // Send welcome email
+    try {
+      await sendEmail(c.env.RESEND_API_KEY, {
+        to: email,
+        subject: '🌈 Welcome to MoodMash!',
+        html: generateWelcomeEmail(username)
+      });
+      console.log(`[Email] Welcome email sent to ${email}`);
+    } catch (emailError) {
+      console.error('[Email] Failed to send welcome email:', emailError);
+      // Continue without failing - registration is still successful
+    }
+    
     return c.json({
       success: true,
       user: { id: userId, username, email },
@@ -1594,8 +1607,19 @@ app.post('/api/auth/password-reset/request', async (c) => {
         VALUES (?, ?, ?)
       `).bind(user.id, resetToken, expiresAt.toISOString()).run();
       
-      // In production, send email with reset link
-      console.log(`Password reset token for ${email}: ${resetToken}`);
+      // Send email with reset link
+      const resetLink = `https://moodmash.win/reset-password?token=${resetToken}`;
+      try {
+        await sendEmail(c.env.RESEND_API_KEY, {
+          to: email,
+          subject: 'Reset Your MoodMash Password',
+          html: generatePasswordResetEmail(resetLink, 60)
+        });
+        console.log(`[Email] Password reset email sent to ${email}`);
+      } catch (emailError) {
+        console.error('[Email] Failed to send password reset email:', emailError);
+        // Continue without failing - token is still valid
+      }
     }
     
     // Always return success to prevent email enumeration
@@ -1668,10 +1692,23 @@ app.post('/api/auth/magic-link/request', async (c) => {
       c.req.header('User-Agent') || 'unknown'
     ).run();
 
-    // In production, send email with magic link
-    const magicLink = `https://f4c6804f.moodmash.pages.dev/auth/magic?token=${token}`;
-    console.log(`Magic link for ${email}: ${magicLink}`);
-    console.log(`Token: ${token}`);
+    // Send email with magic link
+    const magicLink = `https://moodmash.win/auth/magic?token=${token}`;
+    
+    try {
+      await sendEmail(c.env.RESEND_API_KEY, {
+        to: email,
+        subject: '🔐 Sign in to MoodMash',
+        html: generateMagicLinkEmail(magicLink, 15)
+      });
+      console.log(`[Email] Magic link email sent to ${email}`);
+    } catch (emailError) {
+      console.error('[Email] Failed to send magic link email:', emailError);
+      // Continue without failing - link is still valid in dev
+    }
+    
+    console.log(`[Dev] Magic link for ${email}: ${magicLink}`);
+    console.log(`[Dev] Token: ${token}`);
 
     // Log magic link request
     await DB.prepare(`
@@ -1685,13 +1722,7 @@ app.post('/api/auth/magic-link/request', async (c) => {
 
     return c.json({ 
       success: true, 
-      message: 'Magic link sent to your email',
-      // Development only - remove in production
-      debug: {
-        token,
-        link: magicLink,
-        expires_in_minutes: 15
-      }
+      message: 'Magic link sent to your email'
     });
   } catch (error) {
     console.error('Magic link request error:', error);
@@ -2930,6 +2961,7 @@ app.get('/privacy-education', (c) => {
 // ========================================
 
 import { createAIService } from './services/gemini-ai';
+import { sendEmail, generatePasswordResetEmail, generateMagicLinkEmail, generateWelcomeEmail } from './utils/email';
 
 // 1. Mood Pattern Recognition
 app.post('/api/ai/patterns', async (c) => {

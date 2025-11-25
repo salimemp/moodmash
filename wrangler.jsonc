@@ -6,6 +6,11 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  // Environment Variables (configured via CLI or Cloudflare Dashboard)
+  // GEMINI_API_KEY - Gemini AI for wellness tips and mood analysis
+  // RESEND_API_KEY - Resend email service for authentication emails
+  // To set production secrets: npx wrangler secret put RESEND_API_KEY --project-name moodmash
+  // For local dev: Use .dev.vars file (see .dev.vars.example)
   // D1 Database for mood tracking
   // To create: npx wrangler d1 create moodmash-production
   // Then add the database_id here

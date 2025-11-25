@@ -41,3 +41,4 @@ playwright-report/
 playwright/.cache/
 *.mp4
 *.webm
+.dev.vars
