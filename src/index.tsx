@@ -1559,6 +1559,10 @@ app.route('/api/biometrics', biometricRoutes);
 import totpRoutes from './routes/totp';
 app.route('/api/2fa', totpRoutes);
 
+// Advanced Features Routes (Push, Geolocation, Search, Calendar, Export)
+import advancedFeaturesRoutes from './routes/advanced-features';
+app.route('/api', advancedFeaturesRoutes);
+
 // OAuth redirect endpoints (placeholders)
 app.get('/api/auth/oauth/:provider', async (c) => {
   const provider = c.req.param('provider');
