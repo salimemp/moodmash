@@ -1534,6 +1534,12 @@ app.post('/api/auth/logout', async (c) => {
   }
 });
 
+// =============================================================================
+// BIOMETRIC AUTHENTICATION ROUTES (WebAuthn)
+// =============================================================================
+import biometricRoutes from './routes/biometrics';
+app.route('/api/biometrics', biometricRoutes);
+
 // OAuth redirect endpoints (placeholders)
 app.get('/api/auth/oauth/:provider', async (c) => {
   const provider = c.req.param('provider');
