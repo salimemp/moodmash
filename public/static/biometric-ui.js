@@ -28,6 +28,14 @@ class BiometricUI {
       return;
     }
 
+    // Check if Passkeys (conditional mediation) are supported
+    const passkeySupported = await this.biometric.isPasskeySupported();
+    if (passkeySupported) {
+      console.log('[BiometricUI] Passkeys supported - initializing conditional mediation');
+      // Initialize conditional mediation for autofill
+      await this.biometric.initConditionalMediation();
+    }
+
     // Show biometric options in UI
     this.injectBiometricButtons();
   }
@@ -52,8 +60,8 @@ class BiometricUI {
         class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-3"
         onclick="biometricUI.handleBiometricLogin()"
       >
-        <i class="fas fa-fingerprint text-2xl"></i>
-        <span id="biometric-btn-text">Login with ${this.biometric.getAuthenticatorName()}</span>
+        <i class="fas fa-key text-2xl"></i>
+        <span id="biometric-btn-text">Sign in with a Passkey</span>
       </button>
       
       <div id="biometric-status" class="mt-4 text-center text-sm"></div>
@@ -155,10 +163,10 @@ class BiometricUI {
             <i class="fas fa-fingerprint text-4xl text-white"></i>
           </div>
           <h2 class="text-2xl font-bold text-white mb-2">
-            Enable ${authenticatorName}
+            Create a Passkey
           </h2>
           <p class="text-purple-200">
-            Secure your account with biometric authentication for faster, safer login
+            Sign in instantly with ${authenticatorName} - your Passkey syncs across all your devices
           </p>
         </div>
 
@@ -167,22 +175,22 @@ class BiometricUI {
           <div class="flex items-start space-x-3 text-white">
             <i class="fas fa-check-circle text-green-400 mt-1"></i>
             <div>
-              <p class="font-semibold">Faster Login</p>
-              <p class="text-sm text-purple-200">No need to remember passwords</p>
+              <p class="font-semibold">Passwordless Login</p>
+              <p class="text-sm text-purple-200">Sign in instantly with just a tap</p>
             </div>
           </div>
           <div class="flex items-start space-x-3 text-white">
             <i class="fas fa-shield-alt text-blue-400 mt-1"></i>
             <div>
-              <p class="font-semibold">More Secure</p>
-              <p class="text-sm text-purple-200">Your biometrics stay on your device</p>
+              <p class="font-semibold">Phishing-Resistant</p>
+              <p class="text-sm text-purple-200">Impossible to steal or phish</p>
             </div>
           </div>
           <div class="flex items-start space-x-3 text-white">
-            <i class="fas fa-mobile-alt text-purple-400 mt-1"></i>
+            <i class="fas fa-sync-alt text-purple-400 mt-1"></i>
             <div>
-              <p class="font-semibold">Device-Specific</p>
-              <p class="text-sm text-purple-200">Works only on this device</p>
+              <p class="font-semibold">Syncs Across Devices</p>
+              <p class="text-sm text-purple-200">Use on all your Apple or Google devices</p>
             </div>
           </div>
         </div>
@@ -197,7 +205,7 @@ class BiometricUI {
             class="w-full py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             onclick="biometricUI.handleEnrollment('${user.id}', '${user.email}', '${user.name || user.email}')"
           >
-            Enable ${authenticatorName}
+            Create Passkey
           </button>
           
           <button
@@ -287,14 +295,14 @@ class BiometricUI {
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center space-x-3">
             <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center">
-              <i class="fas fa-fingerprint text-2xl text-purple-600"></i>
+              <i class="fas fa-key text-2xl text-purple-600"></i>
             </div>
             <div>
               <h3 class="text-lg font-semibold text-gray-800 dark:text-white">
-                Biometric Authentication
+                Passkeys
               </h3>
               <p class="text-sm text-gray-600 dark:text-gray-400">
-                ${this.biometric.getAuthenticatorName()}
+                Passwordless sign-in with ${this.biometric.getAuthenticatorName()}
               </p>
             </div>
           </div>
@@ -303,12 +311,16 @@ class BiometricUI {
 
         <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
           <div class="flex items-start space-x-2">
-            <i class="fas fa-info-circle mt-1 text-blue-500"></i>
-            <p>Use your device's biometric authentication for faster, more secure login</p>
+            <i class="fas fa-bolt mt-1 text-yellow-500"></i>
+            <p>Sign in instantly without passwords - faster and more secure</p>
           </div>
           <div class="flex items-start space-x-2">
             <i class="fas fa-shield-alt mt-1 text-green-500"></i>
-            <p>Your biometric data is stored securely on your device and never shared</p>
+            <p>Passkeys are phishing-resistant and can't be stolen or guessed</p>
+          </div>
+          <div class="flex items-start space-x-2">
+            <i class="fas fa-sync-alt mt-1 text-blue-500"></i>
+            <p>Your Passkey syncs securely across all your devices via iCloud or Google</p>
           </div>
         </div>
 

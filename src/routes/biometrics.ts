@@ -91,7 +91,8 @@ biometricRoutes.post('/register/options', async (c) => {
       authenticatorSelection: {
         authenticatorAttachment: 'platform' as const, // Force platform authenticator (Face ID, Touch ID, etc.)
         userVerification: 'required' as const,
-        requireResidentKey: false
+        requireResidentKey: true,  // PASSKEY: Enable discoverable credentials (resident keys)
+        residentKey: 'required' as const  // PASSKEY: Modern WebAuthn Level 3 parameter
       },
       excludeCredentials: excludeCredentials.length > 0 ? excludeCredentials : undefined
     };

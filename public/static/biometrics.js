@@ -387,6 +387,189 @@ class BiometricAuth {
     // We can't customize the native prompt, but we can show our own UI before it
     return true;
   }
+
+  // =============================================================================
+  // PASSKEY METHODS (Discoverable Credentials)
+  // =============================================================================
+
+  /**
+   * Check if Passkeys (discoverable credentials) are supported
+   */
+  async isPasskeySupported() {
+    if (!this.isSupported) return false;
+
+    try {
+      // Check if PublicKeyCredential.isConditionalMediationAvailable exists
+      if (typeof PublicKeyCredential.isConditionalMediationAvailable === 'function') {
+        return await PublicKeyCredential.isConditionalMediationAvailable();
+      }
+      
+      // Fallback: if platform authenticator is available, assume Passkey support
+      return await this.isPlatformAuthenticatorAvailable();
+    } catch (error) {
+      console.error('[Passkeys] Error checking support:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Authenticate with Passkey using conditional mediation (autofill)
+   * This enables the browser's autofill UI for Passkeys
+   */
+  async authenticateWithConditionalMediation() {
+    if (!this.isSupported) {
+      throw new Error('Passkey authentication is not supported on this device');
+    }
+
+    try {
+      if (this.debug) {
+        console.log('[Passkeys] Starting conditional mediation authentication');
+      }
+
+      // Check if conditional mediation is available
+      const isAvailable = await this.isPasskeySupported();
+      if (!isAvailable) {
+        throw new Error('Conditional mediation is not supported');
+      }
+
+      // Get authentication options from server (no userId needed for Passkeys)
+      const optionsResponse = await fetch('/api/biometrics/authenticate/options', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: null }) // Passkey: no userId needed
+      });
+
+      if (!optionsResponse.ok) {
+        throw new Error('Failed to get authentication options from server');
+      }
+
+      const options = await optionsResponse.json();
+
+      // Convert base64 to ArrayBuffer
+      options.challenge = this.base64ToArrayBuffer(options.challenge);
+
+      // Enable conditional mediation (autofill)
+      const assertion = await navigator.credentials.get({
+        publicKey: options,
+        mediation: 'conditional' // PASSKEY: Enable autofill UI
+      });
+
+      if (!assertion) {
+        throw new Error('No credential selected');
+      }
+
+      if (this.debug) {
+        console.log('[Passkeys] Assertion received via conditional mediation:', assertion);
+      }
+
+      // Prepare assertion data for server
+      const assertionData = {
+        id: assertion.id,
+        rawId: this.arrayBufferToBase64(assertion.rawId),
+        type: assertion.type,
+        response: {
+          clientDataJSON: this.arrayBufferToBase64(assertion.response.clientDataJSON),
+          authenticatorData: this.arrayBufferToBase64(assertion.response.authenticatorData),
+          signature: this.arrayBufferToBase64(assertion.response.signature),
+          userHandle: assertion.response.userHandle ? 
+            this.arrayBufferToBase64(assertion.response.userHandle) : null
+        }
+      };
+
+      // Send assertion to server for verification
+      const verifyResponse = await fetch('/api/biometrics/authenticate/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          assertion: assertionData
+        })
+      });
+
+      if (!verifyResponse.ok) {
+        throw new Error('Passkey authentication failed');
+      }
+
+      const result = await verifyResponse.json();
+
+      if (this.debug) {
+        console.log('[Passkeys] Authentication complete:', result);
+      }
+
+      return {
+        success: true,
+        user: result.user,
+        sessionToken: result.sessionToken
+      };
+
+    } catch (error) {
+      console.error('[Passkeys] Conditional mediation error:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        throw new Error('Passkey authentication was cancelled');
+      } else {
+        throw new Error(`Passkey authentication failed: ${error.message}`);
+      }
+    }
+  }
+
+  /**
+   * Register a Passkey (discoverable credential)
+   * This is the same as register() but emphasizes Passkey terminology
+   */
+  async registerPasskey(userId, username, displayName) {
+    // Passkeys use the same registration flow as biometrics
+    // The difference is requireResidentKey: true on the server side
+    return await this.register(userId, username, displayName);
+  }
+
+  /**
+   * Authenticate with Passkey (without username)
+   * Uses discoverable credentials
+   */
+  async authenticateWithPasskey() {
+    // Authenticate without userId (Passkey uses userHandle)
+    return await this.authenticate(null);
+  }
+
+  /**
+   * Initialize conditional mediation on page load
+   * This enables autofill UI for Passkeys
+   */
+  async initConditionalMediation() {
+    try {
+      const supported = await this.isPasskeySupported();
+      if (!supported) {
+        if (this.debug) {
+          console.log('[Passkeys] Conditional mediation not supported');
+        }
+        return false;
+      }
+
+      if (this.debug) {
+        console.log('[Passkeys] Initializing conditional mediation');
+      }
+
+      // Start conditional mediation in the background
+      // This will show autofill UI when user focuses on a field
+      this.authenticateWithConditionalMediation().then(result => {
+        if (result.success) {
+          // User authenticated via autofill, redirect to dashboard
+          window.location.href = '/';
+        }
+      }).catch(error => {
+        // Ignore errors from conditional mediation
+        // User may have dismissed the autofill UI
+        if (this.debug) {
+          console.log('[Passkeys] Conditional mediation dismissed:', error.message);
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error('[Passkeys] Init conditional mediation error:', error);
+      return false;
+    }
+  }
 }
 
 // Global instance
