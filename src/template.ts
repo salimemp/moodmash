@@ -35,6 +35,7 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Stylesheets -->
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
+        <link href="/static/mobile-responsive.css" rel="stylesheet">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
         <!-- Load i18n and utils first -->
@@ -45,6 +46,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="/static/chatbot.js"></script>
         <script src="/static/accessibility.js"></script>
         <script src="/static/cookie-consent.js"></script>
+        <script src="/static/bottom-nav.js"></script>
+        <script src="/static/touch-gestures.js"></script>
         
         <!-- External Libraries (Load before app scripts) -->
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>

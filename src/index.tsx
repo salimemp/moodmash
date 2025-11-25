@@ -55,6 +55,9 @@ import {
   getCloudflareSecret
 } from './utils/secrets';
 
+// Authentication Wall
+import { authWall, apiAuthWall } from './middleware/auth-wall';
+
 const app = new Hono<{ Bindings: Bindings }>();
 
 // Global Security Middleware (applies to all routes)
@@ -87,6 +90,15 @@ app.use('/api/*', cors());
 
 // Serve static files
 app.use('/static/*', serveStatic({ root: './public' }));
+
+// =============================================================================
+// MANDATORY AUTHENTICATION - Auth Wall Middleware
+// =============================================================================
+// Apply auth wall to all routes (except public routes defined in auth-wall.ts)
+app.use('*', authWall);
+
+// Apply API auth wall to all API routes (returns 401 for unauthenticated)
+app.use('/api/*', apiAuthWall);
 
 // =============================================================================
 // OAUTH AUTHENTICATION ROUTES
