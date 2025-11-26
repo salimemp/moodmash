@@ -331,6 +331,44 @@ Provide comprehensive analytics in JSON format:
     const response = result.response.text();
     return JSON.parse(response);
   }
+
+  /**
+   * 9. Conversational Chat
+   * Provides interactive chat with context awareness
+   */
+  async chat(
+    userMessage: string,
+    conversationHistory: Array<{ role: string; parts: Array<{ text: string }> }> = [],
+    systemPrompt: string = 'You are MoodMash AI Assistant, a helpful and empathetic AI.'
+  ): Promise<string> {
+    try {
+      // Create chat session with history
+      const chat = this.model.startChat({
+        history: [
+          {
+            role: 'user',
+            parts: [{ text: systemPrompt }]
+          },
+          {
+            role: 'model',
+            parts: [{ text: 'I understand. I am MoodMash AI Assistant, here to help with mood tracking and emotional wellness. How can I assist you today?' }]
+          },
+          ...conversationHistory
+        ],
+        generationConfig: {
+          maxOutputTokens: 1000,
+          temperature: 0.7,
+        },
+      });
+
+      const result = await chat.sendMessage(userMessage);
+      const response = result.response;
+      return response.text();
+    } catch (error) {
+      console.error('[Gemini Chat] Error:', error);
+      throw new Error('Failed to get AI response');
+    }
+  }
 }
 
 // Helper function to initialize AI service with environment variable

@@ -3711,6 +3711,279 @@ app.post('/api/ai/analytics', async (c) => {
 });
 
 // ============================================================================
+// AI CHAT ASSISTANT (Gemini-powered conversational assistant)
+// ============================================================================
+
+// Start a new chat conversation
+app.post('/api/chat/conversations', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    // Get authenticated user
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        getCookie(c, 'session_token');
+    
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    const { title } = await c.req.json();
+    
+    // Create new conversation
+    const result = await DB.prepare(`
+      INSERT INTO chat_conversations (user_id, title)
+      VALUES (?, ?)
+    `).bind(session.user_id, title || 'New Chat').run();
+    
+    return c.json({
+      success: true,
+      conversation: {
+        id: result.meta.last_row_id,
+        title: title || 'New Chat',
+        created_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('[Chat] Create conversation error:', error);
+    return c.json({ error: 'Failed to create conversation' }, 500);
+  }
+});
+
+// Get user's chat conversations
+app.get('/api/chat/conversations', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    // Get authenticated user
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        getCookie(c, 'session_token');
+    
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Get conversations with message count
+    const conversations = await DB.prepare(`
+      SELECT 
+        c.*,
+        COUNT(m.id) as message_count
+      FROM chat_conversations c
+      LEFT JOIN chat_messages m ON c.id = m.conversation_id
+      WHERE c.user_id = ?
+      GROUP BY c.id
+      ORDER BY c.updated_at DESC
+    `).bind(session.user_id).all();
+    
+    return c.json({
+      success: true,
+      conversations: conversations.results
+    });
+  } catch (error: any) {
+    console.error('[Chat] Get conversations error:', error);
+    return c.json({ error: 'Failed to get conversations' }, 500);
+  }
+});
+
+// Get messages for a conversation
+app.get('/api/chat/conversations/:id/messages', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const conversationId = c.req.param('id');
+    
+    // Get authenticated user
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        getCookie(c, 'session_token');
+    
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Verify conversation belongs to user
+    const conversation = await DB.prepare(`
+      SELECT * FROM chat_conversations WHERE id = ? AND user_id = ?
+    `).bind(conversationId, session.user_id).first();
+    
+    if (!conversation) {
+      return c.json({ error: 'Conversation not found' }, 404);
+    }
+    
+    // Get messages
+    const messages = await DB.prepare(`
+      SELECT * FROM chat_messages
+      WHERE conversation_id = ?
+      ORDER BY created_at ASC
+    `).bind(conversationId).all();
+    
+    return c.json({
+      success: true,
+      messages: messages.results
+    });
+  } catch (error: any) {
+    console.error('[Chat] Get messages error:', error);
+    return c.json({ error: 'Failed to get messages' }, 500);
+  }
+});
+
+// Send a message and get Gemini response
+app.post('/api/chat/conversations/:id/messages', async (c) => {
+  const { DB, GEMINI_API_KEY } = c.env;
+  
+  try {
+    const conversationId = c.req.param('id');
+    const { message } = await c.req.json();
+    
+    if (!message || message.trim().length === 0) {
+      return c.json({ error: 'Message is required' }, 400);
+    }
+    
+    // Get authenticated user
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        getCookie(c, 'session_token');
+    
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id, u.username
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Verify conversation belongs to user
+    const conversation = await DB.prepare(`
+      SELECT * FROM chat_conversations WHERE id = ? AND user_id = ?
+    `).bind(conversationId, session.user_id).first();
+    
+    if (!conversation) {
+      return c.json({ error: 'Conversation not found' }, 404);
+    }
+    
+    // Save user message
+    const userMessageResult = await DB.prepare(`
+      INSERT INTO chat_messages (conversation_id, role, content)
+      VALUES (?, 'user', ?)
+    `).bind(conversationId, message).run();
+    
+    // Get conversation history for context
+    const history = await DB.prepare(`
+      SELECT role, content FROM chat_messages
+      WHERE conversation_id = ?
+      ORDER BY created_at ASC
+      LIMIT 20
+    `).bind(conversationId).all();
+    
+    // Call Gemini AI
+    const aiService = createAIService(GEMINI_API_KEY);
+    
+    // Build context-aware prompt
+    const systemPrompt = `You are MoodMash AI Assistant, a helpful and empathetic AI that helps users with mood tracking, mental wellness, and emotional health. 
+You have access to the user's mood history and can provide personalized insights and support.
+Be conversational, supportive, and understanding. Keep responses concise but helpful.
+User: ${session.username}`;
+    
+    const conversationHistory = history.results.map((msg: any) => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+    
+    // Get AI response
+    const aiResponse = await aiService.chat(message, conversationHistory, systemPrompt);
+    
+    // Save assistant message
+    const assistantMessageResult = await DB.prepare(`
+      INSERT INTO chat_messages (conversation_id, role, content)
+      VALUES (?, 'assistant', ?)
+    `).bind(conversationId, aiResponse).run();
+    
+    // Update conversation timestamp
+    await DB.prepare(`
+      UPDATE chat_conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?
+    `).bind(conversationId).run();
+    
+    return c.json({
+      success: true,
+      userMessage: {
+        id: userMessageResult.meta.last_row_id,
+        role: 'user',
+        content: message,
+        created_at: new Date().toISOString()
+      },
+      assistantMessage: {
+        id: assistantMessageResult.meta.last_row_id,
+        role: 'assistant',
+        content: aiResponse,
+        created_at: new Date().toISOString()
+      }
+    });
+  } catch (error: any) {
+    console.error('[Chat] Send message error:', error);
+    return c.json({ error: 'Failed to send message', details: error.message }, 500);
+  }
+});
+
+// Delete a conversation
+app.delete('/api/chat/conversations/:id', async (c) => {
+  const { DB } = c.env;
+  
+  try {
+    const conversationId = c.req.param('id');
+    
+    // Get authenticated user
+    const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
+                        getCookie(c, 'session_token');
+    
+    const session = await DB.prepare(`
+      SELECT s.*, u.id as user_id
+      FROM sessions s
+      JOIN users u ON s.user_id = u.id
+      WHERE s.session_token = ? AND s.expires_at > datetime('now')
+    `).bind(sessionToken).first();
+    
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
+    }
+    
+    // Delete conversation (messages will be cascade deleted)
+    const result = await DB.prepare(`
+      DELETE FROM chat_conversations WHERE id = ? AND user_id = ?
+    `).bind(conversationId, session.user_id).run();
+    
+    if (result.meta.changes === 0) {
+      return c.json({ error: 'Conversation not found' }, 404);
+    }
+    
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('[Chat] Delete conversation error:', error);
+    return c.json({ error: 'Failed to delete conversation' }, 500);
+  }
+});
+
+// ============================================================================
 // HEALTH DASHBOARD API ENDPOINTS (v9.0)
 // ============================================================================
 
@@ -5022,6 +5295,15 @@ app.post('/api/support/log-access', async (c) => {
     // Don't fail if logging fails
     return c.json({ success: true });
   }
+});
+
+// AI Chat Assistant Page
+app.get('/ai-chat', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/ai-chat.js"></script>
+  `;
+  return c.html(renderHTML('AI Chat Assistant', content, 'ai-chat'));
 });
 
 // AI Insights Dashboard Page
