@@ -73,6 +73,13 @@ async function init() {
             response: error.response
         });
         
+        // If 401 Unauthorized, show landing page
+        if (error.response && error.response.status === 401) {
+            console.log('[Dashboard] User not authenticated, showing landing page');
+            renderLandingPage();
+            return;
+        }
+        
         // Safe error display with fallback
         const errorMsg = (typeof i18n !== 'undefined' && i18n.t) 
             ? i18n.t('error_loading_failed') 
@@ -585,6 +592,74 @@ function renderMoodContext(mood) {
 }
 
 // Show error message
+// Render landing page for unauthenticated users
+function renderLandingPage() {
+    const app = document.getElementById('app');
+    const loading = document.getElementById('loading');
+    if (loading) loading.remove();
+    
+    app.innerHTML = `
+        <div class="max-w-6xl mx-auto fade-in">
+            <!-- Hero Section -->
+            <div class="text-center py-16">
+                <h1 class="text-5xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-heart text-purple-600 mr-3"></i>
+                    Welcome to MoodMash
+                </h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto mb-8">
+                    Track your emotional wellness journey with AI-powered insights and personalized recommendations
+                </p>
+                <div class="flex gap-4 justify-center">
+                    <a href="/register" class="px-8 py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-lg font-semibold">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Get Started Free
+                    </a>
+                    <a href="/login" class="px-8 py-4 bg-white border-2 border-purple-600 text-purple-600 rounded-lg hover:bg-purple-50 transition text-lg font-semibold">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Sign In
+                    </a>
+                </div>
+            </div>
+
+            <!-- Features Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 py-12">
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-brain text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">AI Insights</h3>
+                    <p class="text-gray-600">Get personalized insights powered by Gemini AI to understand your mood patterns</p>
+                </div>
+
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-chart-line text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Track Progress</h3>
+                    <p class="text-gray-600">Visualize your emotional wellness journey with beautiful charts and analytics</p>
+                </div>
+
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i class="fas fa-spa text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Wellness Tips</h3>
+                    <p class="text-gray-600">Receive personalized wellness activities and coping strategies</p>
+                </div>
+            </div>
+
+            <!-- CTA Section -->
+            <div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-12 text-center text-white my-12">
+                <h2 class="text-3xl font-bold mb-4">Start Your Wellness Journey Today</h2>
+                <p class="text-lg mb-6 opacity-90">Join thousands of users improving their mental health with MoodMash</p>
+                <a href="/register" class="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition text-lg font-semibold">
+                    Sign Up Now - It's Free
+                </a>
+            </div>
+        </div>
+    `;
+}
+
 function showError(message) {
     const app = document.getElementById('app');
     app.innerHTML = `

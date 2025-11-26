@@ -160,6 +160,9 @@ class OnboardingFlow {
                 </div>
             `;
             content.style.opacity = '1';
+            
+            // CRITICAL: Add event listeners AFTER content is rendered
+            this.addStepEventListeners();
         }, 200);
         
         // Update buttons
@@ -415,7 +418,7 @@ class OnboardingFlow {
         if (this.currentStep < this.totalSteps - 1) {
             this.currentStep++;
             this.renderStep(this.currentStep);
-            this.addStepEventListeners();
+            // addStepEventListeners() is now called inside renderStep after timeout
         } else {
             this.complete();
         }
@@ -425,7 +428,7 @@ class OnboardingFlow {
         if (this.currentStep > 0) {
             this.currentStep--;
             this.renderStep(this.currentStep);
-            this.addStepEventListeners();
+            // addStepEventListeners() is now called inside renderStep after timeout
         }
     }
     
