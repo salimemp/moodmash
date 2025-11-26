@@ -1,3 +1,6 @@
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') { axios.defaults.withCredentials = true; }
+
 /**
  * Privacy Center - Frontend
  * GDPR-compliant data management and privacy controls

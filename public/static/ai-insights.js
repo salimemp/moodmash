@@ -1,3 +1,6 @@
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') { axios.defaults.withCredentials = true; }
+
 // MoodMash AI Insights - Powered by Gemini 2.0 Flash
 // Advanced mood intelligence and predictive analytics
 

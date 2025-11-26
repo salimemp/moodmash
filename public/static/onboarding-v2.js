@@ -1,3 +1,6 @@
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') { axios.defaults.withCredentials = true; }
+
 /**
  * Enhanced Interactive Onboarding Flow
  * Version: 10.3 - Mobile Optimized with Gestures

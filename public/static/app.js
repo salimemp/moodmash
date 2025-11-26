@@ -2,6 +2,11 @@
 
 const API_BASE = '/api';
 
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') {
+    axios.defaults.withCredentials = true;
+}
+
 // =============================================================================
 // SERVICE WORKER REGISTRATION (PWA Support)
 // =============================================================================

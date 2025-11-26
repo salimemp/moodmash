@@ -1,3 +1,6 @@
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') { axios.defaults.withCredentials = true; }
+
 // MoodMash Wellness Activities JavaScript
 
 const API_BASE = '/api';

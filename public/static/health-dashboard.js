@@ -1,3 +1,6 @@
+// Configure axios to send cookies with all requests
+if (typeof axios !== 'undefined') { axios.defaults.withCredentials = true; }
+
 /**
  * Health Dashboard - Frontend
  * Comprehensive health metrics visualization and tracking
