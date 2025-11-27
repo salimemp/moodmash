@@ -1407,10 +1407,10 @@ app.post('/api/auth/register', async (c) => {
     // Hash password with bcrypt (10 rounds)
     const passwordHash = await bcrypt.hash(password, 10);
     
-    // Insert user (auto-verified for better UX - can be changed to 0 for production)
+    // Insert user (NOT verified - requires email verification)
     const result = await DB.prepare(`
       INSERT INTO users (username, email, password_hash, is_verified, is_active)
-      VALUES (?, ?, ?, 1, 1)
+      VALUES (?, ?, ?, 0, 1)
     `).bind(username, email, passwordHash).run();
     
     const userId = result.meta.last_row_id;
@@ -1451,9 +1451,11 @@ app.post('/api/auth/register', async (c) => {
     
     return c.json({
       success: true,
-      message: 'Registration successful! You can now log in.',
-      user: { id: userId, username, email, is_verified: true },
-      requires_verification: false
+      message: 'Registration successful! Please check your email to verify your account.',
+      user: { id: userId, username, email, is_verified: false },
+      requires_verification: true,
+      verification_sent: true,
+      hint: 'Check your spam folder if you don\'t see the email within a few minutes.'
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -1491,18 +1493,16 @@ app.post('/api/auth/login', async (c) => {
       return c.json({ error: 'Invalid username or password' }, 401);
     }
     
-    // Check if email is verified (optional - can be disabled for testing)
-    // Note: Email verification is currently optional to improve user experience
-    // Uncomment below to require email verification before login
-    /*
+    // MANDATORY: Check if email is verified before allowing login
     if (!user.is_verified) {
       return c.json({ 
-        error: 'Email not verified. Please check your email for the verification link.',
+        error: 'Email not verified',
+        message: 'Please check your email and click the verification link before logging in.',
         code: 'EMAIL_NOT_VERIFIED',
-        email: user.email
+        email: user.email,
+        hint: 'Check your spam folder if you don\'t see the email. You can request a new verification email if needed.'
       }, 403);
     }
-    */
     
     // Verify password with bcrypt
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
