@@ -1,0 +1,26 @@
+# MoodMash Robots.txt
+# https://moodmash.win/robots.txt
+
+User-agent: *
+Allow: /
+Allow: /login
+Allow: /register
+Allow: /about
+Allow: /privacy
+Allow: /terms
+Allow: /api-docs
+Allow: /monitoring
+
+# Disallow sensitive endpoints
+Disallow: /api/
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /*.json
+Disallow: /*?token=*
+Disallow: /*?session=*
+
+# Crawl rate
+Crawl-delay: 1
+
+# Sitemap
+Sitemap: https://moodmash.win/sitemap.xml

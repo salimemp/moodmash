@@ -1,0 +1,52 @@
+# humanstxt.org/
+# The humans responsible & technology colophon
+
+# TEAM
+
+    Developer: MoodMash Team
+    Site: https://moodmash.win
+    Email: support@moodmash.win
+    Location: Global
+
+# THANKS
+
+    Contributors: Open source community
+    AI Partner: Google Gemini AI
+    Email Service: Resend
+    Monitoring: Sentry.io
+    Infrastructure: Cloudflare
+
+# TECHNOLOGY COLOPHON
+
+    Backend: Hono Framework, TypeScript
+    Database: Cloudflare D1 (SQLite)
+    Storage: Cloudflare R2
+    Frontend: Vanilla JavaScript, TailwindCSS
+    Charts: Chart.js
+    AI: Google Gemini 2.0 Flash
+    Email: Resend API
+    Monitoring: Prometheus, Grafana, Sentry
+    Deployment: Cloudflare Pages & Workers
+    Version Control: Git
+
+# PROJECT
+
+    Name: MoodMash
+    Version: 1.0.0
+    Status: Production
+    Launch Date: 2025-11-27
+    Last Update: 2025-11-27
+    
+# FEATURES
+
+    - AI-Powered Mood Analysis
+    - Pattern Recognition
+    - Crisis Detection
+    - Wellness Recommendations
+    - Analytics Dashboard
+    - Email Notifications
+    - Real-time Monitoring
+    - HIPAA Compliant
+    - Privacy-First Design
+    - Mobile Responsive
+    - PWA Support

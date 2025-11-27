@@ -1,0 +1,27 @@
+# Security Contact Information
+# https://moodmash.win/.well-known/security.txt
+
+Contact: mailto:security@moodmash.win
+Contact: https://moodmash.win/security-report
+Expires: 2026-11-27T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://moodmash.win/.well-known/security.txt
+
+# Security Policy
+Policy: https://moodmash.win/security-policy
+
+# Acknowledgments
+Acknowledgments: https://moodmash.win/security-acknowledgments
+
+# Encryption
+Encryption: https://moodmash.win/pgp-key.txt
+
+# Hiring
+Hiring: https://moodmash.win/careers
+
+# Additional Information
+# - Report security vulnerabilities responsibly
+# - We appreciate responsible disclosure
+# - Bug bounty program available
+# - Average response time: 24-48 hours
+# - Critical issues: <4 hours response time
