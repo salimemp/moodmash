@@ -1302,7 +1302,7 @@ app.get('/api/auth/me', async (c) => {
   try {
     // Get session token from cookie or header
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     if (!sessionToken) {
       return c.json({ error: 'Not authenticated' }, 401);
@@ -1542,7 +1542,7 @@ app.post('/api/auth/logout', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     if (sessionToken) {
       await DB.prepare(`
@@ -1570,7 +1570,7 @@ app.post('/api/contact', async (c) => {
   try {
     // Get session token
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     if (!sessionToken) {
       return c.json({ error: 'Authentication required' }, 401);
@@ -1727,7 +1727,7 @@ app.get('/api/contact/my-submissions', async (c) => {
   try {
     // Get session token
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     if (!sessionToken) {
       return c.json({ error: 'Authentication required' }, 401);
@@ -1776,7 +1776,7 @@ app.get('/api/contact/submission/:id', async (c) => {
     
     // Get session token
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     if (!sessionToken) {
       return c.json({ error: 'Authentication required' }, 401);
@@ -2372,7 +2372,7 @@ app.post('/api/tokens/user', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     // Verify session
     const session = await DB.prepare(`
@@ -2433,7 +2433,7 @@ app.get('/api/tokens/user', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     const session = await DB.prepare(`
       SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
@@ -2464,7 +2464,7 @@ app.delete('/api/tokens/user/:id', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     const session = await DB.prepare(`
       SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
@@ -2497,7 +2497,7 @@ app.post('/api/files/upload', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     const session = await DB.prepare(`
       SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
@@ -2605,7 +2605,7 @@ app.get('/api/files', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     const session = await DB.prepare(`
       SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
@@ -2642,7 +2642,7 @@ app.delete('/api/files/:id', async (c) => {
   
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
-                        c.req.cookie('session_token');
+                        getCookie(c, 'session_token');
     
     const session = await DB.prepare(`
       SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > datetime('now')
