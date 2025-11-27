@@ -119,8 +119,9 @@ app.use('/api/*', async (c, next) => {
 // Enable CORS for API routes
 app.use('/api/*', cors());
 
-// Serve static files
-app.use('/static/*', serveStatic({ root: './public' }));
+// NOTE: Static files (logo.png, og-image.png, robots.txt, etc.) are automatically
+// served by Cloudflare Pages from the dist/ directory. They are excluded from 
+// the worker in public/_routes.json, so no serveStatic routes needed here.
 
 // =============================================================================
 // MANDATORY AUTHENTICATION - Auth Wall Middleware

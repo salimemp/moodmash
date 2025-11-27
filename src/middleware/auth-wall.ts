@@ -13,6 +13,10 @@ import { getSession } from '../auth';
 /**
  * Public routes that don't require authentication
  * STRICT MODE: Only dashboard and register pages are public
+ * 
+ * NOTE: Static assets (logo.png, og-image.png, robots.txt, etc.) are automatically
+ * served by Cloudflare Pages and excluded in _routes.json, so they don't need to be
+ * listed here. The worker never sees requests for those files.
  */
 const PUBLIC_ROUTES = [
   '/', // Dashboard - public landing page
@@ -22,7 +26,6 @@ const PUBLIC_ROUTES = [
   '/forgot-password', // Password reset request page
   '/reset-password', // Password reset completion page (needs token in URL)
   '/monitoring', // Monitoring dashboard - public for Grafana/Prometheus integration
-  '/static/', // Static assets (CSS, JS, images)
   '/api/', // All API routes bypass authWall and use apiAuthWall instead
   '/auth/', // OAuth callback routes
 ];
