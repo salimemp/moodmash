@@ -57,38 +57,41 @@ class MoodMashAuth {
     if (!container) return;
 
     container.innerHTML = `
-      <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-4">
+      <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
         <div class="w-full max-w-md">
           <!-- Logo and Title -->
           <div class="text-center mb-8">
             <div class="flex items-center justify-center mb-4">
-              <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
-                <i class="fas fa-smile text-3xl text-white"></i>
+              <div class="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
+                <i class="fas fa-heart text-4xl text-white"></i>
               </div>
             </div>
-            <h1 class="text-3xl font-bold text-white mb-2" id="auth-title">
-              ${this.currentView === 'register' ? this.t('auth_create_account') : this.t('auth_welcome_back')}
+            <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-2" id="auth-title">
+              MoodMash
             </h1>
-            <p class="text-purple-200" id="auth-subtitle">
+            <p class="text-lg text-gray-600 dark:text-gray-400 mb-1" id="auth-subtitle">
+              ${this.currentView === 'register' ? this.t('auth_create_account') : this.t('auth_welcome_back')}
+            </p>
+            <p class="text-sm text-gray-500 dark:text-gray-500">
               ${this.currentView === 'register' ? this.t('auth_start_tracking') : this.t('auth_sign_in_continue')}
             </p>
           </div>
 
           <!-- Main Auth Card -->
-          <div class="bg-gradient-to-br from-purple-800/50 to-purple-900/50 backdrop-blur-lg rounded-3xl p-8 shadow-2xl border border-purple-700/50">
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">
             
             <!-- Tab Switcher -->
-            <div class="flex mb-8 bg-black/30 rounded-full p-1">
+            <div class="flex mb-8 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
               <button 
                 id="tab-login" 
-                class="flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${this.currentView === 'login' ? 'bg-purple-600 text-white shadow-lg' : 'text-purple-300 hover:text-white'}"
+                class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${this.currentView === 'login' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}"
                 onclick="authManager.switchView('login')"
               >
                 ${this.t('auth_login')}
               </button>
               <button 
                 id="tab-register" 
-                class="flex-1 py-3 px-6 rounded-full font-semibold transition-all duration-300 ${this.currentView === 'register' ? 'bg-purple-600 text-white shadow-lg' : 'text-purple-300 hover:text-white'}"
+                class="flex-1 py-3 px-6 rounded-lg font-semibold transition-all duration-300 ${this.currentView === 'register' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}"
                 onclick="authManager.switchView('register')"
               >
                 ${this.t('auth_register')}
@@ -101,10 +104,24 @@ class MoodMashAuth {
                 ${this.renderFormFields()}
               </div>
 
+              <!-- Password Strength Meter (Register only) -->
+              ${this.currentView === 'register' ? `
+                <div id="password-strength" class="hidden mb-4">
+                  <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm text-gray-600 dark:text-gray-400">Password Strength:</span>
+                    <span id="strength-text" class="text-sm font-semibold"></span>
+                  </div>
+                  <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div id="strength-bar" class="h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                  </div>
+                  <div id="strength-errors" class="mt-2 text-sm text-red-600 dark:text-red-400"></div>
+                </div>
+              ` : ''}
+
               <!-- Submit Button -->
               <button 
                 type="submit" 
-                class="w-full py-4 bg-purple-600 hover:bg-purple-500 text-white font-semibold rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 mt-6"
+                class="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg flex items-center justify-center space-x-2 mt-6"
                 id="submit-btn"
               >
                 <i class="fas ${this.currentView === 'register' ? 'fa-user-plus' : 'fa-sign-in-alt'}"></i>
@@ -114,9 +131,9 @@ class MoodMashAuth {
 
             <!-- Divider -->
             <div class="flex items-center my-6">
-              <div class="flex-1 border-t border-purple-600"></div>
-              <span class="px-4 text-purple-300 text-sm uppercase">${this.t('auth_or_continue_with')}</span>
-              <div class="flex-1 border-t border-purple-600"></div>
+              <div class="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
+              <span class="px-4 text-gray-500 dark:text-gray-400 text-sm uppercase">${this.t('auth_or_continue_with')}</span>
+              <div class="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             </div>
 
             <!-- OAuth Providers -->
@@ -128,7 +145,7 @@ class MoodMashAuth {
             <div class="space-y-3">
               <button 
                 onclick="authManager.signInWithKey()" 
-                class="w-full py-3 bg-black/40 hover:bg-black/60 text-white rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 border border-purple-700/50"
+                class="w-full py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600"
               >
                 <i class="fas fa-key"></i>
                 <span>${this.t('auth_sign_in_key')}</span>
@@ -136,7 +153,7 @@ class MoodMashAuth {
 
               <button 
                 onclick="authManager.useBiometrics()" 
-                class="w-full py-3 bg-black/40 hover:bg-black/60 text-white rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 border border-purple-700/50"
+                class="w-full py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 border border-gray-300 dark:border-gray-600"
               >
                 <i class="fas fa-fingerprint"></i>
                 <span>${this.t('auth_use_biometrics')}</span>
@@ -145,7 +162,7 @@ class MoodMashAuth {
 
             <!-- Security Notice -->
             <div class="mt-6 text-center">
-              <p class="text-purple-300 text-sm flex items-center justify-center space-x-2">
+              <p class="text-gray-500 dark:text-gray-400 text-sm flex items-center justify-center space-x-2">
                 <i class="fas fa-lock"></i>
                 <span>${this.t('auth_protected_encryption')}</span>
               </p>
@@ -170,7 +187,7 @@ class MoodMashAuth {
             id="username" 
             name="username"
             placeholder="${this.t('auth_username_placeholder')}"
-            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="username"
           >
@@ -184,7 +201,7 @@ class MoodMashAuth {
             id="email" 
             name="email"
             placeholder="${this.t('auth_email_placeholder')}"
-            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="email"
           >
@@ -192,20 +209,21 @@ class MoodMashAuth {
 
         <!-- Password -->
         <div class="mb-4 relative">
-          <label class="block text-white font-medium mb-2">${this.t('auth_password')}</label>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">${this.t('auth_password')}</label>
           <input 
             type="password" 
             id="password" 
             name="password"
             placeholder="${this.t('auth_password_placeholder')}"
-            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="new-password"
+            oninput="authManager.checkPasswordStrength()"
           >
           <button 
             type="button" 
             onclick="authManager.togglePassword('password')"
-            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+            class="absolute right-4 top-11 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <i class="fas fa-eye" id="password-toggle"></i>
           </button>
@@ -213,20 +231,20 @@ class MoodMashAuth {
 
         <!-- Confirm Password -->
         <div class="mb-4 relative">
-          <label class="block text-white font-medium mb-2">${this.t('auth_confirm_password')}</label>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">${this.t('auth_confirm_password')}</label>
           <input 
             type="password" 
             id="confirm-password" 
             name="confirm-password"
             placeholder="${this.t('auth_confirm_password_placeholder')}"
-            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="new-password"
           >
           <button 
             type="button" 
             onclick="authManager.togglePassword('confirm-password')"
-            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+            class="absolute right-4 top-11 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <i class="fas fa-eye" id="confirm-password-toggle"></i>
           </button>
@@ -236,13 +254,13 @@ class MoodMashAuth {
       return `
         <!-- Username -->
         <div class="mb-4">
-          <label class="block text-white font-medium mb-2">${this.t('auth_username')}</label>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">${this.t('auth_username')}</label>
           <input 
             type="text" 
             id="username" 
             name="username"
             placeholder="${this.t('auth_username_login_placeholder')}"
-            class="w-full px-4 py-3 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="username"
           >
@@ -250,20 +268,20 @@ class MoodMashAuth {
 
         <!-- Password -->
         <div class="mb-4 relative">
-          <label class="block text-white font-medium mb-2">${this.t('auth_password')}</label>
+          <label class="block text-gray-700 dark:text-gray-300 font-medium mb-2">${this.t('auth_password')}</label>
           <input 
             type="password" 
             id="password" 
             name="password"
             placeholder="${this.t('auth_password_login_placeholder')}"
-            class="w-full px-4 py-3 pr-12 bg-black/40 border border-purple-700/50 rounded-xl text-white placeholder-purple-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
+            class="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-all"
             required
             autocomplete="current-password"
           >
           <button 
             type="button" 
             onclick="authManager.togglePassword('password')"
-            class="absolute right-4 top-11 text-purple-400 hover:text-purple-300"
+            class="absolute right-4 top-11 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
           >
             <i class="fas fa-eye" id="password-toggle"></i>
           </button>
@@ -376,6 +394,82 @@ class MoodMashAuth {
     } catch (error) {
       console.error('Auth error:', error);
       this.showMessage(this.t('auth_error_occurred'), 'error');
+    }
+  }
+
+  async checkPasswordStrength() {
+    const passwordInput = document.getElementById('password');
+    const strengthContainer = document.getElementById('password-strength');
+    const strengthBar = document.getElementById('strength-bar');
+    const strengthText = document.getElementById('strength-text');
+    const strengthErrors = document.getElementById('strength-errors');
+    
+    if (!passwordInput || !strengthContainer) return;
+    
+    const password = passwordInput.value;
+    
+    if (!password || password.length === 0) {
+      strengthContainer.classList.add('hidden');
+      return;
+    }
+    
+    strengthContainer.classList.remove('hidden');
+    
+    try {
+      // Call API to check password strength
+      const response = await fetch('/api/auth/check-password-strength', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      
+      const result = await response.json();
+      
+      // Update strength bar
+      const score = result.score || 0;
+      const strength = result.strength || 'weak';
+      
+      strengthBar.style.width = `${score}%`;
+      
+      // Color based on strength
+      const colors = {
+        weak: 'bg-red-500',
+        medium: 'bg-yellow-500',
+        strong: 'bg-blue-500',
+        very_strong: 'bg-green-500'
+      };
+      
+      const textColors = {
+        weak: 'text-red-600 dark:text-red-400',
+        medium: 'text-yellow-600 dark:text-yellow-400',
+        strong: 'text-blue-600 dark:text-blue-400',
+        very_strong: 'text-green-600 dark:text-green-400'
+      };
+      
+      // Remove all color classes
+      strengthBar.className = 'h-2 rounded-full transition-all duration-300 ' + (colors[strength] || 'bg-gray-500');
+      strengthText.className = 'text-sm font-semibold ' + (textColors[strength] || 'text-gray-600');
+      strengthText.textContent = strength.replace('_', ' ').toUpperCase();
+      
+      // Show errors if any
+      if (result.errors && result.errors.length > 0) {
+        strengthErrors.innerHTML = result.errors.map(err => 
+          `<div class="flex items-start space-x-1 mt-1">
+            <i class="fas fa-exclamation-circle mt-0.5"></i>
+            <span>${err}</span>
+          </div>`
+        ).join('');
+      } else if (result.breached) {
+        strengthErrors.innerHTML = `
+          <div class="flex items-start space-x-1 mt-1">
+            <i class="fas fa-exclamation-triangle mt-0.5"></i>
+            <span>This password has been found in data breaches. Please choose a different one.</span>
+          </div>`;
+      } else {
+        strengthErrors.innerHTML = '';
+      }
+    } catch (error) {
+      console.error('Password strength check error:', error);
     }
   }
 
