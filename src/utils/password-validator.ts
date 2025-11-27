@@ -117,21 +117,23 @@ export function validatePassword(
 
 /**
  * Check if password contains common patterns
+ * Only reject if patterns are significant (4+ chars) or dominate the password
  */
 function hasCommonPatterns(password: string): boolean {
   const lowerPassword = password.toLowerCase();
   
-  // Sequential numbers
-  if (/012|123|234|345|456|567|678|789/.test(lowerPassword)) return true;
+  // Only check for longer sequential patterns (4+ chars)
+  // This allows "123" in "TestPass123!" but rejects "1234" or "password1234"
+  if (/0123|1234|2345|3456|4567|5678|6789/.test(lowerPassword)) return true;
   
-  // Sequential letters
-  if (/abc|bcd|cde|def|efg|fgh|ghi|hij|ijk|jkl|klm|lmn|mno|nop|opq|pqr|qrs|rst|stu|tuv|uvw|vwx|wxy|xyz/.test(lowerPassword)) return true;
+  // Sequential letters (4+ chars)
+  if (/abcd|bcde|cdef|defg|efgh|fghi|ghij|hijk|ijkl|jklm|klmn|lmno|mnop|nopq|opqr|pqrs|qrst|rstu|stuv|tuvw|uvwx|vwxy|wxyz/.test(lowerPassword)) return true;
   
-  // Repeated characters (3 or more)
-  if (/(.)\1\1/.test(password)) return true;
+  // Repeated characters (4 or more of the same character)
+  if (/(.)\1\1\1/.test(password)) return true;
   
-  // Common keyboard patterns
-  if (/qwerty|asdfgh|zxcvbn|qazwsx/.test(lowerPassword)) return true;
+  // Common keyboard patterns (longer sequences)
+  if (/qwerty|asdfgh|zxcvbn|qazwsx|qwertyuiop/.test(lowerPassword)) return true;
   
   return false;
 }
