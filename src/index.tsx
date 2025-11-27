@@ -70,19 +70,37 @@ app.use('/api/*', analyticsMiddleware);
 app.use('/api/*', async (c, next) => {
   const startTime = Date.now();
   const { trackPerformance } = await import('./services/performance-monitoring');
+  const { metricsCollector } = await import('./services/metrics');
 
-  await next();
-
-  const responseTime = Date.now() - startTime;
-  
-  // Track in background (don't await)
-  trackPerformance(c.env, {
-    endpoint: c.req.path,
+  // Increment request counter
+  metricsCollector.increment('http_requests_total', 1, {
     method: c.req.method,
-    response_time_ms: responseTime,
-    status_code: c.res.status,
-    timestamp: new Date().toISOString(),
-  }).catch(console.error);
+    path: c.req.path
+  });
+
+  try {
+    await next();
+
+    const responseTime = Date.now() - startTime;
+    
+    // Record response time for metrics
+    metricsCollector.recordResponseTime(responseTime);
+    
+    // Track in background (don't await)
+    trackPerformance(c.env, {
+      endpoint: c.req.path,
+      method: c.req.method,
+      response_time_ms: responseTime,
+      status_code: c.res.status,
+      timestamp: new Date().toISOString(),
+    }).catch(console.error);
+  } catch (error) {
+    // Increment error counter
+    metricsCollector.increment('http_errors_total', 1, {
+      path: c.req.path
+    });
+    throw error;
+  }
 });
 
 // Enable CORS for API routes
@@ -3981,6 +3999,80 @@ app.delete('/api/chat/conversations/:id', async (c) => {
     console.error('[Chat] Delete conversation error:', error);
     return c.json({ error: 'Failed to delete conversation' }, 500);
   }
+});
+
+// ============================================================================
+// MONITORING & METRICS API ENDPOINTS
+// Prometheus-compatible metrics and monitoring dashboard
+// ============================================================================
+
+import { metricsCollector } from './services/metrics';
+
+// Prometheus metrics endpoint
+app.get('/metrics', (c) => {
+  const prometheusFormat = metricsCollector.toPrometheusFormat();
+  return c.text(prometheusFormat, 200, {
+    'Content-Type': 'text/plain; version=0.0.4'
+  });
+});
+
+// Metrics snapshot (JSON format)
+app.get('/api/monitoring/metrics', (c) => {
+  const snapshot = metricsCollector.getSnapshot();
+  return c.json(snapshot);
+});
+
+// Health status endpoint
+app.get('/api/health/status', async (c) => {
+  const { DB, R2, GEMINI_API_KEY, RESEND_API_KEY } = c.env;
+  
+  const health = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    api: 'healthy',
+    database: 'unknown',
+    auth: 'healthy',
+    email: 'unknown',
+    storage: 'unknown',
+    ai: 'unknown',
+    uptime: process.uptime ? Math.round(process.uptime()) : 0
+  };
+  
+  // Check database
+  try {
+    await DB.prepare('SELECT 1').first();
+    health.database = 'healthy';
+  } catch (error) {
+    health.database = 'unhealthy';
+    health.status = 'degraded';
+  }
+  
+  // Check R2 storage
+  try {
+    if (R2) {
+      health.storage = 'healthy';
+    }
+  } catch (error) {
+    health.storage = 'unhealthy';
+  }
+  
+  // Check email service
+  health.email = RESEND_API_KEY ? 'configured' : 'not_configured';
+  
+  // Check AI service
+  health.ai = GEMINI_API_KEY ? 'configured' : 'not_configured';
+  
+  return c.json(health);
+});
+
+// Monitoring Dashboard Page
+app.get('/monitoring', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/monitoring.js"></script>
+  `;
+  return c.html(renderHTML('System Monitoring', content, 'monitoring'));
 });
 
 // ============================================================================

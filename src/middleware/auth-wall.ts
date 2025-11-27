@@ -21,6 +21,7 @@ const PUBLIC_ROUTES = [
   '/verify-email', // Email verification page (needs token in URL)
   '/forgot-password', // Password reset request page
   '/reset-password', // Password reset completion page (needs token in URL)
+  '/monitoring', // Monitoring dashboard - public for Grafana/Prometheus integration
   '/static/', // Static assets (CSS, JS, images)
   '/api/', // All API routes bypass authWall and use apiAuthWall instead
   '/auth/', // OAuth callback routes
@@ -108,7 +109,12 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
   const path = c.req.path;
 
   // Allow public API routes
-  if (path.startsWith('/api/auth/') || path === '/api/health/status' || path === '/api/health') {
+  if (
+    path.startsWith('/api/auth/') || 
+    path === '/api/health/status' || 
+    path === '/api/health' ||
+    path.startsWith('/api/monitoring/')  // Allow Prometheus metrics scraping
+  ) {
     return await next();
   }
 
