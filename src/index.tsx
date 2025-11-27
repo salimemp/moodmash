@@ -4119,6 +4119,129 @@ app.post('/api/sentry-test', async (c) => {
   }
 });
 
+// R2 Storage test endpoint (for testing R2 bucket)
+app.post('/api/r2-test', async (c) => {
+  try {
+    const { R2 } = c.env;
+    
+    if (!R2) {
+      return c.json({
+        error: 'R2 not configured',
+        message: 'R2 bucket binding not found in environment'
+      }, 400);
+    }
+    
+    const testKey = `test/r2-verification-${Date.now()}.txt`;
+    const testContent = `MoodMash R2 Test - ${new Date().toISOString()}`;
+    
+    // Test 1: Upload to R2
+    try {
+      await R2.put(testKey, testContent, {
+        httpMetadata: {
+          contentType: 'text/plain'
+        }
+      });
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'R2 upload failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        test: 'upload'
+      }, 500);
+    }
+    
+    // Test 2: Read from R2
+    let retrievedContent: string;
+    try {
+      const object = await R2.get(testKey);
+      if (!object) {
+        return c.json({
+          success: false,
+          error: 'R2 read failed',
+          message: 'Object not found after upload',
+          test: 'read'
+        }, 500);
+      }
+      retrievedContent = await object.text();
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'R2 read failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        test: 'read'
+      }, 500);
+    }
+    
+    // Test 3: Verify content matches
+    const contentMatches = retrievedContent === testContent;
+    if (!contentMatches) {
+      return c.json({
+        success: false,
+        error: 'R2 content mismatch',
+        message: 'Retrieved content does not match uploaded content',
+        test: 'verify',
+        expected: testContent,
+        actual: retrievedContent
+      }, 500);
+    }
+    
+    // Test 4: Delete from R2
+    try {
+      await R2.delete(testKey);
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'R2 delete failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        test: 'delete'
+      }, 500);
+    }
+    
+    // Test 5: Verify deletion
+    try {
+      const deletedObject = await R2.get(testKey);
+      if (deletedObject !== null) {
+        return c.json({
+          success: false,
+          error: 'R2 deletion verification failed',
+          message: 'Object still exists after deletion',
+          test: 'verify-delete'
+        }, 500);
+      }
+    } catch (error) {
+      return c.json({
+        success: false,
+        error: 'R2 deletion verification failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        test: 'verify-delete'
+      }, 500);
+    }
+    
+    return c.json({
+      success: true,
+      message: 'R2 storage is working correctly',
+      tests_passed: [
+        '✅ Upload test passed',
+        '✅ Read test passed',
+        '✅ Content verification passed',
+        '✅ Delete test passed',
+        '✅ Deletion verification passed'
+      ],
+      bucket_name: 'moodmash-storage',
+      test_key: testKey,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('[R2 Test] Failed:', error);
+    return c.json({
+      success: false,
+      error: 'R2 test failed',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
 // Email test endpoint (for testing Resend API)
 app.post('/api/email-test', async (c) => {
   try {
