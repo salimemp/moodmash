@@ -4170,11 +4170,12 @@ app.post('/api/email-test', async (c) => {
         break;
     }
     
-    // Send email
+    // Send email using Resend onboarding domain (verified by default)
     const result = await sendEmail(RESEND_API_KEY, {
       to: testEmail,
       subject,
-      html
+      html,
+      from: 'MoodMash Testing <onboarding@resend.dev>' // Use Resend's verified domain for testing
     });
     
     return c.json({
