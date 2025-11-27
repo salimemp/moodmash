@@ -58,7 +58,20 @@ import {
 // Authentication Wall
 import { authWall, apiAuthWall } from './middleware/auth-wall';
 
+// Sentry Error Tracking
+import { 
+  isSentryConfigured,
+  sentryMiddleware, 
+  captureError, 
+  setSentryUser,
+  clearSentryUser,
+  addBreadcrumb
+} from './services/sentry';
+
 const app = new Hono<{ Bindings: Bindings }>();
+
+// Sentry Error Tracking Middleware (applies to all routes)
+app.use('*', sentryMiddleware);
 
 // Global Security Middleware (applies to all routes)
 app.use('*', securityMiddleware);
@@ -1537,6 +1550,16 @@ app.post('/api/auth/login', async (c) => {
     const maxAge = trustDevice ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
     c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`);
     
+    // Set Sentry user context for error tracking
+    if (c.env.SENTRY_DSN) {
+      setSentryUser(user.id, user.username, user.email);
+      addBreadcrumb('auth', 'User logged in', {
+        user_id: user.id,
+        username: user.username,
+        trusted_device: trustDevice
+      });
+    }
+    
     return c.json({
       success: true,
       user: {
@@ -1550,6 +1573,16 @@ app.post('/api/auth/login', async (c) => {
     });
   } catch (error) {
     console.error('Login error:', error);
+    
+    // Capture error in Sentry
+    if (c.env.SENTRY_DSN) {
+      captureError(error as Error, {
+        endpoint: '/api/auth/login',
+        method: 'POST',
+        statusCode: 500
+      });
+    }
+    
     return c.json({ error: 'Login failed' }, 500);
   }
 });
@@ -1568,11 +1601,27 @@ app.post('/api/auth/logout', async (c) => {
       `).bind(sessionToken).run();
     }
     
+    // Clear Sentry user context
+    if (c.env.SENTRY_DSN) {
+      clearSentryUser();
+      addBreadcrumb('auth', 'User logged out');
+    }
+    
     c.header('Set-Cookie', 'session_token=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0');
     
     return c.json({ success: true });
   } catch (error) {
     console.error('Logout error:', error);
+    
+    // Capture error in Sentry
+    if (c.env.SENTRY_DSN) {
+      captureError(error as Error, {
+        endpoint: '/api/auth/logout',
+        method: 'POST',
+        statusCode: 500
+      });
+    }
+    
     return c.json({ error: 'Logout failed' }, 500);
   }
 });
@@ -4020,6 +4069,53 @@ app.get('/metrics', (c) => {
 app.get('/api/monitoring/metrics', (c) => {
   const snapshot = metricsCollector.getSnapshot();
   return c.json(snapshot);
+});
+
+// Sentry test endpoint (for verifying error tracking)
+app.post('/api/sentry-test', async (c) => {
+  try {
+    const { type = 'error' } = await c.req.json().catch(() => ({ type: 'error' }));
+    
+    if (!c.env.SENTRY_DSN) {
+      return c.json({ 
+        error: 'Sentry not configured',
+        message: 'SENTRY_DSN environment variable not set'
+      }, 400);
+    }
+    
+    if (type === 'error') {
+      // Test error capture
+      throw new Error('Sentry test error - This is intentional for testing');
+    } else if (type === 'message') {
+      // Test message capture
+      const { captureMessage } = await import('./services/sentry');
+      captureMessage('Sentry test message from MoodMash', 'info');
+      return c.json({ 
+        success: true, 
+        message: 'Test message sent to Sentry' 
+      });
+    }
+    
+    return c.json({ 
+      error: 'Invalid test type',
+      valid_types: ['error', 'message']
+    }, 400);
+  } catch (error) {
+    // This error will be captured by Sentry middleware
+    if (c.env.SENTRY_DSN) {
+      captureError(error as Error, {
+        endpoint: '/api/sentry-test',
+        method: 'POST',
+        test: true
+      });
+    }
+    
+    return c.json({ 
+      success: true, 
+      message: 'Test error sent to Sentry',
+      error: (error as Error).message
+    });
+  }
 });
 
 // Health status endpoint

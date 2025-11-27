@@ -65,4 +65,7 @@ export interface MoodStats {
 
 export interface Bindings {
   DB: D1Database;
+  SENTRY_DSN?: string;
+  ENVIRONMENT?: string;
+  RELEASE_VERSION?: string;
 }
