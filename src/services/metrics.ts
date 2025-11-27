@@ -30,6 +30,7 @@ class MetricsCollector {
   private metrics: Map<string, Metric> = new Map();
   private responseTimes: number[] = [];
   private maxResponseTimes = 1000; // Keep last 1000 response times
+  private responseTimeIndex = 0; // Memory leak fix: Circular buffer index
   
   constructor() {
     this.initializeMetrics();
@@ -63,16 +64,26 @@ class MetricsCollector {
     if (metric) {
       metric.value += amount;
       metric.timestamp = Date.now();
-      if (labels) metric.labels = { ...metric.labels, ...labels };
+      // Memory leak fix: Limit label count to prevent unbounded growth
+      if (labels) {
+        const currentLabelCount = Object.keys(metric.labels || {}).length;
+        if (currentLabelCount < 50) { // Max 50 labels per metric
+          metric.labels = { ...metric.labels, ...labels };
+        }
+      }
     } else {
       this.set(name, 'counter', amount, labels);
     }
   }
   
   recordResponseTime(ms: number) {
-    this.responseTimes.push(ms);
-    if (this.responseTimes.length > this.maxResponseTimes) {
-      this.responseTimes.shift();
+    // Memory leak fix: Use circular buffer instead of shift() - O(1) instead of O(n)
+    if (this.responseTimes.length < this.maxResponseTimes) {
+      this.responseTimes.push(ms);
+    } else {
+      // Overwrite oldest entry in circular buffer
+      this.responseTimes[this.responseTimeIndex] = ms;
+      this.responseTimeIndex = (this.responseTimeIndex + 1) % this.maxResponseTimes;
     }
     
     // Update average

@@ -27,10 +27,51 @@ const cache = new Map<string, CacheEntry>();
 let cacheHits = 0;
 let cacheMisses = 0;
 
+// Memory leak fix: Add cache size limit and automatic cleanup
+const MAX_CACHE_SIZE = 1000; // Limit to 1000 entries (~2 MB)
+let lastCleanup = Date.now();
+const CLEANUP_INTERVAL = 300000; // Clean every 5 minutes
+
+/**
+ * Clean expired entries (batch mode)
+ * @param maxClean Maximum number of entries to clean
+ */
+function cleanExpiredBatch(maxClean: number = 10): void {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  for (const [key, entry] of cache.entries()) {
+    if (cleaned >= maxClean) break;
+    if (now > entry.expires_at) {
+      cache.delete(key);
+      cleaned++;
+    }
+  }
+}
+
+/**
+ * Trigger periodic cleanup if needed
+ */
+function maybeCleanup(): void {
+  const now = Date.now();
+  if (now - lastCleanup > CLEANUP_INTERVAL) {
+    cleanExpired();
+    lastCleanup = now;
+  }
+}
+
 /**
  * Get value from cache
  */
 export function get<T>(key: string): T | null {
+  // Memory leak fix: Periodic automatic cleanup
+  maybeCleanup();
+  
+  // Clean a few expired entries on each get (lazy cleanup)
+  if (cache.size > 100) {
+    cleanExpiredBatch(5);
+  }
+  
   const entry = cache.get(key);
 
   if (!entry) {
@@ -54,6 +95,16 @@ export function get<T>(key: string): T | null {
  */
 export function set(key: string, data: any, ttl: number = 300): void {
   const now = Date.now();
+  
+  // Memory leak fix: Enforce size limit (LRU-style eviction)
+  if (cache.size >= MAX_CACHE_SIZE && !cache.has(key)) {
+    // Remove oldest entry first
+    const firstKey = cache.keys().next().value;
+    if (firstKey) {
+      cache.delete(firstKey);
+    }
+  }
+  
   cache.set(key, {
     data,
     expires_at: now + ttl * 1000,

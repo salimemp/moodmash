@@ -114,7 +114,8 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
     path === '/api/health/status' || 
     path === '/api/health' ||
     path.startsWith('/api/monitoring/') ||  // Allow Prometheus metrics scraping
-    path === '/api/sentry-test'  // Allow Sentry test endpoint
+    path === '/api/sentry-test' ||  // Allow Sentry test endpoint
+    path === '/api/email-test'  // Allow email test endpoint
   ) {
     return await next();
   }

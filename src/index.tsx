@@ -4118,6 +4118,83 @@ app.post('/api/sentry-test', async (c) => {
   }
 });
 
+// Email test endpoint (for testing Resend API)
+app.post('/api/email-test', async (c) => {
+  try {
+    const { RESEND_API_KEY } = c.env;
+    
+    if (!RESEND_API_KEY) {
+      return c.json({
+        error: 'Email not configured',
+        message: 'RESEND_API_KEY environment variable not set'
+      }, 400);
+    }
+    
+    const { to, type = 'welcome' } = await c.req.json().catch(() => ({ type: 'welcome' }));
+    const testEmail = to || 'salimmakrana@gmail.com'; // Default to your email
+    
+    // Send test email based on type
+    let html: string;
+    let subject: string;
+    
+    switch (type) {
+      case 'verification':
+        html = generateVerificationEmail(
+          'https://moodmash.win/verify-email?token=test123',
+          'Test User',
+          60
+        );
+        subject = 'Test: Verify Your Email - MoodMash';
+        break;
+      
+      case 'password-reset':
+        html = generatePasswordResetEmail(
+          'https://moodmash.win/reset-password?token=test123',
+          60
+        );
+        subject = 'Test: Reset Your Password - MoodMash';
+        break;
+      
+      case 'magic-link':
+        html = generateMagicLinkEmail(
+          'https://moodmash.win/auth/magic?token=test123',
+          15
+        );
+        subject = 'Test: Sign in to MoodMash';
+        break;
+      
+      case 'welcome':
+      default:
+        html = generateWelcomeEmail('Test User');
+        subject = 'Test: Welcome to MoodMash!';
+        break;
+    }
+    
+    // Send email
+    const result = await sendEmail(RESEND_API_KEY, {
+      to: testEmail,
+      subject,
+      html
+    });
+    
+    return c.json({
+      success: true,
+      message: 'Test email sent successfully',
+      email_id: result.id,
+      sent_to: testEmail,
+      type: type
+    });
+    
+  } catch (error) {
+    console.error('[Email Test] Failed:', error);
+    return c.json({
+      success: false,
+      error: 'Failed to send test email',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }, 500);
+  }
+});
+
 // Health status endpoint
 app.get('/api/health/status', async (c) => {
   const { DB, R2, GEMINI_API_KEY, RESEND_API_KEY } = c.env;
