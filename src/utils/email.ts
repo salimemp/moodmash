@@ -20,7 +20,7 @@ export async function sendEmail(
   apiKey: string,
   options: EmailOptions
 ): Promise<{ id: string; success: boolean }> {
-  const { to, subject, html, from = 'MoodMash <noreply@moodmash.win>', replyTo, cc, bcc } = options;
+  const { to, subject, html, from = 'MoodMash <noreply@verify.moodmash.win>', replyTo, cc, bcc } = options;
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
