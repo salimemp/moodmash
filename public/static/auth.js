@@ -318,9 +318,6 @@ class MoodMashAuth {
   renderOAuthProviders() {
     const providers = [
       { id: 'google', icon: 'fab fa-google', color: 'hover:bg-red-500' },
-      { id: 'apple', icon: 'fab fa-apple', color: 'hover:bg-gray-800' },
-      { id: 'facebook', icon: 'fab fa-facebook-f', color: 'hover:bg-blue-600' },
-      { id: 'x', icon: 'fab fa-x-twitter', color: 'hover:bg-black' },
       { id: 'github', icon: 'fab fa-github', color: 'hover:bg-gray-700' }
     ];
 

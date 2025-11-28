@@ -1,5 +1,5 @@
 // OAuth Authentication Module
-import { Google, GitHub, Facebook } from 'arctic';
+import { Google, GitHub } from 'arctic';
 import type { Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
@@ -17,11 +17,6 @@ export function initOAuthProviders(env: any) {
             env.GITHUB_CLIENT_ID || '',
             env.GITHUB_CLIENT_SECRET || '',
             `${baseUrl}/auth/github/callback`
-        ),
-        facebook: new Facebook(
-            env.FACEBOOK_CLIENT_ID || '',
-            env.FACEBOOK_CLIENT_SECRET || '',
-            `${baseUrl}/auth/facebook/callback`
         )
     };
 }
@@ -39,7 +34,7 @@ export interface Session {
     email: string;
     name: string;
     picture?: string;
-    provider: 'google' | 'github' | 'facebook';
+    provider: 'google' | 'github';
     isPremium: boolean;
     createdAt: number;
 }
