@@ -3342,6 +3342,137 @@ app.get('/register', (c) => {
   `);
 });
 
+// Email verification page
+app.get('/verify-email', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verify Email - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full">
+            <div id="verification-container" class="bg-white rounded-2xl shadow-xl p-8">
+                <div class="text-center mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-indigo-100 rounded-full mb-4">
+                        <i class="fas fa-envelope-open-text text-3xl text-indigo-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800">Verifying Your Email</h1>
+                    <p class="text-gray-600 mt-2">Please wait while we verify your account...</p>
+                </div>
+                
+                <div class="flex justify-center">
+                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+          // Get token from URL
+          const urlParams = new URLSearchParams(window.location.search);
+          const token = urlParams.get('token');
+          const container = document.getElementById('verification-container');
+          
+          if (!token) {
+            container.innerHTML = \`
+              <div class="text-center">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                  <i class="fas fa-exclamation-circle text-3xl text-red-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800 mb-2">Invalid Link</h1>
+                <p class="text-gray-600 mb-6">This verification link is invalid or missing a token.</p>
+                <a href="/login" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                  Go to Login
+                </a>
+              </div>
+            \`;
+            return;
+          }
+          
+          // Verify the email
+          fetch(\`/api/auth/verify-email?token=\${token}\`)
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                container.innerHTML = \`
+                  <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                      <i class="fas fa-check-circle text-3xl text-green-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Email Verified!</h1>
+                    <p class="text-gray-600 mb-6">\${data.message || 'Your email has been successfully verified. You can now log in to your account.'}</p>
+                    <a href="/login" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                      Continue to Login
+                    </a>
+                  </div>
+                \`;
+              } else {
+                container.innerHTML = \`
+                  <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                      <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Verification Failed</h1>
+                    <p class="text-gray-600 mb-6">\${data.error || 'This verification link is invalid or has expired.'}</p>
+                    <div class="space-y-3">
+                      <a href="/register" class="block w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition text-center">
+                        Register New Account
+                      </a>
+                      <button onclick="resendVerification()" class="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition">
+                        Resend Verification Email
+                      </button>
+                    </div>
+                  </div>
+                \`;
+              }
+            })
+            .catch(error => {
+              console.error('Verification error:', error);
+              container.innerHTML = \`
+                <div class="text-center">
+                  <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
+                  </div>
+                  <h1 class="text-2xl font-bold text-gray-800 mb-2">Something Went Wrong</h1>
+                  <p class="text-gray-600 mb-6">We couldn't verify your email. Please try again later.</p>
+                  <a href="/login" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                    Go to Login
+                  </a>
+                </div>
+              \`;
+            });
+          
+          function resendVerification() {
+            const email = prompt('Please enter your email address:');
+            if (!email) return;
+            
+            fetch('/api/auth/resend-verification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                alert('✅ Verification email sent! Please check your inbox.');
+              } else {
+                alert('❌ ' + (data.error || 'Failed to send verification email.'));
+              }
+            })
+            .catch(error => {
+              alert('❌ Something went wrong. Please try again later.');
+            });
+          }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
 // Magic link verification page
 app.get('/auth/magic', (c) => {
   return c.html(`
