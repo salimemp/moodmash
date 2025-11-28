@@ -3431,6 +3431,302 @@ app.get('/auth/magic', (c) => {
   `);
 });
 
+// Security settings test page (Passkey, Biometrics, 2FA verification)
+app.get('/security-test', (c) => {
+  return c.html(`
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Security Features Test - MoodMash</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+    </head>
+    <body class="bg-gray-50 p-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-8 mb-6">
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-shield-alt text-indigo-600 mr-2"></i>
+                    Security Features Test
+                </h1>
+                <p class="text-gray-600 mb-8">Test Passkey, Biometric Authentication, and 2FA functionality</p>
+                
+                <!-- Passkey/WebAuthn Test -->
+                <div class="mb-8 p-6 border border-gray-200 rounded-lg">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-key text-blue-600 mr-2"></i>
+                        Passkey / WebAuthn
+                    </h2>
+                    <div class="space-y-4">
+                        <button onclick="testPasskeyRegister()" class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+                            <i class="fas fa-user-plus mr-2"></i>
+                            Test Passkey Registration
+                        </button>
+                        <button onclick="testPasskeyLogin()" class="w-full bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 transition">
+                            <i class="fas fa-sign-in-alt mr-2"></i>
+                            Test Passkey Authentication
+                        </button>
+                        <button onclick="testPasskeyList()" class="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition">
+                            <i class="fas fa-list mr-2"></i>
+                            List Registered Passkeys
+                        </button>
+                        <div id="passkey-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
+                            <pre class="text-sm text-gray-700 overflow-auto"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Biometrics Test -->
+                <div class="mb-8 p-6 border border-gray-200 rounded-lg">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-fingerprint text-green-600 mr-2"></i>
+                        Biometric Authentication
+                    </h2>
+                    <div class="space-y-4">
+                        <button onclick="testBiometricEnroll()" class="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition">
+                            <i class="fas fa-user-check mr-2"></i>
+                            Test Biometric Enrollment
+                        </button>
+                        <button onclick="testBiometricAuth()" class="w-full bg-green-500 text-white px-6 py-3 rounded-lg hover:bg-green-600 transition">
+                            <i class="fas fa-unlock mr-2"></i>
+                            Test Biometric Authentication
+                        </button>
+                        <button onclick="checkBiometricStatus()" class="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Check Biometric Status
+                        </button>
+                        <div id="biometric-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
+                            <pre class="text-sm text-gray-700 overflow-auto"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 2FA/TOTP Test -->
+                <div class="mb-8 p-6 border border-gray-200 rounded-lg">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-mobile-alt text-purple-600 mr-2"></i>
+                        Two-Factor Authentication (2FA)
+                    </h2>
+                    <div class="space-y-4">
+                        <button onclick="testTotpSetup()" class="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition">
+                            <i class="fas fa-qrcode mr-2"></i>
+                            Test 2FA Setup (Get QR Code)
+                        </button>
+                        <button onclick="testTotpVerify()" class="w-full bg-purple-500 text-white px-6 py-3 rounded-lg hover:bg-purple-600 transition">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Test 2FA Verification
+                        </button>
+                        <button onclick="checkTotpStatus()" class="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            Check 2FA Status
+                        </button>
+                        <div id="totp-result" class="mt-4 p-4 bg-gray-50 rounded-lg hidden">
+                            <pre class="text-sm text-gray-700 overflow-auto"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Summary -->
+                <div class="p-6 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <h2 class="text-xl font-semibold text-indigo-800 mb-4">
+                        <i class="fas fa-clipboard-check mr-2"></i>
+                        Feature Status Summary
+                    </h2>
+                    <div id="status-summary" class="space-y-2">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 bg-gray-400 rounded-full mr-3"></div>
+                            <span class="text-gray-700">Click test buttons to verify features</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <script>
+          // Utility function to display results
+          function showResult(elementId, result, success = true) {
+            const resultDiv = document.getElementById(elementId);
+            const pre = resultDiv.querySelector('pre');
+            resultDiv.classList.remove('hidden');
+            pre.textContent = JSON.stringify(result, null, 2);
+            resultDiv.className = \`mt-4 p-4 rounded-lg \${success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}\`;
+          }
+          
+          // Passkey/WebAuthn Tests
+          async function testPasskeyRegister() {
+            try {
+              showResult('passkey-result', { status: 'Testing...', message: 'Initiating passkey registration' }, true);
+              
+              // This would normally require a logged-in user
+              const response = await fetch('/api/biometrics/register/options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'testuser' })
+              });
+              const data = await response.json();
+              showResult('passkey-result', data, response.ok);
+            } catch (error) {
+              showResult('passkey-result', { error: error.message }, false);
+            }
+          }
+          
+          async function testPasskeyLogin() {
+            try {
+              showResult('passkey-result', { status: 'Testing...', message: 'Initiating passkey authentication' }, true);
+              
+              const response = await fetch('/api/biometrics/authenticate/options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              const data = await response.json();
+              showResult('passkey-result', data, response.ok);
+            } catch (error) {
+              showResult('passkey-result', { error: error.message }, false);
+            }
+          }
+          
+          async function testPasskeyList() {
+            try {
+              showResult('passkey-result', { status: 'Testing...', message: 'Fetching passkey list' }, true);
+              
+              const response = await fetch('/api/biometrics/list');
+              const data = await response.json();
+              showResult('passkey-result', data, response.ok);
+            } catch (error) {
+              showResult('passkey-result', { error: error.message }, false);
+            }
+          }
+          
+          // Biometric Tests
+          async function testBiometricEnroll() {
+            try {
+              showResult('biometric-result', { status: 'Testing...', message: 'Testing biometric enrollment endpoint' }, true);
+              
+              const response = await fetch('/api/biometrics/register/options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'testuser' })
+              });
+              const data = await response.json();
+              showResult('biometric-result', { 
+                endpoint: '/api/biometrics/register/options',
+                status: response.ok ? 'Available' : 'Error',
+                response: data 
+              }, response.ok);
+            } catch (error) {
+              showResult('biometric-result', { error: error.message }, false);
+            }
+          }
+          
+          async function testBiometricAuth() {
+            try {
+              showResult('biometric-result', { status: 'Testing...', message: 'Testing biometric authentication endpoint' }, true);
+              
+              const response = await fetch('/api/biometrics/authenticate/options', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              const data = await response.json();
+              showResult('biometric-result', {
+                endpoint: '/api/biometrics/authenticate/options',
+                status: response.ok ? 'Available' : 'Error',
+                response: data
+              }, response.ok);
+            } catch (error) {
+              showResult('biometric-result', { error: error.message }, false);
+            }
+          }
+          
+          async function checkBiometricStatus() {
+            try {
+              showResult('biometric-result', { status: 'Checking...', message: 'Verifying biometric feature availability' }, true);
+              
+              // Check if WebAuthn is supported
+              const webauthnSupported = window.PublicKeyCredential !== undefined;
+              
+              showResult('biometric-result', {
+                webauthn_supported: webauthnSupported,
+                platform_authenticator: webauthnSupported ? 'Checking...' : 'N/A',
+                biometric_api_endpoints: {
+                  register: '/api/biometrics/register/options',
+                  authenticate: '/api/biometrics/authenticate/options',
+                  list: '/api/biometrics/list',
+                  enrolled: '/api/biometrics/enrolled'
+                }
+              }, webauthnSupported);
+            } catch (error) {
+              showResult('biometric-result', { error: error.message }, false);
+            }
+          }
+          
+          // 2FA/TOTP Tests
+          async function testTotpSetup() {
+            try {
+              showResult('totp-result', { status: 'Testing...', message: 'Testing 2FA setup endpoint' }, true);
+              
+              const response = await fetch('/api/2fa/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+              });
+              const data = await response.json();
+              showResult('totp-result', {
+                endpoint: '/api/2fa/setup',
+                status: response.ok ? 'Available' : 'Error',
+                response: data
+              }, response.ok);
+            } catch (error) {
+              showResult('totp-result', { error: error.message }, false);
+            }
+          }
+          
+          async function testTotpVerify() {
+            try {
+              showResult('totp-result', { status: 'Testing...', message: 'Testing 2FA verification endpoint' }, true);
+              
+              const response = await fetch('/api/2fa/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: '123456' })
+              });
+              const data = await response.json();
+              showResult('totp-result', {
+                endpoint: '/api/2fa/verify',
+                status: response.ok ? 'Available' : 'Error',
+                response: data
+              }, response.ok);
+            } catch (error) {
+              showResult('totp-result', { error: error.message }, false);
+            }
+          }
+          
+          async function checkTotpStatus() {
+            try {
+              showResult('totp-result', { status: 'Checking...', message: 'Verifying 2FA feature availability' }, true);
+              
+              const response = await fetch('/api/2fa/status');
+              const data = await response.json();
+              showResult('totp-result', {
+                endpoint: '/api/2fa/status',
+                status: response.ok ? 'Available' : 'Error',
+                response: data,
+                api_endpoints: {
+                  setup: '/api/2fa/setup',
+                  verify: '/api/2fa/verify',
+                  disable: '/api/2fa/disable',
+                  backup_codes: '/api/2fa/backup-codes'
+                }
+              }, response.ok);
+            } catch (error) {
+              showResult('totp-result', { error: error.message }, false);
+            }
+          }
+        </script>
+    </body>
+    </html>
+  `);
+});
+
 // =============================================================================
 // PWA ROUTES
 // =============================================================================
