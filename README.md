@@ -231,6 +231,13 @@ moodmash/
    SESSION_SECRET=xxxxx
    SENTRY_DSN=https://xxxxx@xxxxx.ingest.de.sentry.io/xxxxx
    ```
+   
+   **OAuth Setup:** See [OAUTH_SETUP_GUIDE.md](./OAUTH_SETUP_GUIDE.md) for complete instructions on:
+   - Setting up Google OAuth (Web/iOS/Android)
+   - Setting up GitHub OAuth
+   - Understanding platform-specific requirements
+   - Security best practices
+   - Troubleshooting common issues
 
 4. **Set up D1 database**
    ```bash
