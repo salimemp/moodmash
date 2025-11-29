@@ -3,22 +3,38 @@ import { Google, GitHub } from 'arctic';
 import type { Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
+// Check if OAuth provider is configured
+export function isOAuthConfigured(provider: 'google' | 'github', env: any): boolean {
+    if (provider === 'google') {
+        return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+    } else if (provider === 'github') {
+        return !!(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET);
+    }
+    return false;
+}
+
 // Initialize OAuth providers
 export function initOAuthProviders(env: any) {
     const baseUrl = env.BASE_URL || 'http://localhost:3000';
     
-    return {
-        google: new Google(
-            env.GOOGLE_CLIENT_ID || '',
-            env.GOOGLE_CLIENT_SECRET || '',
+    // Only initialize if credentials are present
+    const google = (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) 
+        ? new Google(
+            env.GOOGLE_CLIENT_ID,
+            env.GOOGLE_CLIENT_SECRET,
             `${baseUrl}/auth/google/callback`
-        ),
-        github: new GitHub(
-            env.GITHUB_CLIENT_ID || '',
-            env.GITHUB_CLIENT_SECRET || '',
+        )
+        : null;
+    
+    const github = (env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET)
+        ? new GitHub(
+            env.GITHUB_CLIENT_ID,
+            env.GITHUB_CLIENT_SECRET,
             `${baseUrl}/auth/github/callback`
         )
-    };
+        : null;
+    
+    return { google, github };
 }
 
 // Generate session token
