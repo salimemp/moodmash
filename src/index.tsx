@@ -6627,4 +6627,195 @@ app.get('/contact', (c) => {
   return c.html(content);
 });
 
+// =============================================
+// FEATURE FLAGS API
+// =============================================
+
+import {
+  isFeatureEnabled,
+  getFeatureFlags,
+  getAllEnabledFlags,
+  upsertFeatureFlag,
+  deleteFeatureFlag
+} from './utils/feature-flags';
+
+// Get user's feature flags
+app.get('/api/feature-flags', async (c) => {
+  try {
+    const session = getCurrentUser(c);
+    const userId = session?.userId ? parseInt(session.userId) : undefined;
+
+    // Get all enabled flags for this user
+    const flags = await getAllEnabledFlags(c, userId, {
+      sessionId: c.req.header('x-session-id'),
+      country: c.req.header('cf-ipcountry'),
+      segment: session?.isPremium ? 'premium' : 'free'
+    });
+
+    return c.json({
+      success: true,
+      flags,
+      count: flags.length
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to get feature flags',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Check specific feature flag
+app.get('/api/feature-flags/:flagName', async (c) => {
+  try {
+    const flagName = c.req.param('flagName');
+    const session = getCurrentUser(c);
+    const userId = session?.userId ? parseInt(session.userId) : undefined;
+
+    const enabled = await isFeatureEnabled(c, flagName, userId, {
+      sessionId: c.req.header('x-session-id'),
+      country: c.req.header('cf-ipcountry'),
+      segment: session?.isPremium ? 'premium' : 'free'
+    });
+
+    return c.json({
+      success: true,
+      flagName,
+      enabled
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to check feature flag',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Admin: List all feature flags
+app.get('/api/admin/feature-flags', async (c) => {
+  try {
+    // TODO: Add admin authentication check
+    const db = c.env.DB;
+
+    const flags = await db.prepare(`
+      SELECT * FROM feature_flags ORDER BY category, flag_name
+    `).all();
+
+    return c.json({
+      success: true,
+      flags: flags.results,
+      count: flags.results.length
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to list feature flags',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Admin: Create or update feature flag
+app.post('/api/admin/feature-flags', async (c) => {
+  try {
+    // TODO: Add admin authentication check
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(session.userId);
+    const body = await c.req.json();
+
+    const flag = await upsertFeatureFlag(c, body, userId);
+
+    return c.json({
+      success: true,
+      flag
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to create/update feature flag',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Admin: Delete feature flag
+app.delete('/api/admin/feature-flags/:flagName', async (c) => {
+  try {
+    // TODO: Add admin authentication check
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const flagName = c.req.param('flagName');
+    const userId = parseInt(session.userId);
+
+    const deleted = await deleteFeatureFlag(c, flagName, userId);
+
+    if (!deleted) {
+      return c.json({ error: 'Feature flag not found' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      message: `Feature flag ${flagName} deleted`
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to delete feature flag',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Admin: Get feature flag analytics
+app.get('/api/admin/feature-flags/:flagName/analytics', async (c) => {
+  try {
+    // TODO: Add admin authentication check
+    const db = c.env.DB;
+    const flagName = c.req.param('flagName');
+
+    // Get flag details
+    const flag = await db.prepare(`
+      SELECT * FROM feature_flags WHERE flag_name = ?
+    `).bind(flagName).first();
+
+    if (!flag) {
+      return c.json({ error: 'Feature flag not found' }, 404);
+    }
+
+    // Get evaluation stats
+    const stats = await db.prepare(`
+      SELECT 
+        COUNT(*) as total_evaluations,
+        SUM(CASE WHEN flag_enabled = 1 THEN 1 ELSE 0 END) as enabled_count,
+        COUNT(DISTINCT user_id) as unique_users
+      FROM feature_flag_events
+      WHERE flag_name = ? AND event_type = 'evaluated'
+    `).bind(flagName).first();
+
+    // Get recent events
+    const recentEvents = await db.prepare(`
+      SELECT * FROM feature_flag_events
+      WHERE flag_name = ?
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).bind(flagName).all();
+
+    return c.json({
+      success: true,
+      flag,
+      stats,
+      recentEvents: recentEvents.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to get feature flag analytics',
+      message: error.message
+    }, 500);
+  }
+});
+
 export default app;
