@@ -138,29 +138,43 @@ app.use('/api/*', apiAuthWall);
 
 // Google OAuth - Initiate
 app.get('/auth/google', async (c) => {
-  const { google } = initOAuthProviders(c.env);
-  
-  // Check if Google OAuth is configured
-  if (!google) {
-    // Redirect to login with error message instead of JSON
-    return c.redirect('/login?error=oauth_not_configured&provider=google');
+  try {
+    // Check if Google OAuth is configured
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET) {
+      return c.redirect('/login?error=oauth_not_configured&provider=google');
+    }
+    
+    // Manual OAuth URL construction (Arctic library has issues in Workers environment)
+    const state = crypto.randomUUID();
+    const baseUrl = c.env.BASE_URL || 'https://moodmash.win';
+    const redirectUri = `${baseUrl}/auth/google/callback`;
+    
+    const params = new URLSearchParams({
+      client_id: c.env.GOOGLE_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      scope: 'openid email profile',
+      state: state,
+      access_type: 'offline',
+      prompt: 'consent'
+    });
+    
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+    
+    // Store state in cookie for CSRF protection
+    setCookie(c, 'oauth_state', state, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 10, // 10 minutes
+      sameSite: 'Lax'
+    });
+    
+    return c.redirect(authUrl);
+  } catch (error: any) {
+    console.error('[OAuth] Error:', error.message);
+    return c.redirect('/login?error=oauth_failed&provider=google');
   }
-  
-  const state = crypto.randomUUID();
-  const url = await google.createAuthorizationURL(state, {
-    scopes: ['email', 'profile']
-  });
-  
-  // Store state in cookie for CSRF protection
-  setCookie(c, 'oauth_state', state, {
-    path: '/',
-    httpOnly: true,
-    secure: true,
-    maxAge: 60 * 10, // 10 minutes
-    sameSite: 'Lax'
-  });
-  
-  return c.redirect(url.toString());
 });
 
 // Google OAuth - Callback
