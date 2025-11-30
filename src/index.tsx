@@ -3361,11 +3361,25 @@ app.get('/verify-email', (c) => {
             return;
           }
           
-          // Verify the email
-          fetch(\`/api/auth/verify-email?token=\${token}\`)
-            .then(response => response.json())
+          // Verify the email with timeout
+          console.log('[Verification] Starting verification with token:', token);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+          
+          fetch(\`/api/auth/verify-email?token=\${token}\`, {
+            signal: controller.signal
+          })
+            .then(response => {
+              clearTimeout(timeoutId);
+              console.log('[Verification] Response status:', response.status);
+              return response.json();
+            })
             .then(data => {
+              console.log('[Verification] Response data:', data);
+              
               if (data.success) {
+                // Success case
                 container.innerHTML = \`
                   <div class="text-center">
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
@@ -3378,45 +3392,81 @@ app.get('/verify-email', (c) => {
                     </a>
                   </div>
                 \`;
+                
+                // Redirect to login after 2 seconds
+                setTimeout(() => {
+                  window.location.href = '/login';
+                }, 2000);
               } else {
+                // Error case (expired, invalid, etc.)
+                const errorMessage = data.error || 'This verification link is invalid or has expired.';
+                const isExpired = data.code === 'TOKEN_EXPIRED';
+                
                 container.innerHTML = \`
                   <div class="text-center">
                     <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-                      <i class="fas fa-times-circle text-3xl text-red-600"></i>
+                      <i class="fas fa-\${isExpired ? 'clock' : 'times-circle'} text-3xl text-red-600"></i>
                     </div>
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Verification Failed</h1>
-                    <p class="text-gray-600 mb-6">\${data.error || 'This verification link is invalid or has expired.'}</p>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">\${isExpired ? 'Link Expired' : 'Verification Failed'}</h1>
+                    <p class="text-gray-600 mb-6">\${errorMessage}</p>
                     <div class="space-y-3">
-                      <a href="/register" class="block w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition text-center">
-                        Register New Account
+                      \${data.email ? \`
+                        <button onclick="resendVerification('\${data.email}')" class="block w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                          <i class="fas fa-paper-plane mr-2"></i>
+                          Resend Verification Email
+                        </button>
+                      \` : \`
+                        <a href="/register" class="block w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition text-center">
+                          Register New Account
+                        </a>
+                      \`}
+                      <a href="/login" class="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition text-center">
+                        Go to Login
                       </a>
-                      <button onclick="resendVerification()" class="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition">
-                        Resend Verification Email
-                      </button>
                     </div>
                   </div>
                 \`;
               }
             })
             .catch(error => {
-              console.error('Verification error:', error);
+              clearTimeout(timeoutId);
+              console.error('[Verification] Error:', error);
+              
+              const isTimeout = error.name === 'AbortError';
+              
               container.innerHTML = \`
                 <div class="text-center">
                   <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
                     <i class="fas fa-exclamation-triangle text-3xl text-red-600"></i>
                   </div>
-                  <h1 class="text-2xl font-bold text-gray-800 mb-2">Something Went Wrong</h1>
-                  <p class="text-gray-600 mb-6">We couldn't verify your email. Please try again later.</p>
-                  <a href="/login" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
-                    Go to Login
-                  </a>
+                  <h1 class="text-2xl font-bold text-gray-800 mb-2">\${isTimeout ? 'Request Timeout' : 'Connection Error'}</h1>
+                  <p class="text-gray-600 mb-6">\${isTimeout ? 'The verification request took too long. Please try again.' : 'We couldn\'t connect to the server. Please check your internet connection and try again.'}</p>
+                  <div class="space-y-3">
+                    <button onclick="location.reload()" class="block w-full bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                      <i class="fas fa-redo mr-2"></i>
+                      Try Again
+                    </button>
+                    <a href="/login" class="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition text-center">
+                      Go to Login
+                    </a>
+                  </div>
                 </div>
               \`;
             });
           
-          function resendVerification() {
-            const email = prompt('Please enter your email address:');
-            if (!email) return;
+          function resendVerification(email) {
+            if (!email) {
+              email = prompt('Please enter your email address:');
+              if (!email) return;
+            }
+            
+            console.log('[Resend] Requesting new verification email for:', email);
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Sending...';
             
             fetch('/api/auth/resend-verification', {
               method: 'POST',
@@ -3425,13 +3475,31 @@ app.get('/verify-email', (c) => {
             })
             .then(response => response.json())
             .then(data => {
+              console.log('[Resend] Response:', data);
+              button.disabled = false;
+              button.innerHTML = originalText;
+              
               if (data.success) {
-                alert('✅ Verification email sent! Please check your inbox.');
+                container.innerHTML = \`
+                  <div class="text-center">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                      <i class="fas fa-envelope-circle-check text-3xl text-green-600"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Email Sent!</h1>
+                    <p class="text-gray-600 mb-6">We've sent a new verification link to <strong>\${email}</strong>. Please check your inbox and spam folder.</p>
+                    <a href="/login" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition">
+                      Go to Login
+                    </a>
+                  </div>
+                \`;
               } else {
                 alert('❌ ' + (data.error || 'Failed to send verification email.'));
               }
             })
             .catch(error => {
+              console.error('[Resend] Error:', error);
+              button.disabled = false;
+              button.innerHTML = originalText;
               alert('❌ Something went wrong. Please try again later.');
             });
           }
