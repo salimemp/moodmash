@@ -26,6 +26,8 @@ const PUBLIC_ROUTES = [
   '/forgot-password', // Password reset request page
   '/reset-password', // Password reset completion page (needs token in URL)
   '/monitoring', // Monitoring dashboard - public for Grafana/Prometheus integration
+  '/ccpa-rights', // CCPA Privacy Rights page - public for CCPA compliance
+  '/privacy-policy', // Privacy Policy page - public for transparency
   '/api/', // All API routes bypass authWall and use apiAuthWall instead
   '/auth/', // OAuth callback routes
 ];
@@ -119,7 +121,9 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
     path.startsWith('/api/monitoring/') ||  // Allow Prometheus metrics scraping
     path === '/api/sentry-test' ||  // Allow Sentry test endpoint
     path === '/api/email-test' ||  // Allow email test endpoint
-    path === '/api/r2-test'  // Allow R2 storage test endpoint
+    path === '/api/r2-test' ||  // Allow R2 storage test endpoint
+    path === '/api/ccpa/applies' ||  // CCPA applicability check (public)
+    path === '/api/ccpa/data-categories'  // CCPA data categories (public for transparency)
   ) {
     return await next();
   }
