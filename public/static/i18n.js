@@ -679,9 +679,7 @@ const translations = {
         onboarding_welcome_feature1: '📊 Track your moods with smart analytics',
         onboarding_welcome_feature2: '🎯 Discover personalized wellness activities',
         onboarding_welcome_feature3: '🌍 Available in 13 languages',
-        onboarding_welcome_title: 'Welcome to MoodMash'
-    },
-    es: {
+        onboarding_welcome_title: 'Welcome to MoodMash',
       auth_create_account: "Crear Cuenta",
       auth_welcome_back: "Bienvenido de Nuevo",
       auth_start_tracking: "Comienza a rastrear tus estados de ánimo hoy",
