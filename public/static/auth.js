@@ -137,7 +137,7 @@ class MoodMashAuth {
             </div>
 
             <!-- OAuth Providers -->
-            <div class="grid grid-cols-5 gap-3 mb-6">
+            <div class="grid grid-cols-2 gap-3 mb-6">
               ${this.renderOAuthProviders()}
             </div>
 
@@ -317,18 +317,33 @@ class MoodMashAuth {
 
   renderOAuthProviders() {
     const providers = [
-      { id: 'google', icon: 'fab fa-google', color: 'hover:bg-red-500' },
-      { id: 'github', icon: 'fab fa-github', color: 'hover:bg-gray-700' }
+      { 
+        id: 'google', 
+        icon: 'fab fa-google', 
+        bgColor: 'bg-white hover:bg-gray-50',
+        textColor: 'text-gray-700',
+        border: 'border-gray-300',
+        gradient: 'bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500'
+      },
+      { 
+        id: 'github', 
+        icon: 'fab fa-github', 
+        bgColor: 'bg-[#6e5494] hover:bg-[#5d4785]',
+        textColor: 'text-white',
+        border: 'border-[#6e5494]',
+        gradient: 'bg-[#6e5494]'
+      }
     ];
 
     return providers.map(provider => `
       <button 
         type="button"
         onclick="authManager.oauthLogin('${provider.id}')" 
-        class="w-full aspect-square bg-black/40 ${provider.color} rounded-xl flex items-center justify-center text-white text-xl transition-all duration-300 hover:scale-105 border border-purple-700/50"
-        title="${this.t('auth_continue_with')} ${provider.id}"
+        class="w-full py-4 ${provider.bgColor} rounded-lg flex items-center justify-center ${provider.textColor} text-base font-medium transition-all duration-300 hover:shadow-lg border ${provider.border} space-x-2"
+        title="${this.t('auth_continue_with')} ${provider.id.charAt(0).toUpperCase() + provider.id.slice(1)}"
       >
-        <i class="${provider.icon}"></i>
+        <i class="${provider.icon} text-xl"></i>
+        <span>Continue with ${provider.id.charAt(0).toUpperCase() + provider.id.slice(1)}</span>
       </button>
     `).join('');
   }
