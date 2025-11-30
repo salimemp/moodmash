@@ -547,8 +547,8 @@ class MoodMashAuth {
   async oauthLogin(provider) {
     this.showMessage(this.t('auth_redirecting_provider').replace('{provider}', provider), 'info');
     
-    // In production, this would redirect to OAuth flow
-    window.location.href = `/api/auth/oauth/${provider}`;
+    // Redirect to OAuth flow (direct routes, not /api/auth/oauth/)
+    window.location.href = `/auth/${provider}`;
   }
 
   async signInWithKey() {
