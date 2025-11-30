@@ -4061,6 +4061,205 @@ app.get('/privacy-education', (c) => {
   return c.html(renderHTML('Privacy Education', content, 'privacy-education'));
 });
 
+// CCPA Privacy Rights (California Consumer Privacy Act)
+app.get('/ccpa-rights', (c) => {
+  const content = `
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center gap-3 mb-4">
+          <i class="fas fa-balance-scale text-4xl text-indigo-600"></i>
+          <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+              Your Privacy Rights
+            </h1>
+            <p class="text-gray-600 dark:text-gray-300">
+              California Consumer Privacy Act (CCPA) Rights Management
+            </p>
+          </div>
+        </div>
+        <p class="text-gray-700 dark:text-gray-300">
+          Under the California Consumer Privacy Act (CCPA), California residents have specific rights regarding their personal information. 
+          Use this page to exercise your rights and manage your data.
+        </p>
+      </div>
+
+      <!-- Opt-Out Preferences -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <i class="fas fa-toggle-on text-indigo-600 mr-2"></i>
+          Opt-Out Preferences
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">
+          Control how your personal information is used and shared.
+        </p>
+
+        <div class="space-y-4">
+          <!-- Do Not Sell -->
+          <div class="flex items-start gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <input type="checkbox" id="opt-out-sale" class="mt-1 w-5 h-5 text-indigo-600 rounded" />
+            <div class="flex-1">
+              <label for="opt-out-sale" class="font-semibold text-gray-900 dark:text-white cursor-pointer">
+                Do Not Sell My Personal Information
+              </label>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                Opt-out of the sale of your personal information to third parties.
+                <span class="text-indigo-600 font-medium">We do not sell your data.</span>
+              </p>
+            </div>
+          </div>
+
+          <!-- Do Not Share -->
+          <div class="flex items-start gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <input type="checkbox" id="opt-out-share" class="mt-1 w-5 h-5 text-indigo-600 rounded" />
+            <div class="flex-1">
+              <label for="opt-out-share" class="font-semibold text-gray-900 dark:text-white cursor-pointer">
+                Do Not Share My Personal Information
+              </label>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                Opt-out of sharing your personal information for cross-context behavioral advertising.
+              </p>
+            </div>
+          </div>
+
+          <!-- Limit Use -->
+          <div class="flex items-start gap-3 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <input type="checkbox" id="limit-use" class="mt-1 w-5 h-5 text-indigo-600 rounded" />
+            <div class="flex-1">
+              <label for="limit-use" class="font-semibold text-gray-900 dark:text-white cursor-pointer">
+                Limit Use of Sensitive Personal Information
+              </label>
+              <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                Limit the use of your sensitive personal information (mood data, health data).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex items-center justify-between">
+          <p id="preferences-updated" class="text-sm text-gray-500 dark:text-gray-400"></p>
+          <button 
+            onclick="CCPARights.savePreferences()"
+            class="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            <i class="fas fa-save mr-2"></i>Save Preferences
+          </button>
+        </div>
+      </div>
+
+      <!-- Your Rights -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <i class="fas fa-gavel text-indigo-600 mr-2"></i>
+          Exercise Your Rights
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">
+          California residents have the following rights under CCPA:
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-4">
+          <!-- Right to Know -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+              <i class="fas fa-search text-blue-600 mr-2"></i>
+              Right to Know
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Request information about what personal data we collect, use, and share.
+            </p>
+            <button 
+              onclick="CCPARights.requestAccess()"
+              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              Request My Data
+            </button>
+          </div>
+
+          <!-- Right to Delete -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+              <i class="fas fa-trash text-red-600 mr-2"></i>
+              Right to Delete
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Request deletion of your personal information we have collected.
+            </p>
+            <button 
+              onclick="CCPARights.requestDeletion()"
+              class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            >
+              Request Deletion
+            </button>
+          </div>
+
+          <!-- Right to Portability -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+              <i class="fas fa-download text-green-600 mr-2"></i>
+              Data Portability
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Download a copy of all your personal data in a portable format.
+            </p>
+            <button 
+              onclick="CCPARights.exportData()"
+              class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+            >
+              Export My Data
+            </button>
+          </div>
+
+          <!-- Right to Correct -->
+          <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+            <h3 class="font-semibold text-gray-900 dark:text-white mb-2 flex items-center">
+              <i class="fas fa-edit text-yellow-600 mr-2"></i>
+              Right to Correct
+            </h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mb-3">
+              Request correction of inaccurate personal information.
+            </p>
+            <button 
+              onclick="CCPARights.requestCorrection()"
+              class="w-full px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition"
+            >
+              Request Correction
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request History -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+          <i class="fas fa-history text-indigo-600 mr-2"></i>
+          Your Requests
+        </h2>
+        <p class="text-gray-600 dark:text-gray-300 mb-4">
+          Track the status of your CCPA requests. We will respond within 45 days as required by law.
+        </p>
+        <div id="requests-list"></div>
+      </div>
+
+      <!-- Information -->
+      <div class="bg-blue-50 dark:bg-blue-900 rounded-lg p-6 mt-6">
+        <h3 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">
+          <i class="fas fa-info-circle mr-2"></i>
+          Important Information
+        </h3>
+        <ul class="text-sm text-blue-800 dark:text-blue-200 space-y-2">
+          <li><i class="fas fa-check mr-2"></i>We will respond to your requests within 45 days</li>
+          <li><i class="fas fa-check mr-2"></i>You may be required to verify your identity</li>
+          <li><i class="fas fa-check mr-2"></i>You will not be discriminated against for exercising your rights</li>
+          <li><i class="fas fa-check mr-2"></i>You may designate an authorized agent to make requests on your behalf</li>
+        </ul>
+      </div>
+    </div>
+
+    <script src="/static/ccpa-rights.js"></script>
+  `;
+  return c.html(renderHTML('CCPA Privacy Rights', content, 'ccpa-rights'));
+});
+
 // ========================================
 // AI-POWERED MOOD INTELLIGENCE API ROUTES
 // Using Gemini 2.0 Flash for advanced mood analysis
@@ -6903,5 +7102,48 @@ app.get('/api/admin/feature-flags/:flagName/analytics', async (c) => {
     }, 500);
   }
 });
+
+// =============================================================================
+// CCPA (California Consumer Privacy Act) API ROUTES
+// =============================================================================
+
+import {
+  getCCPAPreferences,
+  updateCCPAPreferences,
+  submitCCPARequest,
+  getCCPARequests,
+  getDataCategories,
+  exportUserData,
+  deleteUserAccount,
+  logCCPANotice,
+  checkCCPAApplicability
+} from './ccpa-api';
+
+// Get user's CCPA preferences (Do Not Sell/Share)
+app.get('/api/ccpa/preferences', getCCPAPreferences);
+
+// Update user's CCPA preferences
+app.post('/api/ccpa/preferences', updateCCPAPreferences);
+
+// Submit CCPA data request (access, delete, portability, correction)
+app.post('/api/ccpa/request', submitCCPARequest);
+
+// Get user's CCPA requests
+app.get('/api/ccpa/requests', getCCPARequests);
+
+// Get data categories (what data we collect)
+app.get('/api/ccpa/data-categories', getDataCategories);
+
+// Export user data (Right to Data Portability)
+app.get('/api/ccpa/export-data', exportUserData);
+
+// Delete user account and all data (Right to Delete)
+app.post('/api/ccpa/delete-account', deleteUserAccount);
+
+// Log CCPA notice display
+app.post('/api/ccpa/log-notice', logCCPANotice);
+
+// Check if CCPA applies to user
+app.get('/api/ccpa/applies', checkCCPAApplicability);
 
 export default app;
