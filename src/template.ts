@@ -172,7 +172,7 @@ export function renderHTML(title: string, content: string, currentPage: string =
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
             t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-          })(window, document, "clarity", "script", "CLARITY_PROJECT_ID");
+          })(window, document, "clarity", "script", "ue56xoult3");
         </script>
         
         <!-- Navigation (rendered by utils.js) -->
