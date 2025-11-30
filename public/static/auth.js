@@ -56,6 +56,47 @@ class MoodMashAuth {
     const container = document.getElementById('auth-container');
     if (!container) return;
 
+    // Check for OAuth error in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    const provider = urlParams.get('provider');
+    
+    let errorMessage = '';
+    if (error === 'oauth_not_configured' && provider) {
+      const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
+      errorMessage = `
+        <div class="mb-6 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div class="flex items-start">
+            <i class="fas fa-info-circle text-yellow-600 dark:text-yellow-400 mt-0.5 mr-3"></i>
+            <div>
+              <h3 class="font-semibold text-yellow-800 dark:text-yellow-400 mb-1">
+                ${providerName} OAuth Not Configured
+              </h3>
+              <p class="text-sm text-yellow-700 dark:text-yellow-500">
+                ${providerName} sign-in is not yet available. Please use email/password or choose another sign-in method.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (error === 'oauth_failed') {
+      errorMessage = `
+        <div class="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div class="flex items-start">
+            <i class="fas fa-exclamation-circle text-red-600 dark:text-red-400 mt-0.5 mr-3"></i>
+            <div>
+              <h3 class="font-semibold text-red-800 dark:text-red-400 mb-1">
+                Sign-In Failed
+              </h3>
+              <p class="text-sm text-red-700 dark:text-red-500">
+                There was an error during sign-in. Please try again or use a different method.
+              </p>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
     container.innerHTML = `
       <div class="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
         <div class="w-full max-w-md">
@@ -76,6 +117,9 @@ class MoodMashAuth {
               ${this.currentView === 'register' ? this.t('auth_start_tracking') : this.t('auth_sign_in_continue')}
             </p>
           </div>
+
+          <!-- OAuth Error Message -->
+          ${errorMessage}
 
           <!-- Main Auth Card -->
           <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700">

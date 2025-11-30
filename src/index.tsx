@@ -142,12 +142,8 @@ app.get('/auth/google', async (c) => {
   
   // Check if Google OAuth is configured
   if (!google) {
-    return c.json({ 
-      error: 'OAuth not yet configured', 
-      message: 'Please configure Google OAuth credentials',
-      provider: 'google',
-      instructions: 'Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables'
-    }, 501); // 501 Not Implemented
+    // Redirect to login with error message instead of JSON
+    return c.redirect('/login?error=oauth_not_configured&provider=google');
   }
   
   const state = crypto.randomUUID();
@@ -228,32 +224,33 @@ app.get('/auth/google/callback', async (c) => {
 
 // GitHub OAuth - Initiate
 app.get('/auth/github', async (c) => {
-  const { github } = initOAuthProviders(c.env);
-  
-  // Check if GitHub OAuth is configured
-  if (!github) {
-    return c.json({ 
-      error: 'OAuth not yet configured', 
-      message: 'Please configure GitHub OAuth credentials',
-      provider: 'github',
-      instructions: 'Set GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET environment variables'
-    }, 501); // 501 Not Implemented
+  try {
+    const { github } = initOAuthProviders(c.env);
+    
+    // Check if GitHub OAuth is configured
+    if (!github) {
+      // Redirect to login with error message instead of JSON
+      return c.redirect('/login?error=oauth_not_configured&provider=github');
+    }
+    
+    const state = crypto.randomUUID();
+    const url = await github.createAuthorizationURL(state, {
+      scopes: ['user:email']
+    });
+    
+    setCookie(c, 'oauth_state', state, {
+      path: '/',
+      httpOnly: true,
+      secure: true,
+      maxAge: 60 * 10,
+      sameSite: 'Lax'
+    });
+    
+    return c.redirect(url.toString());
+  } catch (error: any) {
+    console.error('GitHub OAuth initiation error:', error);
+    return c.redirect('/login?error=oauth_not_configured&provider=github');
   }
-  
-  const state = crypto.randomUUID();
-  const url = await github.createAuthorizationURL(state, {
-    scopes: ['user:email']
-  });
-  
-  setCookie(c, 'oauth_state', state, {
-    path: '/',
-    httpOnly: true,
-    secure: true,
-    maxAge: 60 * 10,
-    sameSite: 'Lax'
-  });
-  
-  return c.redirect(url.toString());
 });
 
 // GitHub OAuth - Callback
