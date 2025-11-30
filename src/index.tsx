@@ -3976,6 +3976,24 @@ app.get('/activities', (c) => {
   return c.html(renderHTML('Wellness Activities', content, 'activities'));
 });
 
+// Profile page
+app.get('/profile', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/app.js"></script>
+  `;
+  return c.html(renderHTML('Profile', content, 'profile'));
+});
+
+// Mood page (alias for /log)
+app.get('/mood', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/log.js"></script>
+  `;
+  return c.html(renderHTML('Log Mood', content, 'mood'));
+});
+
 // Health Dashboard page (v9.0)
 app.get('/health-dashboard', (c) => {
   const content = `
