@@ -46,7 +46,7 @@ Value: glc_eyJvIjoiMTYwMzkyMCIsIm4iOiJzdGFjay0xNDU0MTMyLWhsLXJlYWQtbW9vZG1hc2giL
 
 ```
 Variable Name: GRAFANA_STACK_URL
-Value: https://salimmoodmash.grafana.net
+Value: https://salimmakrana.grafana.net
 ```
 
 ### Step 3: Encrypt Sensitive Variables
@@ -82,7 +82,7 @@ npx wrangler pages secret put GRAFANA_LOKI_TOKEN --project-name moodmash
 # Enter: glc_eyJvIjoiMTYwMzkyMCIsIm4iOiJzdGFjay0xNDU0MTMyLWhsLXJlYWQtbW9vZG1hc2giLCJrIjoiaTJPNkgxOTdldzI4SENiVjFnT3lDMThqIiwibSI6eyJyIjoicHJvZC1tZS1jZW50cmFsLTEifX0=
 
 npx wrangler pages secret put GRAFANA_STACK_URL --project-name moodmash
-# Enter: https://salimmoodmash.grafana.net
+# Enter: https://salimmakrana.grafana.net
 ```
 
 ## Verification
@@ -90,7 +90,7 @@ npx wrangler pages secret put GRAFANA_STACK_URL --project-name moodmash
 After adding the environment variables:
 
 1. Deploy your application (the monitoring code will be added next)
-2. Check logs in Grafana Cloud: https://salimmoodmash.grafana.net/explore
+2. Check logs in Grafana Cloud: https://salimmakrana.grafana.net/explore
 3. Check metrics in Grafana Cloud Prometheus
 
 ## Security Notes

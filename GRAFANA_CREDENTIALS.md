@@ -40,7 +40,7 @@ GRAFANA_LOKI_USER=1411925
 GRAFANA_LOKI_TOKEN=glc_eyJvIjoiMTYwMzkyMCIsIm4iOiJzdGFjay0xNDU0MTMyLWhsLXJlYWQtbW9vZG1hc2giLCJrIjoiaTJPNkgxOTdldzI4SENiVjFnT3lDMThqIiwibSI6eyJyIjoicHJvZC1tZS1jZW50cmFsLTEifX0=
 
 # Grafana Stack URL (for dashboards)
-GRAFANA_STACK_URL=https://salimmoodmash.grafana.net
+GRAFANA_STACK_URL=https://salimmakrana.grafana.net
 ```
 
 ---
