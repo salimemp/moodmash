@@ -204,6 +204,7 @@ app.get('/auth/google', async (c) => {
 
 // Google OAuth - Callback
 app.get('/auth/google/callback', async (c) => {
+  const { DB } = c.env;
   const code = c.req.query('code');
   const state = c.req.query('state');
   const storedState = getCookie(c, 'oauth_state');
@@ -227,20 +228,68 @@ app.get('/auth/google/callback', async (c) => {
       headers: { Authorization: `Bearer ${tokens.accessToken}` }
     });
     
-    const user = await response.json();
+    const oauthUser = await response.json();
     
-    // Create session
-    const session: Session = {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-      picture: user.picture,
-      provider: 'google',
-      isPremium: false, // Check database for premium status
-      createdAt: Date.now()
-    };
+    // Check if user exists in database
+    let dbUser = await DB.prepare(`
+      SELECT * FROM users WHERE email = ?
+    `).bind(oauthUser.email).first();
     
-    const sessionToken = createSession(session);
+    if (!dbUser) {
+      // Create new user
+      const result = await DB.prepare(`
+        INSERT INTO users (
+          email, name, username, avatar_url, 
+          oauth_provider, oauth_provider_id, 
+          is_verified, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, 1)
+      `).bind(
+        oauthUser.email,
+        oauthUser.name || oauthUser.email.split('@')[0],
+        oauthUser.email.split('@')[0] + '_' + crypto.randomUUID().slice(0, 8),
+        oauthUser.picture,
+        'google',
+        oauthUser.id
+      ).run();
+      
+      // Fetch the newly created user
+      dbUser = await DB.prepare(`
+        SELECT * FROM users WHERE id = ?
+      `).bind(result.meta.last_row_id).first();
+    } else {
+      // Update existing user
+      await DB.prepare(`
+        UPDATE users 
+        SET avatar_url = ?, oauth_provider = 'google', oauth_provider_id = ?,
+            last_login_at = datetime('now'), login_count = login_count + 1
+        WHERE id = ?
+      `).bind(oauthUser.picture, oauthUser.id, dbUser.id).run();
+    }
+    
+    // Create database session
+    const sessionToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    await DB.prepare(`
+      INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
+      VALUES (?, ?, 1, ?, ?, ?)
+    `).bind(
+      dbUser.id,
+      sessionToken,
+      expiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'oauth_login', ?, ?, 1)
+    `).bind(
+      dbUser.id,
+      JSON.stringify({ provider: 'google' }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
     
     // Set session cookie
     setCookie(c, 'session_token', sessionToken, {
@@ -294,6 +343,7 @@ app.get('/auth/github', async (c) => {
 
 // GitHub OAuth - Callback
 app.get('/auth/github/callback', async (c) => {
+  const { DB } = c.env;
   const code = c.req.query('code');
   const state = c.req.query('state');
   const storedState = getCookie(c, 'oauth_state');
@@ -320,10 +370,10 @@ app.get('/auth/github/callback', async (c) => {
       }
     });
     
-    const user = await response.json();
+    const oauthUser = await response.json();
     
     // Fetch primary email if not public
-    let email = user.email;
+    let email = oauthUser.email;
     if (!email) {
       const emailResponse = await fetch('https://api.github.com/user/emails', {
         headers: { 
@@ -335,23 +385,73 @@ app.get('/auth/github/callback', async (c) => {
       email = emails.find((e: any) => e.primary)?.email || emails[0]?.email;
     }
     
-    const session: Session = {
-      userId: user.id.toString(),
-      email: email,
-      name: user.name || user.login,
-      picture: user.avatar_url,
-      provider: 'github',
-      isPremium: false,
-      createdAt: Date.now()
-    };
+    // Check if user exists in database
+    let dbUser = await DB.prepare(`
+      SELECT * FROM users WHERE email = ?
+    `).bind(email).first();
     
-    const sessionToken = createSession(session);
+    if (!dbUser) {
+      // Create new user
+      const result = await DB.prepare(`
+        INSERT INTO users (
+          email, name, username, avatar_url, 
+          oauth_provider, oauth_provider_id, 
+          is_verified, is_active
+        ) VALUES (?, ?, ?, ?, ?, ?, 1, 1)
+      `).bind(
+        email,
+        oauthUser.name || oauthUser.login,
+        oauthUser.login + '_' + crypto.randomUUID().slice(0, 8),
+        oauthUser.avatar_url,
+        'github',
+        oauthUser.id.toString()
+      ).run();
+      
+      // Fetch the newly created user
+      dbUser = await DB.prepare(`
+        SELECT * FROM users WHERE id = ?
+      `).bind(result.meta.last_row_id).first();
+    } else {
+      // Update existing user
+      await DB.prepare(`
+        UPDATE users 
+        SET avatar_url = ?, oauth_provider = 'github', oauth_provider_id = ?,
+            last_login_at = datetime('now'), login_count = login_count + 1
+        WHERE id = ?
+      `).bind(oauthUser.avatar_url, oauthUser.id.toString(), dbUser.id).run();
+    }
     
+    // Create database session
+    const sessionToken = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+    
+    await DB.prepare(`
+      INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
+      VALUES (?, ?, 1, ?, ?, ?)
+    `).bind(
+      dbUser.id,
+      sessionToken,
+      expiresAt.toISOString(),
+      c.req.header('CF-Connecting-IP') || 'unknown',
+      c.req.header('User-Agent') || 'unknown'
+    ).run();
+    
+    // Log security event
+    await DB.prepare(`
+      INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
+      VALUES (?, 'oauth_login', ?, ?, 1)
+    `).bind(
+      dbUser.id,
+      JSON.stringify({ provider: 'github' }),
+      c.req.header('CF-Connecting-IP') || 'unknown'
+    ).run();
+    
+    // Set session cookie
     setCookie(c, 'session_token', sessionToken, {
       path: '/',
       httpOnly: true,
       secure: true,
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: 60 * 60 * 24 * 30, // 30 days
       sameSite: 'Lax'
     });
     
@@ -1584,7 +1684,7 @@ app.post('/api/auth/login', async (c) => {
     
     // Set session cookie
     const maxAge = trustDevice ? 30 * 24 * 60 * 60 : 24 * 60 * 60;
-    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`);
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
     
     // Set Sentry user context for error tracking
     if (c.env.SENTRY_DSN) {
