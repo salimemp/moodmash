@@ -1,0 +1,171 @@
+═══════════════════════════════════════════════════════════════
+              GRAFANA CLOUD API KEY - QUICK GUIDE
+                      MoodMash Platform
+═══════════════════════════════════════════════════════════════
+
+⚠️  IMPORTANT: Grafana Cloud no longer uses "API Keys"
+    They now use "Cloud Access Policies" with tokens
+
+═══════════════════════════════════════════════════════════════
+                    STEP-BY-STEP GUIDE
+═══════════════════════════════════════════════════════════════
+
+Step 1: LOG IN TO GRAFANA CLOUD
+  → Go to: https://grafana.com/auth/sign-in
+  → Sign in with your account
+  → You'll see the "Cloud Portal"
+
+Step 2: NAVIGATE TO ACCESS POLICIES
+  → Click on your STACK NAME (e.g., "moodmash-stack")
+  → In left sidebar: Click "Administration"
+  → Click "Users and access"
+  → Click "Cloud access policies"
+
+  ALTERNATIVE PATH:
+  → Cloud Portal → "Configure" button on your stack
+  → Scroll to "Security" section
+  → Click "Cloud access policies"
+
+Step 3: CREATE ACCESS POLICY
+  → Click "Create access policy" button
+  → Fill in:
+    Name: moodmash-monitoring
+    Display name: MoodMash Monitoring
+  
+  → Select SCOPES (permissions needed):
+    ✅ metrics:read
+    ✅ metrics:write
+    ✅ logs:read
+    ✅ logs:write
+    ✅ alerts:read
+    ✅ alerts:write
+  
+  → Select REALMS:
+    ✅ Your stack name
+  
+  → Click "Create"
+
+Step 4: CREATE TOKEN
+  → Click on the policy you just created
+  → Click "Add token" button
+  → Name: moodmash-app-token
+  → Expiration: Choose (No expiration for production)
+  → Click "Create token"
+
+Step 5: COPY TOKEN
+  ⚠️  CRITICAL: Token shown ONLY ONCE!
+  → Copy the entire token (starts with "glc_")
+  → Save it somewhere safe
+  → Example: glc_eyJrIjoiRXhhbXBsZVRva2VuMTIzIi...
+
+═══════════════════════════════════════════════════════════════
+                  WHAT YOU NEED TO COLLECT
+═══════════════════════════════════════════════════════════════
+
+1. ACCESS TOKEN (from step 5 above)
+   Example: glc_eyJrIjoiRXhhbXBsZVRva2VuMTIzIi...
+
+2. PROMETHEUS ENDPOINT
+   Where: Cloud Portal → Stack → Details → Prometheus section
+   Example: https://prometheus-prod-XX.grafana.net/api/prom/push
+
+3. LOKI ENDPOINT (for logs)
+   Where: Cloud Portal → Stack → Details → Loki section
+   Example: https://logs-prod-XXX.grafana.net/loki/api/v1/push
+
+4. INSTANCE ID (username)
+   Where: Cloud Portal → Stack → Details
+   Example: 123456
+
+═══════════════════════════════════════════════════════════════
+                    VISUAL NAVIGATION MAP
+═══════════════════════════════════════════════════════════════
+
+Grafana Cloud Home
+    │
+    ├─→ Cloud Portal (main page after login)
+    │   │
+    │   ├─→ Your Stack (click on stack name)
+    │   │   │
+    │   │   ├─→ [Left Sidebar]
+    │   │   │   │
+    │   │   │   ├─→ Home
+    │   │   │   ├─→ Explore
+    │   │   │   ├─→ Dashboards
+    │   │   │   ├─→ Alerting
+    │   │   │   ├─→ Administration ★ (YOU NEED THIS!)
+    │   │   │       │
+    │   │   │       ├─→ Users and access ★
+    │   │   │           │
+    │   │   │           ├─→ Cloud access policies ★ ← CREATE HERE
+    │   │   │           ├─→ Service accounts
+    │   │   │           ├─→ Users
+    │   │   │           └─→ Teams
+    │   │   │
+    │   │   └─→ [Details/Configuration Button]
+    │   │       │
+    │   │       ├─→ Prometheus Endpoint ← COPY THIS
+    │   │       ├─→ Loki Endpoint ← COPY THIS
+    │   │       └─→ Instance ID ← COPY THIS
+    │   │
+    │   └─→ Configure (alternative to Details)
+
+═══════════════════════════════════════════════════════════════
+                    COMMON ISSUES
+═══════════════════════════════════════════════════════════════
+
+ISSUE: "I can't find API Keys option"
+SOLUTION: ✅ That's correct! Use "Cloud access policies" instead
+
+ISSUE: "I don't see Administration in sidebar"
+SOLUTION: ✅ Make sure you clicked on your STACK first
+         ✅ You might not have admin permissions
+
+ISSUE: "Cloud access policies option not there"
+SOLUTION: ✅ Check you're in the stack, not Cloud Portal home
+         ✅ Try the alternative path via "Configure" button
+
+ISSUE: "I forgot to copy the token"
+SOLUTION: ✅ Delete the old token
+         ✅ Create a new token
+         ✅ Copy it immediately this time
+
+═══════════════════════════════════════════════════════════════
+                    TESTING YOUR TOKEN
+═══════════════════════════════════════════════════════════════
+
+Test if token works:
+
+  curl -H "Authorization: Bearer YOUR_TOKEN" \
+    https://YOUR_PROMETHEUS_ENDPOINT/api/v1/labels
+
+Expected: JSON response (not 401 Unauthorized)
+
+═══════════════════════════════════════════════════════════════
+                    WHAT TO DO NEXT
+═══════════════════════════════════════════════════════════════
+
+Once you have the token and endpoints:
+
+1. Share them with me (securely)
+2. I'll help integrate into MoodMash
+3. Add to Cloudflare Pages environment variables:
+   - GRAFANA_CLOUD_TOKEN
+   - GRAFANA_PROMETHEUS_URL
+   - GRAFANA_LOKI_URL
+   - GRAFANA_INSTANCE_ID
+
+═══════════════════════════════════════════════════════════════
+                    NEED MORE HELP?
+═══════════════════════════════════════════════════════════════
+
+Detailed Guide: See GRAFANA_CLOUD_SETUP_GUIDE.md
+
+Official Docs:
+  → https://grafana.com/docs/grafana-cloud/
+  → https://grafana.com/docs/grafana-cloud/security-and-account-management/authentication-and-permissions/access-policies/
+
+Community Forum:
+  → https://community.grafana.com/
+
+═══════════════════════════════════════════════════════════════

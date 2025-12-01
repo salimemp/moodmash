@@ -68,4 +68,13 @@ export interface Bindings {
   SENTRY_DSN?: string;
   ENVIRONMENT?: string;
   RELEASE_VERSION?: string;
+  
+  // Grafana Cloud Monitoring
+  GRAFANA_PROMETHEUS_URL?: string;
+  GRAFANA_PROMETHEUS_USER?: string;
+  GRAFANA_PROMETHEUS_TOKEN?: string;
+  GRAFANA_LOKI_URL?: string;
+  GRAFANA_LOKI_USER?: string;
+  GRAFANA_LOKI_TOKEN?: string;
+  GRAFANA_STACK_URL?: string;
 }

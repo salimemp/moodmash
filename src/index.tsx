@@ -68,7 +68,32 @@ import {
   addBreadcrumb
 } from './services/sentry';
 
+// Grafana Cloud Monitoring
+import { 
+  createMonitoring, 
+  monitoringMiddleware,
+  LogLevel,
+  type MonitoringEnv 
+} from './lib/monitoring';
+
 const app = new Hono<{ Bindings: Bindings }>();
+
+// Initialize Grafana Monitoring Middleware
+app.use('*', async (c, next) => {
+  const monitoring = createMonitoring(c.env as unknown as MonitoringEnv, 'moodmash', 'production');
+  c.set('monitoring', monitoring);
+  await next();
+});
+
+// Grafana Request Tracking Middleware
+app.use('*', async (c, next) => {
+  const monitoring = c.get('monitoring');
+  if (monitoring) {
+    await monitoringMiddleware(monitoring)(c, next);
+  } else {
+    await next();
+  }
+});
 
 // Sentry Error Tracking Middleware (applies to all routes)
 app.use('*', sentryMiddleware);
@@ -363,8 +388,35 @@ app.get('/api/auth/me', (c) => {
 // =============================================================================
 
 // Health check
-app.get('/api/health', (c) => {
-  return c.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (c) => {
+  const monitoring = c.get('monitoring');
+  const monitoringEnabled = monitoring ? monitoring.isEnabled() : false;
+  
+  // Test monitoring if enabled
+  if (monitoringEnabled && monitoring) {
+    try {
+      await monitoring.log(LogLevel.INFO, 'Health check performed');
+    } catch (error) {
+      console.error('Failed to send health check log:', error);
+    }
+  }
+  
+  return c.json({ 
+    status: 'ok', 
+    timestamp: new Date().toISOString(),
+    monitoring: {
+      enabled: monitoringEnabled,
+      prometheus: !!c.env.GRAFANA_PROMETHEUS_URL,
+      loki: !!c.env.GRAFANA_LOKI_URL,
+      stack_url: c.env.GRAFANA_STACK_URL || null,
+    },
+    sentry: {
+      enabled: isSentryConfigured(c.env.SENTRY_DSN),
+    },
+    database: {
+      connected: !!c.env.DB,
+    }
+  });
 });
 
 // Get all mood entries (with optional filters)
