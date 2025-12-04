@@ -329,7 +329,8 @@ app.get('/auth/google/callback', async (c) => {
     // Redirect to protected page (not public homepage) to ensure user sees they're logged in
     return c.redirect('/log');
   } catch (error) {
-    console.error('Google OAuth error:', error);
+    console.error('[Google OAuth] Error occurred:', error);
+    console.error('[Google OAuth] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return c.redirect('/?error=oauth_failed');
   }
 });
@@ -477,7 +478,8 @@ app.get('/auth/github/callback', async (c) => {
     // Redirect to protected page (not public homepage) to ensure user sees they're logged in
     return c.redirect('/log');
   } catch (error) {
-    console.error('GitHub OAuth error:', error);
+    console.error('[GitHub OAuth] Error occurred:', error);
+    console.error('[GitHub OAuth] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return c.redirect('/?error=oauth_failed');
   }
 });
