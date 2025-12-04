@@ -65,9 +65,20 @@ export interface MoodStats {
 
 export interface Bindings {
   DB: D1Database;
+  R2?: R2Bucket;
   SENTRY_DSN?: string;
   ENVIRONMENT?: string;
   RELEASE_VERSION?: string;
+  
+  // OAuth Configuration
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
+  GITHUB_CLIENT_ID?: string;
+  GITHUB_CLIENT_SECRET?: string;
+  BASE_URL?: string;
+  
+  // Email Service
+  RESEND_API_KEY?: string;
   
   // Grafana Cloud Monitoring
   GRAFANA_PROMETHEUS_URL?: string;

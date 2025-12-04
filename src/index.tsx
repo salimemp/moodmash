@@ -73,10 +73,38 @@ import {
   createMonitoring, 
   monitoringMiddleware,
   LogLevel,
-  type MonitoringEnv 
+  type MonitoringEnv,
+  type GrafanaMonitoring 
 } from './lib/monitoring';
 
-const app = new Hono<{ Bindings: Bindings }>();
+// OAuth User Types
+interface GoogleUser {
+  id: string;
+  email: string;
+  name?: string;
+  picture?: string;
+}
+
+interface GitHubUser {
+  id: number;
+  login: string;
+  email?: string;
+  name?: string;
+  avatar_url?: string;
+}
+
+interface GitHubEmail {
+  email: string;
+  primary: boolean;
+  verified: boolean;
+}
+
+// Extend Hono context with monitoring
+type Variables = {
+  monitoring: GrafanaMonitoring;
+};
+
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Initialize Grafana Monitoring Middleware
 app.use('*', async (c, next) => {
@@ -228,7 +256,7 @@ app.get('/auth/google/callback', async (c) => {
       headers: { Authorization: `Bearer ${tokens.accessToken}` }
     });
     
-    const oauthUser = await response.json();
+    const oauthUser = await response.json() as GoogleUser;
     
     // Check if user exists in database
     let dbUser = await DB.prepare(`
@@ -322,9 +350,7 @@ app.get('/auth/github', async (c) => {
     }
     
     const state = crypto.randomUUID();
-    const url = await github.createAuthorizationURL(state, {
-      scopes: ['user:email']
-    });
+    const url = await github.createAuthorizationURL(state, ['user:email']);
     
     setCookie(c, 'oauth_state', state, {
       path: '/',
@@ -370,7 +396,7 @@ app.get('/auth/github/callback', async (c) => {
       }
     });
     
-    const oauthUser = await response.json();
+    const oauthUser = await response.json() as GitHubUser;
     
     // Fetch primary email if not public
     let email = oauthUser.email;
@@ -381,8 +407,8 @@ app.get('/auth/github/callback', async (c) => {
           'User-Agent': 'MoodMash'
         }
       });
-      const emails = await emailResponse.json();
-      email = emails.find((e: any) => e.primary)?.email || emails[0]?.email;
+      const emails = await emailResponse.json() as GitHubEmail[];
+      email = emails.find((e) => e.primary)?.email || emails[0]?.email;
     }
     
     // Check if user exists in database
@@ -511,7 +537,7 @@ app.get('/api/health', async (c) => {
       stack_url: c.env.GRAFANA_STACK_URL || null,
     },
     sentry: {
-      enabled: isSentryConfigured(c.env.SENTRY_DSN),
+      enabled: isSentryConfigured(c.env),
     },
     database: {
       connected: !!c.env.DB,
