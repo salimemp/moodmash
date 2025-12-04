@@ -237,8 +237,14 @@ app.get('/auth/google/callback', async (c) => {
   const state = c.req.query('state');
   const storedState = getCookie(c, 'oauth_state');
   
+  console.log('[Google OAuth] Callback - Code:', code?.slice(0, 20) + '...', 'State valid:', state === storedState);
+  
+  // Delete state cookie immediately to prevent reuse
+  deleteCookie(c, 'oauth_state');
+  
   if (!code || !state || state !== storedState) {
-    return c.redirect('/?error=oauth_failed');
+    console.error('[Google OAuth] Validation failed');
+    return c.redirect('/?error=oauth_state_invalid');
   }
   
   try {
@@ -336,10 +342,10 @@ app.get('/auth/google/callback', async (c) => {
     const maxAge = 60 * 60 * 24 * 30; // 30 days
     c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
     
-    // Clean up state cookie
-    deleteCookie(c, 'oauth_state');
+    // State cookie already deleted at the start of callback to prevent reuse
     
     // Redirect to protected page (not public homepage) to ensure user sees they're logged in
+    console.log('[Google OAuth] Success! Redirecting to /log');
     return c.redirect('/log');
   } catch (error) {
     console.error('[Google OAuth] Error occurred:', error);
@@ -354,20 +360,23 @@ app.get('/auth/google/callback', async (c) => {
       troubleshooting = `
         <h3 style="color: orange;">Common Causes:</h3>
         <ul>
-          <li><strong>Redirect URI mismatch:</strong> Check Google Cloud Console → Credentials → OAuth 2.0 Client → Authorized redirect URIs
-            <br>Should include: <code>https://moodmash.win/auth/google/callback</code></li>
-          <li><strong>Code already used:</strong> Don't click "Continue with Google" multiple times. Clear cookies and try again.</li>
-          <li><strong>Code expired:</strong> Authorization codes expire after 10 minutes.</li>
+          <li><strong>Code reuse:</strong> Authorization codes can only be used once. Going back/forward in browser or clicking multiple times causes this.</li>
+          <li><strong>Code expired:</strong> Authorization codes expire after ~10 minutes of being issued.</li>
+          <li><strong>Redirect URI mismatch:</strong> The callback URL must exactly match what's in Google Console.</li>
+          <li><strong>Time skew:</strong> Server time differences can cause validation failures.</li>
         </ul>
-        <h3>How to Fix:</h3>
+        <h3>Quick Fix - Try Again:</h3>
         <ol>
-          <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></li>
-          <li>Edit your OAuth 2.0 Client ID</li>
-          <li>Add <code>https://moodmash.win/auth/google/callback</code> to Authorized redirect URIs</li>
-          <li>Save and wait 5 minutes for changes to propagate</li>
-          <li>Clear your browser cookies for moodmash.win</li>
-          <li>Try again</li>
+          <li><strong>Open a new Incognito/Private window</strong> (to avoid cookie/cache issues)</li>
+          <li>Go to <a href="https://moodmash.win" target="_blank">https://moodmash.win</a></li>
+          <li>Click "Continue with Google" <strong>only once</strong></li>
+          <li>Complete authorization and <strong>don't go back</strong></li>
         </ol>
+        <p style="background: #fff3cd; padding: 10px; border-left: 4px solid #ffc107;">
+          <strong>💡 Tip:</strong> If this keeps happening, your redirect URI might be misconfigured. 
+          It should be exactly: <code>https://moodmash.win/auth/google/callback</code> in 
+          <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a>
+        </p>
       `;
     }
     
