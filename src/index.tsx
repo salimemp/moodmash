@@ -319,14 +319,9 @@ app.get('/auth/google/callback', async (c) => {
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
     
-    // Set session cookie
-    setCookie(c, 'session_token', sessionToken, {
-      path: '/',
-      httpOnly: true,
-      secure: true,
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: 'Lax'
-    });
+    // Set session cookie (using raw header for better compatibility)
+    const maxAge = 60 * 60 * 24 * 30; // 30 days
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
     
     // Clean up state cookie
     deleteCookie(c, 'oauth_state');
@@ -473,14 +468,9 @@ app.get('/auth/github/callback', async (c) => {
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
     
-    // Set session cookie
-    setCookie(c, 'session_token', sessionToken, {
-      path: '/',
-      httpOnly: true,
-      secure: true,
-      maxAge: 60 * 60 * 24 * 30, // 30 days
-      sameSite: 'Lax'
-    });
+    // Set session cookie (using raw header for better compatibility)
+    const maxAge = 60 * 60 * 24 * 30; // 30 days
+    c.header('Set-Cookie', `session_token=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`);
     
     deleteCookie(c, 'oauth_state');
     
