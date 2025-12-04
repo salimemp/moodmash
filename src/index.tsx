@@ -246,10 +246,23 @@ app.get('/auth/google/callback', async (c) => {
     
     // Check if Google OAuth is configured
     if (!google) {
-      return c.redirect('/?error=oauth_not_configured');
+      return c.html(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>OAuth Not Configured</title></head>
+        <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+          <h1 style="color: red;">Google OAuth Not Configured</h1>
+          <p>Google OAuth credentials (GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET) are not set in environment variables.</p>
+          <p>Please add them in Cloudflare Dashboard → Workers & Pages → moodmash → Settings → Environment variables</p>
+          <p><a href="/">← Back to Home</a></p>
+        </body>
+        </html>
+      `);
     }
     
+    console.log('[Google OAuth] Validating authorization code...');
     const tokens = await google.validateAuthorizationCode(code);
+    console.log('[Google OAuth] Token validation successful');
     
     // Fetch user info
     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -334,17 +347,45 @@ app.get('/auth/google/callback', async (c) => {
     
     // Show detailed error for debugging
     const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // Provide helpful troubleshooting based on error
+    let troubleshooting = '';
+    if (errorMessage.includes('invalid_grant')) {
+      troubleshooting = `
+        <h3 style="color: orange;">Common Causes:</h3>
+        <ul>
+          <li><strong>Redirect URI mismatch:</strong> Check Google Cloud Console → Credentials → OAuth 2.0 Client → Authorized redirect URIs
+            <br>Should include: <code>https://moodmash.win/auth/google/callback</code></li>
+          <li><strong>Code already used:</strong> Don't click "Continue with Google" multiple times. Clear cookies and try again.</li>
+          <li><strong>Code expired:</strong> Authorization codes expire after 10 minutes.</li>
+        </ul>
+        <h3>How to Fix:</h3>
+        <ol>
+          <li>Go to <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Google Cloud Console</a></li>
+          <li>Edit your OAuth 2.0 Client ID</li>
+          <li>Add <code>https://moodmash.win/auth/google/callback</code> to Authorized redirect URIs</li>
+          <li>Save and wait 5 minutes for changes to propagate</li>
+          <li>Clear your browser cookies for moodmash.win</li>
+          <li>Try again</li>
+        </ol>
+      `;
+    }
+    
     return c.html(`
       <!DOCTYPE html>
       <html>
       <head><title>Google OAuth Error</title></head>
-      <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
-        <h1 style="color: red;">Google OAuth Failed</h1>
-        <h2>Error Details:</h2>
-        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${errorMessage}</pre>
-        <h3>Stack Trace:</h3>
-        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
-        <p><a href="/">← Back to Home</a></p>
+      <body style="font-family: sans-serif; padding: 20px; background: #f5f5f5; max-width: 900px; margin: 0 auto;">
+        <h1 style="color: #d32f2f;">Google OAuth Failed</h1>
+        <div style="background: #ffebee; padding: 15px; border-left: 4px solid #d32f2f; margin: 20px 0;">
+          <h2 style="margin-top: 0;">Error: ${errorMessage}</h2>
+        </div>
+        ${troubleshooting}
+        <details style="margin: 20px 0;">
+          <summary style="cursor: pointer; color: #666;">Stack Trace (for debugging)</summary>
+          <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto; font-size: 11px;">${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
+        </details>
+        <p><a href="/" style="color: #1976d2; text-decoration: none;">← Back to Home</a></p>
       </body>
       </html>
     `);
