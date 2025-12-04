@@ -331,7 +331,23 @@ app.get('/auth/google/callback', async (c) => {
   } catch (error) {
     console.error('[Google OAuth] Error occurred:', error);
     console.error('[Google OAuth] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    return c.redirect('/?error=oauth_failed');
+    
+    // Show detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.html(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>Google OAuth Error</title></head>
+      <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h1 style="color: red;">Google OAuth Failed</h1>
+        <h2>Error Details:</h2>
+        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${errorMessage}</pre>
+        <h3>Stack Trace:</h3>
+        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
+        <p><a href="/">← Back to Home</a></p>
+      </body>
+      </html>
+    `);
   }
 });
 
@@ -480,7 +496,23 @@ app.get('/auth/github/callback', async (c) => {
   } catch (error) {
     console.error('[GitHub OAuth] Error occurred:', error);
     console.error('[GitHub OAuth] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    return c.redirect('/?error=oauth_failed');
+    
+    // Show detailed error for debugging
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return c.html(`
+      <!DOCTYPE html>
+      <html>
+      <head><title>GitHub OAuth Error</title></head>
+      <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
+        <h1 style="color: red;">GitHub OAuth Failed</h1>
+        <h2>Error Details:</h2>
+        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${errorMessage}</pre>
+        <h3>Stack Trace:</h3>
+        <pre style="background: white; padding: 15px; border: 1px solid #ddd; overflow: auto;">${error instanceof Error ? error.stack : 'No stack trace available'}</pre>
+        <p><a href="/">← Back to Home</a></p>
+      </body>
+      </html>
+    `);
   }
 });
 
