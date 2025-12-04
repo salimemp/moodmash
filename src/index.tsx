@@ -331,7 +331,8 @@ app.get('/auth/google/callback', async (c) => {
     // Clean up state cookie
     deleteCookie(c, 'oauth_state');
     
-    return c.redirect('/?login=success');
+    // Redirect to protected page (not public homepage) to ensure user sees they're logged in
+    return c.redirect('/log');
   } catch (error) {
     console.error('Google OAuth error:', error);
     return c.redirect('/?error=oauth_failed');
@@ -483,7 +484,8 @@ app.get('/auth/github/callback', async (c) => {
     
     deleteCookie(c, 'oauth_state');
     
-    return c.redirect('/?login=success');
+    // Redirect to protected page (not public homepage) to ensure user sees they're logged in
+    return c.redirect('/log');
   } catch (error) {
     console.error('GitHub OAuth error:', error);
     return c.redirect('/?error=oauth_failed');
