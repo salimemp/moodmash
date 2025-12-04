@@ -41,17 +41,23 @@ function init() {
 }
 
 // Render log form
-function renderLogForm() {
+async function renderLogForm() {
     const app = document.getElementById('app');
+    
+    // Check if user is authenticated and get their info
+    let welcomeMessage = i18n.t('log_mood_title');
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.username) {
+        welcomeMessage = `Welcome ${currentUser.username}! ${i18n.t('log_mood_title')}`;
+    }
     
     app.innerHTML = `
         <div class="fade-in">
-            <div class="bg-white rounded-lg shadow-md p-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">
+            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8">
+                <h1 class="text-3xl font-bold text-gray-800 dark:text-white mb-2">
                     <i class="fas fa-pen text-primary mr-2"></i>
-                    ${i18n.t('log_mood_title')}
+                    ${welcomeMessage}
                 </h1>
-                <p class="text-gray-600 mb-8">${i18n.t('log_mood_subtitle')}</p>
+                <p class="text-gray-600 dark:text-gray-300 mb-8">${i18n.t('log_mood_subtitle')}</p>
                 
                 <!-- Emotion Selection -->
                 <div class="mb-8">

@@ -120,10 +120,70 @@ class PWAManager {
 }
 
 // Navigation Component
+// Global user state
+let currentUser = null;
+
+async function checkAuthStatus() {
+    try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+            currentUser = await response.json();
+            return true;
+        }
+    } catch (error) {
+        console.log('[Auth] Not authenticated');
+    }
+    currentUser = null;
+    return false;
+}
+
 function renderNavigation(currentPage = '') {
     const theme = themeManager.isDark() ? 'dark' : 'light';
     const languages = i18n.getAvailableLanguages();
     const currentLang = languages.find(l => l.code === i18n.currentLanguage);
+    
+    // Auth buttons or user profile
+    const authSection = currentUser ? `
+        <!-- User Profile Menu -->
+        <div class="relative ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
+            <button onclick="toggleUserMenu()" class="flex items-center space-x-2 px-3 py-2 text-gray-700 dark:text-gray-300 hover:text-primary rounded-md text-sm font-medium transition-colors">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center text-white font-semibold">
+                    ${(currentUser.username || currentUser.email || 'U').charAt(0).toUpperCase()}
+                </div>
+                <span class="hidden sm:inline">${currentUser.username || currentUser.email || 'User'}</span>
+                <i class="fas fa-chevron-down text-xs"></i>
+            </button>
+            <div id="user-menu" class="hidden absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div class="p-3 border-b border-gray-200 dark:border-gray-700">
+                    <p class="text-sm font-semibold text-gray-800 dark:text-white">${currentUser.username || 'User'}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">${currentUser.email || ''}</p>
+                </div>
+                <div class="py-2">
+                    <a href="/profile" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-user mr-2"></i>Profile
+                    </a>
+                    <a href="/settings" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-cog mr-2"></i>Settings
+                    </a>
+                    <button onclick="handleLogout()" class="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    ` : `
+        <!-- Auth Buttons -->
+        <div class="flex items-center space-x-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
+            <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                <i class="fas fa-sign-in-alt mr-1"></i>
+                <span class="hidden sm:inline">Login</span>
+            </a>
+            <a href="/register" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md">
+                <i class="fas fa-user-plus mr-1"></i>
+                <span class="hidden sm:inline">Sign Up</span>
+            </a>
+        </div>
+    `;
     
     return `
         <nav class="bg-white dark:bg-gray-800 shadow-sm">
@@ -172,22 +232,32 @@ function renderNavigation(currentPage = '') {
                             </div>
                         </button>
                         
-                        <!-- Auth Buttons -->
-                        <div class="flex items-center space-x-2 ml-4 pl-4 border-l border-gray-200 dark:border-gray-700">
-                            <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
-                                <i class="fas fa-sign-in-alt mr-1"></i>
-                                <span class="hidden sm:inline">Login</span>
-                            </a>
-                            <a href="/register" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md">
-                                <i class="fas fa-user-plus mr-1"></i>
-                                <span class="hidden sm:inline">Sign Up</span>
-                            </a>
-                        </div>
+                        ${authSection}
                     </div>
                 </div>
             </div>
         </nav>
     `;
+}
+
+// User menu toggle
+function toggleUserMenu() {
+    const menu = document.getElementById('user-menu');
+    if (menu) {
+        menu.classList.toggle('hidden');
+    }
+}
+
+// Logout handler
+async function handleLogout() {
+    try {
+        await fetch('/auth/logout', { method: 'POST' });
+        currentUser = null;
+        window.location.href = '/login';
+    } catch (error) {
+        console.error('[Logout] Error:', error);
+        window.location.href = '/login';
+    }
 }
 
 // Language dropdown toggle
@@ -201,13 +271,21 @@ function changeLanguage(langCode) {
     i18n.setLanguage(langCode);
 }
 
-// Close dropdown when clicking outside
+// Close dropdowns when clicking outside
 document.addEventListener('click', (e) => {
     const dropdown = document.getElementById('language-dropdown');
     const selector = document.querySelector('.language-selector');
     
     if (dropdown && !selector?.contains(e.target)) {
         dropdown.classList.add('hidden');
+    }
+    
+    // Close user menu when clicking outside
+    const userMenu = document.getElementById('user-menu');
+    const userMenuButton = e.target.closest('button[onclick="toggleUserMenu()"]');
+    
+    if (userMenu && !userMenuButton && !userMenu.contains(e.target)) {
+        userMenu.classList.add('hidden');
     }
 });
 

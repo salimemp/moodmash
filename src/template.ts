@@ -178,9 +178,10 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container"></div>
         <script>
-            // Wait for i18n to be fully loaded before rendering navigation
-            function renderNav() {
+            // Wait for i18n and check auth status before rendering navigation
+            async function renderNav() {
                 if (typeof i18n !== 'undefined' && i18n.translations) {
+                    await checkAuthStatus();
                     document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
                 } else {
                     setTimeout(renderNav, 50); // Check every 50ms
