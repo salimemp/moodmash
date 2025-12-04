@@ -248,10 +248,8 @@ app.get('/auth/google/callback', async (c) => {
   }
   
   try {
-    const { google } = initOAuthProviders(c.env);
-    
     // Check if Google OAuth is configured
-    if (!google) {
+    if (!c.env.GOOGLE_CLIENT_ID || !c.env.GOOGLE_CLIENT_SECRET) {
       return c.html(`
         <!DOCTYPE html>
         <html>
@@ -266,13 +264,36 @@ app.get('/auth/google/callback', async (c) => {
       `);
     }
     
-    console.log('[Google OAuth] Validating authorization code...');
-    const tokens = await google.validateAuthorizationCode(code);
-    console.log('[Google OAuth] Token validation successful');
+    console.log('[Google OAuth] Exchanging authorization code for tokens...');
+    
+    // Manual token exchange (more reliable than Arctic library in Workers)
+    const baseUrl = c.env.BASE_URL || 'https://moodmash.win';
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code: code,
+        client_id: c.env.GOOGLE_CLIENT_ID,
+        client_secret: c.env.GOOGLE_CLIENT_SECRET,
+        redirect_uri: `${baseUrl}/auth/google/callback`,
+        grant_type: 'authorization_code',
+      }),
+    });
+    
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.text();
+      console.error('[Google OAuth] Token exchange failed:', errorData);
+      throw new Error(`Token exchange failed: ${tokenResponse.status} - ${errorData}`);
+    }
+    
+    const tokens = await tokenResponse.json() as { access_token: string; id_token?: string };
+    console.log('[Google OAuth] Token exchange successful');
     
     // Fetch user info
     const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-      headers: { Authorization: `Bearer ${tokens.accessToken}` }
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
     });
     
     const oauthUser = await response.json() as GoogleUser;
