@@ -183,6 +183,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
                 if (typeof i18n !== 'undefined' && i18n.translations) {
                     await checkAuthStatus();
                     document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
+                    // Dispatch event to notify that auth is ready
+                    window.dispatchEvent(new CustomEvent('authReady', { detail: { user: currentUser } }));
                 } else {
                     setTimeout(renderNav, 50); // Check every 50ms
                 }

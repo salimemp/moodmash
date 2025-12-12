@@ -333,7 +333,13 @@ function resetForm() {
     renderLogForm();
 }
 
-// Initialize on page load - wait for i18n to be available
+// Listen for auth ready event and render
+window.addEventListener('authReady', (event) => {
+    console.log('[Log] Auth ready, rendering form');
+    renderLogForm();
+});
+
+// Fallback: Initialize on page load if auth event doesn't fire
 function waitForI18n(callback) {
     if (typeof i18n !== 'undefined' && i18n.translations) {
         callback();

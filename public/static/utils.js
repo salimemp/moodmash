@@ -125,13 +125,18 @@ let currentUser = null;
 
 async function checkAuthStatus() {
     try {
-        const response = await fetch('/api/auth/me');
+        const response = await fetch('/api/auth/me', {
+            credentials: 'include'  // Include cookies in the request
+        });
         if (response.ok) {
             currentUser = await response.json();
+            console.log('[Auth] User authenticated:', currentUser.username || currentUser.email);
             return true;
+        } else {
+            console.log('[Auth] Not authenticated, status:', response.status);
         }
     } catch (error) {
-        console.log('[Auth] Not authenticated');
+        console.error('[Auth] Check failed:', error);
     }
     currentUser = null;
     return false;

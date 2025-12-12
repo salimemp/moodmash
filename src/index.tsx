@@ -597,14 +597,7 @@ app.post('/auth/logout', (c) => {
   return c.json({ success: true });
 });
 
-// Get current user
-app.get('/api/auth/me', (c) => {
-  const user = getCurrentUser(c);
-  if (!user) {
-    return c.json({ authenticated: false }, 401);
-  }
-  return c.json({ authenticated: true, user });
-});
+// Get current user (moved to line 1585 with DB implementation)
 
 // =============================================================================
 // API ROUTES
