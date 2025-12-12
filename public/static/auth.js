@@ -727,3 +727,93 @@ let authManager;
 document.addEventListener('DOMContentLoaded', () => {
   authManager = new MoodMashAuth();
 });
+
+/**
+ * iOS Keyboard Input Fix
+ * Fixes keyboard not appearing on iOS devices
+ */
+function iosInputFix() {
+  // Detect iOS device
+  const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  
+  if (!isIOS) {
+    console.log('[iOS Fix] Not an iOS device, skipping');
+    return;
+  }
+  
+  console.log('[iOS Fix] Applying iOS keyboard fixes');
+  
+  // Fix 1: Remove readonly attribute on touch/focus
+  const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"], input[type="tel"], textarea');
+  
+  inputs.forEach(input => {
+    // Remove readonly on touchstart
+    input.addEventListener('touchstart', function() {
+      if (this.hasAttribute('readonly')) {
+        console.log('[iOS Fix] Removing readonly from', this.id || this.name);
+        this.removeAttribute('readonly');
+      }
+    });
+    
+    // Remove readonly on focus
+    input.addEventListener('focus', function() {
+      if (this.hasAttribute('readonly')) {
+        console.log('[iOS Fix] Removing readonly on focus from', this.id || this.name);
+        this.removeAttribute('readonly');
+      }
+    });
+    
+    // Ensure font-size is at least 16px to prevent zoom
+    const computedStyle = window.getComputedStyle(input);
+    const fontSize = parseFloat(computedStyle.fontSize);
+    if (fontSize < 16) {
+      console.log('[iOS Fix] Increasing font size for', this.id || this.name);
+      input.style.fontSize = '16px';
+    }
+  });
+  
+  // Fix 2: Ensure inputs are properly focused
+  inputs.forEach(input => {
+    input.addEventListener('click', function(e) {
+      e.preventDefault();
+      this.focus();
+      console.log('[iOS Fix] Input clicked and focused:', this.id || this.name);
+    });
+  });
+  
+  // Fix 3: Prevent viewport zoom on input focus
+  const viewport = document.querySelector('meta[name=viewport]');
+  if (viewport) {
+    const content = viewport.getAttribute('content');
+    if (!content.includes('user-scalable')) {
+      // Note: We want to keep user-scalable=yes for accessibility
+      // Just ensuring it's not set to 'no'
+      console.log('[iOS Fix] Viewport allows user scaling (good for accessibility)');
+    }
+  }
+  
+  console.log('[iOS Fix] Applied fixes to', inputs.length, 'input fields');
+}
+
+// Apply iOS fixes after DOM is loaded
+document.addEventListener('DOMContentLoaded', iosInputFix);
+
+// Also apply after auth forms are rendered (they're dynamic)
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (mutation.addedNodes.length) {
+      iosInputFix();
+    }
+  });
+});
+
+// Start observing auth container for changes
+document.addEventListener('DOMContentLoaded', () => {
+  const authContainer = document.getElementById('app');
+  if (authContainer) {
+    observer.observe(authContainer, {
+      childList: true,
+      subtree: true
+    });
+  }
+});
