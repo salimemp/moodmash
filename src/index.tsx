@@ -1622,8 +1622,19 @@ app.post('/api/auth/register', async (c) => {
   const { DB } = c.env;
   
   try {
-    const { username, email, password } = await c.req.json();
+    const { username, email, password, turnstileToken } = await c.req.json();
     
+    // Verify Turnstile token
+    if (turnstileToken) {
+      const turnstileResult = await verifyTurnstile(c, turnstileToken, 'register');
+      if (!turnstileResult.success) {
+        return c.json({ 
+          error: 'Bot verification failed. Please try again.',
+          turnstile_error: turnstileResult.error 
+        }, 403);
+      }
+    }
+
     // Validate input
     if (!username || !email || !password) {
       return c.json({ error: 'All fields are required' }, 400);
@@ -1715,10 +1726,21 @@ app.post('/api/auth/login', async (c) => {
   const { DB } = c.env;
   
   try {
-    const { username, password, trustDevice } = await c.req.json();
+    const { username, password, trustDevice, turnstileToken } = await c.req.json();
     
     if (!username || !password) {
       return c.json({ error: 'Username and password required' }, 400);
+    }
+
+    // Verify Turnstile token
+    if (turnstileToken) {
+      const turnstileResult = await verifyTurnstile(c, turnstileToken, 'login');
+      if (!turnstileResult.success) {
+        return c.json({ 
+          error: 'Bot verification failed. Please try again.',
+          turnstile_error: turnstileResult.error 
+        }, 403);
+      }
     }
     
     // Find user

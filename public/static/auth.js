@@ -17,6 +17,7 @@ class MoodMashAuth {
     await this.waitForI18n();
     this.render();
     this.attachEventListeners();
+    this.renderTurnstile();
   }
 
   async waitForI18n() {
@@ -161,6 +162,20 @@ class MoodMashAuth {
                   <div id="strength-errors" class="mt-2 text-sm text-red-600 dark:text-red-400"></div>
                 </div>
               ` : ''}
+
+              <!-- Cloudflare Turnstile (Bot Protection) -->
+              <div class="mt-6 mb-4">
+                <div class="cf-turnstile" 
+                     data-sitekey="1x00000000000000000000AA" 
+                     data-theme="auto"
+                     data-size="normal"
+                     id="turnstile-widget">
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2 flex items-center justify-center">
+                  <i class="fas fa-shield-alt mr-1"></i>
+                  Protected by Cloudflare Turnstile
+                </p>
+              </div>
 
               <!-- Submit Button -->
               <button 
@@ -396,19 +411,65 @@ class MoodMashAuth {
     this.currentView = view;
     this.render();
     this.attachEventListeners();
+    this.renderTurnstile();
   }
 
   attachEventListeners() {
     // Form is handled by inline onsubmit
   }
 
+  renderTurnstile() {
+    // Wait for Turnstile script to load
+    if (typeof window.turnstile !== 'undefined') {
+      const container = document.getElementById('turnstile-widget');
+      if (container && !container.hasAttribute('data-rendered')) {
+        try {
+          window.turnstile.render('#turnstile-widget', {
+            sitekey: '1x00000000000000000000AA', // Test key - replace with real key in production
+            theme: 'auto', // Auto detect light/dark mode
+            callback: function(token) {
+              console.log('[Turnstile] Verification successful', token ? 'Token received' : 'No token');
+            },
+            'error-callback': function() {
+              console.error('[Turnstile] Verification failed');
+            },
+            'expired-callback': function() {
+              console.warn('[Turnstile] Token expired, please refresh');
+            }
+          });
+          container.setAttribute('data-rendered', 'true');
+          console.log('[Turnstile] Widget rendered successfully');
+        } catch (error) {
+          console.error('[Turnstile] Failed to render widget:', error);
+        }
+      }
+    } else {
+      // Retry after a short delay (max 10 seconds)
+      const retryCount = (this.turnstileRetries || 0) + 1;
+      if (retryCount < 100) { // 100 * 100ms = 10 seconds max
+        this.turnstileRetries = retryCount;
+        setTimeout(() => this.renderTurnstile(), 100);
+      } else {
+        console.error('[Turnstile] Script failed to load after 10 seconds');
+      }
+    }
+  }
+
   async handleSubmit(event) {
     event.preventDefault();
+    
+    // Get Turnstile token
+    const turnstileToken = window.turnstile?.getResponse();
+    if (!turnstileToken) {
+      this.showMessage('Please complete the bot verification', 'error');
+      return;
+    }
     
     const formData = new FormData(event.target);
     const data = {
       username: formData.get('username'),
       password: formData.get('password'),
+      turnstileToken: turnstileToken, // Add Turnstile token
     };
 
     if (this.currentView === 'register') {

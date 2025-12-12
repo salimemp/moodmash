@@ -150,6 +150,9 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
         
+        <!-- Cloudflare Turnstile (Bot Protection) -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        
         <!-- Load Tailwind AFTER our scripts so it can scan dynamically rendered content -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
