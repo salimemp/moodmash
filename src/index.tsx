@@ -3571,6 +3571,9 @@ app.get('/login', (c) => {
     <body>
         <div id="auth-container"></div>
         
+        <!-- Cloudflare Turnstile (Bot Protection) -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        
         <script src="/static/i18n.js"></script>
         <script src="/static/utils.js"></script>
         <script>
@@ -3594,6 +3597,13 @@ app.get('/register', (c) => {
         <title>Register - MoodMash</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/styles.css" rel="stylesheet">
+    </head>
+    <body>
+        <div id="auth-container"></div>
+        
+        <!-- Cloudflare Turnstile (Bot Protection) -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <link href="/static/styles.css" rel="stylesheet">
     </head>
     <body>
