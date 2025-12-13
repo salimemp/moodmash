@@ -166,7 +166,7 @@ class MoodMashAuth {
               <!-- Cloudflare Turnstile (Bot Protection) -->
               <div class="mt-6 mb-4">
                 <div class="cf-turnstile" 
-                     data-sitekey="1x00000000000000000000AA" 
+                     data-sitekey="0x4AAAAAACGcDquzRPgpJm9K" 
                      data-theme="auto"
                      data-size="normal"
                      id="turnstile-widget">
@@ -425,7 +425,7 @@ class MoodMashAuth {
       if (container && !container.hasAttribute('data-rendered')) {
         try {
           window.turnstile.render('#turnstile-widget', {
-            sitekey: '1x00000000000000000000AA', // Test key - replace with real key in production
+            sitekey: '0x4AAAAAACGcDquzRPgpJm9K', // Production key
             theme: 'auto', // Auto detect light/dark mode
             callback: function(token) {
               console.log('[Turnstile] Verification successful', token ? 'Token received' : 'No token');
