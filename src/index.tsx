@@ -642,15 +642,23 @@ app.get('/api/moods', async (c) => {
   const emotion = c.req.query('emotion');
   
   try {
-    let query = `SELECT * FROM mood_entries WHERE user_id = 1`;
+    // Get authenticated user
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
+    let query = `SELECT * FROM mood_entries WHERE user_id = ?`;
+    const params = [session.userId];
     
     if (emotion) {
-      query += ` AND emotion = '${emotion}'`;
+      query += ` AND emotion = ?`;
+      params.push(emotion);
     }
     
     query += ` ORDER BY logged_at DESC LIMIT ${limit}`;
     
-    const result = await DB.prepare(query).all();
+    const result = await DB.prepare(query).bind(...params).all();
     
     // Parse JSON fields
     const moods = result.results.map((row: any) => ({
@@ -670,9 +678,15 @@ app.get('/api/moods/:id', async (c) => {
   const id = c.req.param('id');
   
   try {
+    // Get authenticated user
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
     const result = await DB.prepare(
-      'SELECT * FROM mood_entries WHERE id = ? AND user_id = 1'
-    ).bind(id).first();
+      'SELECT * FROM mood_entries WHERE id = ? AND user_id = ?'
+    ).bind(id, session.userId).first();
     
     if (!result) {
       return c.json({ error: 'Mood entry not found' }, 404);
@@ -803,9 +817,15 @@ app.delete('/api/moods/:id', async (c) => {
   const id = c.req.param('id');
   
   try {
+    // Get authenticated user
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
     await DB.prepare(
-      'DELETE FROM mood_entries WHERE id = ? AND user_id = 1'
-    ).bind(id).run();
+      'DELETE FROM mood_entries WHERE id = ? AND user_id = ?'
+    ).bind(id, session.userId).run();
     
     return c.json({ message: 'Mood entry deleted successfully' });
   } catch (error: any) {
@@ -929,31 +949,37 @@ app.get('/api/stats', async (c) => {
   const days = parseInt(c.req.query('days') || '30');
   
   try {
+    // Get authenticated user
+    const session = getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    
     // Get mood distribution
     const distribution = await DB.prepare(`
       SELECT emotion, COUNT(*) as count, AVG(intensity) as avg_intensity
       FROM mood_entries
-      WHERE user_id = 1 
+      WHERE user_id = ? 
         AND logged_at >= datetime('now', '-${days} days')
       GROUP BY emotion
       ORDER BY count DESC
-    `).all();
+    `).bind(session.userId).all();
     
     // Get total entries
     const total = await DB.prepare(`
       SELECT COUNT(*) as count 
       FROM mood_entries 
-      WHERE user_id = 1 
+      WHERE user_id = ? 
         AND logged_at >= datetime('now', '-${days} days')
-    `).first();
+    `).bind(session.userId).first();
     
     // Get average intensity
     const avgIntensity = await DB.prepare(`
       SELECT AVG(intensity) as avg 
       FROM mood_entries 
-      WHERE user_id = 1 
+      WHERE user_id = ? 
         AND logged_at >= datetime('now', '-${days} days')
-    `).first();
+    `).bind(session.userId).first();
     
     // Calculate mood distribution
     const moodDistribution: Record<string, number> = {};
@@ -971,17 +997,17 @@ app.get('/api/stats', async (c) => {
     const recentAvg = await DB.prepare(`
       SELECT AVG(intensity) as avg 
       FROM mood_entries 
-      WHERE user_id = 1 
+      WHERE user_id = ? 
         AND logged_at >= datetime('now', '-${midpoint} days')
-    `).first();
+    `).bind(session.userId).first();
     
     const olderAvg = await DB.prepare(`
       SELECT AVG(intensity) as avg 
       FROM mood_entries 
-      WHERE user_id = 1 
+      WHERE user_id = ? 
         AND logged_at >= datetime('now', '-${days} days')
         AND logged_at < datetime('now', '-${midpoint} days')
-    `).first();
+    `).bind(session.userId).first();
     
     let trend: 'improving' | 'declining' | 'stable' = 'stable';
     if (recentAvg && olderAvg) {
