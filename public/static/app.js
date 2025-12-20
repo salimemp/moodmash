@@ -90,18 +90,36 @@ async function init() {
 
 // Load statistics
 async function loadStats() {
-    const response = await axios.get(`${API_BASE}/stats?days=30`, {
-        withCredentials: true
+    const response = await fetch(`${API_BASE}/stats?days=30`, {
+        credentials: 'include', // Critical: Send cookies
+        headers: {
+            'Content-Type': 'application/json'
+        }
     });
-    statsData = response.data.stats;
+    
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    statsData = data.stats;
 }
 
 // Load recent moods
 async function loadRecentMoods() {
-    const response = await axios.get(`${API_BASE}/moods?limit=10`, {
-        withCredentials: true
+    const response = await fetch(`${API_BASE}/moods?limit=10`, {
+        credentials: 'include', // Critical: Send cookies
+        headers: {
+            'Content-Type': 'application/json'
+        }
     });
-    moodData = response.data.moods;
+    
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    moodData = data.moods;
 }
 
 // Render dashboard
