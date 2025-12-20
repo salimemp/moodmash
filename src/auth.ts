@@ -114,9 +114,41 @@ export async function requirePremium(c: Context, next: () => Promise<void>) {
     await next();
 }
 
-// Helper to get current user
-export function getCurrentUser(c: Context): Session | null {
+// Helper to get current user from database session
+export async function getCurrentUser(c: Context): Promise<{ userId: number; email: string; username: string; name: string | null; avatar_url: string | null } | null> {
+    const { DB } = c.env;
     const token = getCookie(c, 'session_token');
     if (!token) return null;
-    return getSession(token);
+    
+    try {
+        // Query database for session with user data
+        const session = await DB.prepare(`
+            SELECT s.user_id as userId, u.email, u.username, u.name, u.avatar_url
+            FROM sessions s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.session_token = ? 
+              AND s.expires_at > datetime('now')
+              AND u.is_active = 1
+        `).bind(token).first();
+        
+        if (!session) return null;
+        
+        // Update last activity
+        await DB.prepare(`
+            UPDATE sessions 
+            SET last_activity_at = datetime('now') 
+            WHERE session_token = ?
+        `).bind(token).run();
+        
+        return {
+            userId: session.userId as number,
+            email: session.email as string,
+            username: session.username as string,
+            name: session.name as string | null,
+            avatar_url: session.avatar_url as string | null
+        };
+    } catch (error) {
+        console.error('[Auth] Error getting current user:', error);
+        return null;
+    }
 }

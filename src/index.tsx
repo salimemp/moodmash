@@ -643,7 +643,7 @@ app.get('/api/moods', async (c) => {
   
   try {
     // Get authenticated user
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -679,7 +679,7 @@ app.get('/api/moods/:id', async (c) => {
   
   try {
     // Get authenticated user
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -818,7 +818,7 @@ app.delete('/api/moods/:id', async (c) => {
   
   try {
     // Get authenticated user
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
@@ -950,7 +950,7 @@ app.get('/api/stats', async (c) => {
   
   try {
     // Get authenticated user
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
