@@ -72,7 +72,9 @@ async function init() {
         
         // Check for other auth errors
         if (!authResponse.ok) {
-            throw new Error(`Authentication check failed: ${authResponse.status}`);
+            console.error('[Dashboard] Auth check failed with status:', authResponse.status);
+            renderLandingPage(); // Show landing page for any auth errors
+            return;
         }
         
         const authData = await authResponse.json();
@@ -104,46 +106,70 @@ async function init() {
             return;
         }
         
-        // Safe error display with fallback
-        const errorMsg = (typeof i18n !== 'undefined' && i18n.t) 
-            ? i18n.t('error_loading_failed') 
-            : 'Failed to load dashboard data';
-        showError(errorMsg);
+        // For authenticated users with data loading errors, show empty dashboard instead of error
+        console.log('[Dashboard] Data loading failed, rendering empty dashboard');
+        renderEmptyDashboard();
     }
 }
 
 // Load statistics
 async function loadStats() {
-    const response = await fetch(`${API_BASE}/stats?days=30`, {
-        credentials: 'include', // Critical: Send cookies
-        headers: {
-            'Content-Type': 'application/json'
+    try {
+        const response = await fetch(`${API_BASE}/stats?days=30`, {
+            credentials: 'include', // Critical: Send cookies
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-    });
-    
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+        const data = await response.json();
+        statsData = data.stats || {
+            total_entries: 0,
+            most_common_emotion: 'neutral',
+            average_intensity: 0,
+            mood_distribution: {},
+            recent_trend: 'stable',
+            insights: ['Start tracking your moods to get personalized insights!']
+        };
+    } catch (error) {
+        console.error('[loadStats] Error:', error);
+        // Return empty stats on error instead of throwing
+        statsData = {
+            total_entries: 0,
+            most_common_emotion: 'neutral',
+            average_intensity: 0,
+            mood_distribution: {},
+            recent_trend: 'stable',
+            insights: ['Unable to load statistics. Please try again later.']
+        };
     }
-    
-    const data = await response.json();
-    statsData = data.stats;
 }
 
 // Load recent moods
 async function loadRecentMoods() {
-    const response = await fetch(`${API_BASE}/moods?limit=10`, {
-        credentials: 'include', // Critical: Send cookies
-        headers: {
-            'Content-Type': 'application/json'
+    try {
+        const response = await fetch(`${API_BASE}/moods?limit=10`, {
+            credentials: 'include', // Critical: Send cookies
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
         }
-    });
-    
-    if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        
+        const data = await response.json();
+        moodData = data.moods || [];
+    } catch (error) {
+        console.error('[loadRecentMoods] Error:', error);
+        // Return empty array on error instead of throwing
+        moodData = [];
     }
-    
-    const data = await response.json();
-    moodData = data.moods;
 }
 
 // Render dashboard
@@ -701,6 +727,81 @@ function renderLandingPage() {
                 <a href="/register" class="inline-block px-8 py-4 bg-white text-purple-600 rounded-lg hover:bg-gray-100 transition text-lg font-semibold">
                     Sign Up Now - It's Free
                 </a>
+            </div>
+        </div>
+    `;
+}
+
+// Render empty dashboard for new users or when data fails to load
+function renderEmptyDashboard() {
+    const app = document.getElementById('app');
+    const loading = document.getElementById('loading');
+    if (loading) loading.remove();
+    
+    app.innerHTML = `
+        <div class="max-w-6xl mx-auto fade-in">
+            <!-- Welcome Message for New Users -->
+            <div class="bg-gradient-to-r from-purple-100 to-blue-100 rounded-lg p-8 text-center mb-8">
+                <i class="fas fa-smile-beam text-purple-600 text-5xl mb-4"></i>
+                <h2 class="text-3xl font-bold text-gray-800 mb-3">Welcome to Your MoodMash Dashboard!</h2>
+                <p class="text-lg text-gray-700 mb-6">Ready to start tracking your emotional wellness journey?</p>
+                <a href="/log" class="inline-block px-8 py-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition text-lg font-semibold">
+                    <i class="fas fa-plus-circle mr-2"></i>
+                    Log Your First Mood
+                </a>
+            </div>
+            
+            <!-- Quick Stats (Empty State) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="text-4xl font-bold text-purple-600 mb-2">0</div>
+                    <div class="text-gray-600">Mood Entries</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="text-4xl font-bold text-blue-600 mb-2">-</div>
+                    <div class="text-gray-600">Most Common</div>
+                </div>
+                <div class="bg-white rounded-lg p-6 shadow-sm text-center">
+                    <div class="text-4xl font-bold text-green-600 mb-2">-</div>
+                    <div class="text-gray-600">Average Intensity</div>
+                </div>
+            </div>
+            
+            <!-- Getting Started Guide -->
+            <div class="bg-white rounded-lg p-8 shadow-sm">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">
+                    <i class="fas fa-rocket text-purple-600 mr-2"></i>
+                    Getting Started
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-purple-600 font-bold">1</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-1">Log Your Mood</h4>
+                            <p class="text-gray-600">Track how you're feeling throughout the day</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-blue-600 font-bold">2</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-1">View Insights</h4>
+                            <p class="text-gray-600">Get AI-powered insights about your mood patterns</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                            <span class="text-green-600 font-bold">3</span>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800 mb-1">Track Progress</h4>
+                            <p class="text-gray-600">Monitor your emotional wellness over time</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     `;
