@@ -54,6 +54,31 @@ async function init() {
     console.log('[Dashboard] Chart available:', typeof Chart !== 'undefined');
     
     try {
+        // CRITICAL: Check authentication FIRST before loading data
+        console.log('[Dashboard] Checking authentication...');
+        const authResponse = await fetch(`${API_BASE}/auth/me`, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        // If not authenticated (401), show landing page
+        if (authResponse.status === 401) {
+            console.log('[Dashboard] User not authenticated, showing landing page');
+            renderLandingPage();
+            return;
+        }
+        
+        // Check for other auth errors
+        if (!authResponse.ok) {
+            throw new Error(`Authentication check failed: ${authResponse.status}`);
+        }
+        
+        const authData = await authResponse.json();
+        console.log('[Dashboard] User authenticated:', authData.user?.username);
+        
+        // Now load dashboard data for authenticated user
         console.log('[Dashboard] Loading stats...');
         await loadStats();
         console.log('[Dashboard] Stats loaded:', statsData);
@@ -69,13 +94,12 @@ async function init() {
         console.error('[Dashboard] Failed to initialize:', error);
         console.error('[Dashboard] Error details:', {
             message: error.message,
-            stack: error.stack,
-            response: error.response
+            stack: error.stack
         });
         
-        // If 401 Unauthorized, show landing page
-        if (error.response && error.response.status === 401) {
-            console.log('[Dashboard] User not authenticated, showing landing page');
+        // Check if error message contains "401" (from fetch errors)
+        if (error.message && error.message.includes('401')) {
+            console.log('[Dashboard] User not authenticated (401 in error), showing landing page');
             renderLandingPage();
             return;
         }
