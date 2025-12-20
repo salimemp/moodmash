@@ -170,7 +170,13 @@ app.use('/api/*', async (c, next) => {
 });
 
 // Enable CORS for API routes
-app.use('/api/*', cors());
+app.use('/api/*', cors({
+  origin: (origin) => origin, // Allow all origins (or specify your domain)
+  credentials: true, // CRITICAL: Allow cookies to be sent
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+  exposeHeaders: ['Set-Cookie']
+}));
 
 // NOTE: Static files (logo.png, og-image.png, robots.txt, etc.) are automatically
 // served by Cloudflare Pages from the dist/ directory. They are excluded from 

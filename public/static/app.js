@@ -90,13 +90,17 @@ async function init() {
 
 // Load statistics
 async function loadStats() {
-    const response = await axios.get(`${API_BASE}/stats?days=30`);
+    const response = await axios.get(`${API_BASE}/stats?days=30`, {
+        withCredentials: true
+    });
     statsData = response.data.stats;
 }
 
 // Load recent moods
 async function loadRecentMoods() {
-    const response = await axios.get(`${API_BASE}/moods?limit=10`);
+    const response = await axios.get(`${API_BASE}/moods?limit=10`, {
+        withCredentials: true
+    });
     moodData = response.data.moods;
 }
 
