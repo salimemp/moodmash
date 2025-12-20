@@ -603,7 +603,7 @@ class OnboardingFlow {
             return;
         }
         
-        const style = document.createElement('style');
+        const onboardingStyle = document.createElement('style');
         style.id = 'onboarding-v2-styles';
         style.textContent = `
             /* Onboarding Styles */
@@ -982,7 +982,7 @@ class OnboardingFlow {
             }
         `;
         
-        document.head.appendChild(style);
+        document.head.appendChild(onboardingStyle);
     }
 }
 

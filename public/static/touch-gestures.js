@@ -378,7 +378,7 @@ window.addEventListener('load', () => {
 });
 
 // Add heart pop animation
-const style = document.createElement('style');
+const touchGesturesStyle = document.createElement('style');
 style.textContent = `
     @keyframes heartPop {
         0% {
@@ -394,6 +394,6 @@ style.textContent = `
         }
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(touchGesturesStyle);
 
 console.log('[TouchGestures] Module loaded');

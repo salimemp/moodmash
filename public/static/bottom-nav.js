@@ -185,7 +185,7 @@ function addBottomNavStyles() {
         return;
     }
 
-    const style = document.createElement('style');
+    const bottomNavStyle = document.createElement('style');
     style.id = 'bottom-nav-styles';
     style.textContent = `
         /* Mobile Bottom Navigation */
@@ -341,7 +341,7 @@ function addBottomNavStyles() {
         }
     `;
 
-    document.head.appendChild(style);
+    document.head.appendChild(bottomNavStyle);
 }
 
 /**

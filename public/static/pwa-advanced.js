@@ -381,7 +381,7 @@ window.addEventListener('appinstalled', () => {
 });
 
 // Add PWA notice styles
-const style = document.createElement('style');
+const pwaStyle = document.createElement('style');
 style.textContent = `
     .pwa-notice {
         position: fixed;
@@ -425,7 +425,7 @@ style.textContent = `
         font-size: 14px;
     }
 `;
-document.head.appendChild(style);
+document.head.appendChild(pwaStyle);
 
 // Initialize
 const pwa = new AdvancedPWA();
