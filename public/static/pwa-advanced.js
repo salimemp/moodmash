@@ -382,7 +382,7 @@ window.addEventListener('appinstalled', () => {
 
 // Add PWA notice styles
 const pwaStyle = document.createElement('style');
-style.textContent = `
+pwaStyle.textContent = `
     .pwa-notice {
         position: fixed;
         bottom: 80px;

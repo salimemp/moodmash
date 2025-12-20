@@ -186,8 +186,8 @@ function addBottomNavStyles() {
     }
 
     const bottomNavStyle = document.createElement('style');
-    style.id = 'bottom-nav-styles';
-    style.textContent = `
+    bottomNavStyle.id = 'bottom-nav-styles';
+    bottomNavStyle.textContent = `
         /* Mobile Bottom Navigation */
         .mobile-bottom-nav {
             position: fixed;

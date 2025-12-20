@@ -604,8 +604,8 @@ class OnboardingFlow {
         }
         
         const onboardingStyle = document.createElement('style');
-        style.id = 'onboarding-v2-styles';
-        style.textContent = `
+        onboardingStyle.id = 'onboarding-v2-styles';
+        onboardingStyle.textContent = `
             /* Onboarding Styles */
             .onboarding-overlay {
                 position: fixed;
