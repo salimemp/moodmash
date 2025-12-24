@@ -394,22 +394,44 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
+      - name: Check for deployment secrets
+        id: check-secrets
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ] || [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            echo "secrets_configured=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Deployment secrets not configured"
+            echo "📝 To enable automatic deployment:"
+            echo "1. Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo "2. Add CLOUDFLARE_API_TOKEN"
+            echo "3. Add CLOUDFLARE_ACCOUNT_ID: d65655738594c6ac1a7011998a73e77d"
+            echo ""
+            echo "See DEPLOYMENT_SETUP.md for detailed instructions"
+          else
+            echo "secrets_configured=true" >> $GITHUB_OUTPUT
+            echo "✅ Deployment secrets configured"
+          fi
+      
       - name: Checkout code
+        if: steps.check-secrets.outputs.secrets_configured == 'true'
         uses: actions/checkout@v4
         
       - name: Setup Node.js
+        if: steps.check-secrets.outputs.secrets_configured == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
       
       - name: Install dependencies
+        if: steps.check-secrets.outputs.secrets_configured == 'true'
         run: npm ci
         
       - name: Build for production
+        if: steps.check-secrets.outputs.secrets_configured == 'true'
         run: npm run build
         
       - name: Deploy to Cloudflare Pages
+        if: steps.check-secrets.outputs.secrets_configured == 'true'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -418,7 +440,18 @@ jobs:
           
       - name: Deployment Summary
         run: |
-          echo "✅ Deployment Complete!"
-          echo "Production URL: https://moodmash.win"
-          echo "Deploy Time: $(date -u)"
-          echo "Commit: ${{ github.sha }}"
+          if [ "${{ steps.check-secrets.outputs.secrets_configured }}" == "true" ]; then
+            echo "✅ Deployment Complete!"
+            echo "Production URL: https://moodmash.win"
+            echo "Deploy Time: $(date -u)"
+            echo "Commit: ${{ github.sha }}"
+          else
+            echo "⚠️ Deployment skipped - secrets not configured"
+            echo "All other CI checks passed successfully ✅"
+            echo ""
+            echo "To enable automatic deployment, add these secrets:"
+            echo "  - CLOUDFLARE_API_TOKEN"
+            echo "  - CLOUDFLARE_ACCOUNT_ID"
+            echo ""
+            echo "See DEPLOYMENT_SETUP.md for instructions"
+          fi
