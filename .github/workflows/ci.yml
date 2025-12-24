@@ -32,8 +32,7 @@ jobs:
         run: npm ci
         
       - name: Run TypeScript type check
-        run: npx tsc --noEmit || echo "⚠️ TypeScript errors found (non-blocking)"
-        continue-on-error: true
+        run: npx tsc --noEmit
         
       - name: Run unit tests
         run: npm run test:unit
@@ -75,7 +74,6 @@ jobs:
         
       - name: Run tests with coverage
         run: npm run test:coverage
-        continue-on-error: true
         
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -99,8 +97,7 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           
       - name: Run npm audit
-        run: npm audit --production --audit-level=moderate
-        continue-on-error: true
+        run: npm audit --production --audit-level=moderate || true
         
       - name: Check for vulnerabilities
         run: |
@@ -136,8 +133,7 @@ jobs:
       - name: Check for console.log statements
         run: |
           echo "Checking for console.log in production code..."
-          grep -r "console.log" src/ && echo "⚠️ Found console.log statements" || echo "✅ No console.log statements found"
-        continue-on-error: true
+          grep -r "console.log" src/ && echo "⚠️ Found console.log statements" || echo "✅ No console.log statements found" || true
 
   # Job 4: API Health Check
   api-health-check:
