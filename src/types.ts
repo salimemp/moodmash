@@ -86,6 +86,7 @@ export interface Bindings {
   
   // Security
   TURNSTILE_SECRET_KEY?: string;
+  TURNSTILE_SITE_KEY?: string;
   
   // Grafana Cloud Monitoring
   GRAFANA_PROMETHEUS_URL?: string;
@@ -113,4 +114,13 @@ export interface Variables {
   session?: Session;
   subscription?: any;
   isPremium?: boolean;
+}
+
+// Turnstile Verification
+export interface TurnstileVerificationResult {
+  success: boolean;
+  error?: string;
+  'error-codes'?: string[];
+  challenge_ts?: string;
+  hostname?: string;
 }
