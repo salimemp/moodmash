@@ -7,7 +7,7 @@
 
 import type { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
-import type { Bindings } from '../types';
+import type { Bindings, Variables } from '../types';
 import { getSession } from '../auth';
 
 /**
@@ -53,7 +53,7 @@ function isPublicRoute(path: string): boolean {
 /**
  * Auth wall middleware - redirects unauthenticated users to login
  */
-export async function authWall(c: Context<{ Bindings: Bindings }>, next: Next) {
+export async function authWall(c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) {
   const path = c.req.path;
 
   // Allow public routes
@@ -95,8 +95,8 @@ export async function authWall(c: Context<{ Bindings: Bindings }>, next: Next) {
     // }
 
     // Attach user info to context
-    c.set('user_id', session.user_id);
-    c.set('session', session);
+    c.set('user_id', session.user_id as number);
+    c.set('session', session as any);
 
     // User is authenticated and verified, proceed
     await next();
@@ -110,7 +110,7 @@ export async function authWall(c: Context<{ Bindings: Bindings }>, next: Next) {
 /**
  * API auth wall - returns 401 for unauthenticated API requests
  */
-export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next) {
+export async function apiAuthWall(c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) {
   const path = c.req.path;
 
   // Allow public API routes
@@ -159,8 +159,8 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings }>, next: Next
     }
 
     // Attach user info to context
-    c.set('user_id', session.user_id);
-    c.set('session', session);
+    c.set('user_id', session.user_id as number);
+    c.set('session', session as any);
 
     await next();
   } catch (error) {
@@ -188,8 +188,8 @@ export function getAuthenticatedUserId(c: Context): number {
  * Require specific user role
  */
 export function requireRole(role: 'user' | 'admin' | 'moderator') {
-  return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
-    const session = await getSession(c);
+  return async (c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) => {
+    const session = c.get('session');
     
     if (!session || !session.userId) {
       return c.json({ error: 'Authentication required' }, 401);

@@ -4,6 +4,7 @@
  */
 
 import { Context } from 'hono';
+import type { R2Bucket, R2ObjectBody } from '@cloudflare/workers-types';
 
 export interface MediaFile {
   id?: number;

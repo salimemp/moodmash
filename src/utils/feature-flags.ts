@@ -56,7 +56,7 @@ export async function isFeatureEnabled(
       WHERE flag_name = ? 
       AND (environment = ? OR environment = 'all')
       LIMIT 1
-    `).bind(flagName, environment).first<FeatureFlag>();
+    `).bind(flagName, environment).first() as FeatureFlag | null;
 
     if (!flag) {
       // Flag doesn't exist, default to false
@@ -204,7 +204,7 @@ export async function getAllEnabledFlags(
       SELECT flag_name FROM feature_flags 
       WHERE enabled = 1 
       AND (environment = ? OR environment = 'all')
-    `).bind(environment).all<{ flag_name: string }>();
+    `).bind(environment).all() as { results: Array<{ flag_name: string }> };
 
     const enabledFlags: string[] = [];
 
@@ -338,7 +338,7 @@ export async function upsertFeatureFlag(
   // Get the created/updated flag
   const createdFlag = await db.prepare(`
     SELECT * FROM feature_flags WHERE flag_name = ?
-  `).bind(flag.flag_name).first<FeatureFlag>();
+  `).bind(flag.flag_name).first() as FeatureFlag | null;
 
   // Log the event
   await db.prepare(`
@@ -362,7 +362,7 @@ export async function deleteFeatureFlag(
 
   const flag = await db.prepare(`
     SELECT id FROM feature_flags WHERE flag_name = ?
-  `).bind(flagName).first<{ id: number }>();
+  `).bind(flagName).first() as { id: number } | null;
 
   if (!flag) return false;
 

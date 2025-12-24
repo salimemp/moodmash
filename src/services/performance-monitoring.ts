@@ -184,9 +184,9 @@ export async function getPerformanceDashboard(
     .bind(last24h)
     .all();
 
-  const total = overallStats?.total_requests || 0;
-  const errors = overallStats?.error_count || 0;
-  const cacheHits = overallStats?.cache_hits || 0;
+  const total = Number(overallStats?.total_requests) || 0;
+  const errors = Number(overallStats?.error_count) || 0;
+  const cacheHits = Number(overallStats?.cache_hits) || 0;
 
   return {
     overall: {

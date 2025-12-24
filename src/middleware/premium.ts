@@ -6,14 +6,14 @@
  */
 
 import type { Context, Next } from 'hono';
-import type { Bindings } from '../types';
+import type { Bindings, Variables } from '../types';
 import { checkFeatureAccess, trackFeatureUsage, checkUsageLimit } from '../services/subscriptions';
 
 /**
  * Middleware to require a specific feature access
  */
 export function requireFeature(featureId: string) {
-  return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
+  return async (c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) => {
     try {
       // Get user ID from session/token (simplified - you should get from actual auth)
       const userId = parseInt(c.req.header('X-User-ID') || '1');
@@ -46,7 +46,7 @@ export function requireFeature(featureId: string) {
  * Middleware to check usage limits
  */
 export function requireUsageLimit(limitType: 'moods' | 'groups' | 'friends') {
-  return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
+  return async (c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) => {
     try {
       const userId = parseInt(c.req.header('X-User-ID') || '1');
 
@@ -73,7 +73,7 @@ export function requireUsageLimit(limitType: 'moods' | 'groups' | 'friends') {
 /**
  * Middleware to add premium status to response
  */
-export async function addPremiumContext(c: Context<{ Bindings: Bindings }>, next: Next) {
+export async function addPremiumContext(c: Context<{ Bindings: Bindings; Variables: Variables }>, next: Next) {
   try {
     const userId = parseInt(c.req.header('X-User-ID') || '1');
 

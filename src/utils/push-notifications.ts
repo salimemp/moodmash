@@ -55,7 +55,7 @@ export async function subscribeToPush(
   // Subscribe to push
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any
   });
   
   // Extract subscription data
@@ -109,7 +109,7 @@ export async function showLocalNotification(
   
   const registration = await navigator.serviceWorker.ready;
   
-  await registration.showNotification(payload.title, {
+  const options: any = {
     body: payload.body,
     icon: payload.icon || '/static/icons/icon-192x192.png',
     badge: payload.badge || '/static/icons/badge-72x72.png',
@@ -118,7 +118,8 @@ export async function showLocalNotification(
     actions: payload.actions,
     vibrate: [200, 100, 200],
     requireInteraction: false
-  });
+  };
+  await registration.showNotification(payload.title, options);
 }
 
 /**

@@ -72,12 +72,15 @@ function base32Decode(base32: string): Uint8Array {
 async function hmacSha1(key: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
+    // @ts-ignore - Cloudflare Workers crypto API compatibility
     key,
+    // @ts-ignore - Cloudflare Workers crypto API compatibility
     { name: 'HMAC', hash: 'SHA-1' },
     false,
     ['sign']
   );
 
+  // @ts-ignore - Cloudflare Workers crypto API compatibility
   const signature = await crypto.subtle.sign('HMAC', cryptoKey, message);
   return new Uint8Array(signature);
 }

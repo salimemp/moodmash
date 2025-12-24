@@ -1815,7 +1815,7 @@ app.post('/api/auth/login', async (c) => {
     }
     
     // Verify password with bcrypt
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash as string);
     if (!isPasswordValid) {
       // Increment failed login attempts
       await DB.prepare(`
@@ -2281,7 +2281,7 @@ app.get('/api/auth/verify-email', async (c) => {
     
     // Check if token is expired
     const now = new Date();
-    const expiresAt = new Date(verification.expires_at);
+    const expiresAt = new Date(verification.expires_at as string);
     
     if (now > expiresAt) {
       return c.json({ 
@@ -2316,9 +2316,9 @@ app.get('/api/auth/verify-email', async (c) => {
     // Send welcome email
     try {
       await sendEmail(c.env.RESEND_API_KEY || '', {
-        to: verification.email,
+        to: verification.email as string,
         subject: '🌈 Welcome to MoodMash!',
-        html: generateWelcomeEmail(verification.username)
+        html: generateWelcomeEmail(verification.username as string)
       });
       console.log(`[Email] Welcome email sent to ${verification.email}`);
     } catch (emailError) {
@@ -2370,7 +2370,7 @@ app.post('/api/auth/resend-verification', async (c) => {
       WHERE user_id = ? AND created_at > datetime('now', '-1 hour')
     `).bind(user.id).first();
     
-    if (recentVerifications && recentVerifications.count >= 3) {
+    if (recentVerifications && (recentVerifications.count as number) >= 3) {
       return c.json({ 
         error: 'Too many verification requests. Please try again later.',
         retry_after: 3600 // 1 hour in seconds
@@ -2393,7 +2393,7 @@ app.post('/api/auth/resend-verification', async (c) => {
       await sendEmail(c.env.RESEND_API_KEY || '', {
         to: email,
         subject: '📧 Verify Your MoodMash Account',
-        html: generateVerificationEmail(verificationLink, user.username, 60)
+        html: generateVerificationEmail(verificationLink, user.username as string, 60)
       });
       console.log(`[Email] Verification email resent to ${email}`);
     } catch (emailError) {
@@ -2492,7 +2492,7 @@ app.post('/api/auth/password-reset/complete', async (c) => {
     
     // Check if token is expired
     const now = new Date();
-    const expiresAt = new Date(reset.expires_at);
+    const expiresAt = new Date(reset.expires_at as string);
     
     if (now > expiresAt) {
       return c.json({ error: 'Reset token has expired. Please request a new password reset.' }, 400);
@@ -2689,7 +2689,7 @@ app.get('/api/auth/magic-link/verify', async (c) => {
     }
 
     // Check if expired
-    const expiresAt = new Date(magicLink.expires_at);
+    const expiresAt = new Date(magicLink.expires_at as string);
     if (expiresAt < new Date()) {
       return c.json({ error: 'Magic link has expired' }, 401);
     }
@@ -3268,7 +3268,7 @@ app.get('/api/media/:id', async (c) => {
     }
 
     // Return file
-    return new Response(object.body, {
+    return new Response(object.body as any, {
       headers: {
         'Content-Type': mediaFile.mimeType,
         'Content-Disposition': `inline; filename="${mediaFile.originalFilename}"`
@@ -5027,7 +5027,7 @@ app.post('/api/chat/conversations/:id/messages', async (c) => {
     `).bind(conversationId).all();
     
     // Call Gemini AI
-    const aiService = createAIService(GEMINI_API_KEY);
+    const aiService = createAIService(c.env.GEMINI_API_KEY || '');
     
     // Build context-aware prompt
     const systemPrompt = `You are MoodMash AI Assistant, a helpful and empathetic AI that helps users with mood tracking, mental wellness, and emotional health. 
@@ -5560,7 +5560,7 @@ app.get('/api/hipaa/status', async (c) => {
     return c.json({ success: true, data: status });
   } catch (error: any) {
     console.error('[HIPAA Status] Error:', error);
-    await HIPAAComplianceService.logAudit(env.DB, {
+    await HIPAAComplianceService.logAudit(c.env.DB, {
       action: 'GET_HIPAA_STATUS',
       contains_phi: false,
       success: false,
@@ -6338,8 +6338,8 @@ app.get('/api/health/status', async (c) => {
           total_entries: cacheStats.total_entries,
         },
         performance: {
-          status: (recentMetrics?.avg_time || 0) < 500 ? 'healthy' : 'degraded',
-          avg_response_time_ms: recentMetrics?.avg_time || 0,
+          status: ((recentMetrics?.avg_time as number) || 0) < 500 ? 'healthy' : 'degraded',
+          avg_response_time_ms: (recentMetrics?.avg_time as number) || 0,
         },
       },
     };
