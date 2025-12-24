@@ -115,7 +115,7 @@ export async function requirePremium(c: Context, next: () => Promise<void>) {
 }
 
 // Helper to get current user from database session
-export async function getCurrentUser(c: Context): Promise<{ userId: number; email: string; username: string; name: string | null; avatar_url: string | null } | null> {
+export async function getCurrentUser(c: Context): Promise<{ userId: number; email: string; username: string; name: string | null; avatar_url: string | null; isPremium?: boolean } | null> {
     const { DB } = c.env;
     const token = getCookie(c, 'session_token');
     if (!token) return null;
@@ -145,7 +145,8 @@ export async function getCurrentUser(c: Context): Promise<{ userId: number; emai
             email: session.email as string,
             username: session.username as string,
             name: session.name as string | null,
-            avatar_url: session.avatar_url as string | null
+            avatar_url: session.avatar_url as string | null,
+            isPremium: false // TODO: Check actual subscription status
         };
     } catch (error) {
         console.error('[Auth] Error getting current user:', error);

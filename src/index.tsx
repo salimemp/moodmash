@@ -663,7 +663,7 @@ app.get('/api/moods', async (c) => {
     }
     
     let query = `SELECT * FROM mood_entries WHERE user_id = ?`;
-    const params = [session.userId];
+    const params: any[] = [session.userId];
     
     if (emotion) {
       query += ` AND emotion = ?`;
@@ -671,7 +671,7 @@ app.get('/api/moods', async (c) => {
     }
     
     query += ` ORDER BY logged_at DESC LIMIT ?`;
-    params.push(String(limit));
+    params.push(limit);
     
     const result = await DB.prepare(query).bind(...params).all();
     
@@ -2941,7 +2941,7 @@ app.post('/api/files/upload', async (c) => {
       file_key: fileKey,
       filename: fileName,
       size: arrayBuffer.byteLength,
-      mime_type: file.type,
+      mime_type: (file as File).type,
       access_url: `/api/files/${fileKey}`
     });
   } catch (error) {
@@ -2977,9 +2977,9 @@ app.get('/api/files/:key{.+}', async (c) => {
       return c.json({ error: 'File not found in storage' }, 404);
     }
 
-    return new Response(object.body, {
+    return new Response(object.body as BodyInit, {
       headers: {
-        'Content-Type': object.httpMetadata?.contentType || file.mime_type,
+        'Content-Type': object.httpMetadata?.contentType || (file as any).mime_type,
         'Content-Length': object.size.toString(),
         'Content-Disposition': `inline; filename="${file.original_filename}"`,
         'Cache-Control': 'public, max-age=31536000'
