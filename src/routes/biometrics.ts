@@ -23,12 +23,12 @@ function generateChallenge(): string {
 /**
  * Generate user ID (16 bytes)
  */
-function generateUserId(userId: string): string {
+async function generateUserId(userId: string): Promise<string> {
   // Use consistent hash of user ID
   const encoder = new TextEncoder();
   const data = encoder.encode(userId);
-  const hash = crypto.subtle.digest('SHA-256', data);
-  return hash.then(h => btoa(String.fromCharCode(...new Uint8Array(h).slice(0, 16))));
+  const hash = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(hash).slice(0, 16)));
 }
 
 const biometricRoutes = new Hono<{ Bindings: Bindings }>();
@@ -337,7 +337,7 @@ biometricRoutes.post('/unenroll', async (c) => {
 
     // Verify user is authenticated and matches the userId
     const currentUser = await getCurrentUser(c);
-    if (!currentUser || currentUser.id !== userId) {
+    if (!currentUser || currentUser.userId !== userId) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -366,7 +366,7 @@ biometricRoutes.get('/list', async (c) => {
 
     const credentials = await c.env.DB.prepare(
       'SELECT credential_id, created_at, last_used_at FROM biometric_credentials WHERE user_id = ?'
-    ).bind(currentUser.id).all();
+    ).bind(currentUser.userId).all();
 
     return c.json({
       credentials: credentials.results.map((row: any) => ({

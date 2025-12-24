@@ -38,7 +38,7 @@ totpRoutes.post('/enroll/start', async (c) => {
     // Check if already enrolled
     const existing = await c.env.DB.prepare(
       'SELECT * FROM totp_secrets WHERE user_id = ?'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     if (existing && existing.enabled) {
       return c.json({ error: '2FA is already enabled' }, 400);
@@ -55,12 +55,12 @@ totpRoutes.post('/enroll/start', async (c) => {
       // Update existing
       await c.env.DB.prepare(
         'UPDATE totp_secrets SET secret = ?, enabled = 0, verified = 0 WHERE user_id = ?'
-      ).bind(secret, currentUser.id).run();
+      ).bind(secret, currentUser.userId).run();
     } else {
       // Create new
       await c.env.DB.prepare(
         'INSERT INTO totp_secrets (user_id, secret, enabled, verified) VALUES (?, ?, 0, 0)'
-      ).bind(currentUser.id, secret).run();
+      ).bind(currentUser.userId, secret).run();
     }
 
     return c.json({
@@ -94,7 +94,7 @@ totpRoutes.post('/enroll/verify', async (c) => {
     // Get secret
     const result = await c.env.DB.prepare(
       'SELECT secret FROM totp_secrets WHERE user_id = ? AND enabled = 0'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     if (!result) {
       return c.json({ error: 'No pending 2FA enrollment' }, 404);
@@ -115,13 +115,13 @@ totpRoutes.post('/enroll/verify', async (c) => {
     // Enable 2FA
     await c.env.DB.prepare(
       'UPDATE totp_secrets SET enabled = 1, verified = 1 WHERE user_id = ?'
-    ).bind(currentUser.id).run();
+    ).bind(currentUser.userId).run();
 
     // Store backup codes
     for (const hash of hashedCodes) {
       await c.env.DB.prepare(
         'INSERT INTO backup_codes (user_id, code_hash) VALUES (?, ?)'
-      ).bind(currentUser.id, hash).run();
+      ).bind(currentUser.userId, hash).run();
     }
 
     return c.json({
@@ -245,15 +245,15 @@ totpRoutes.get('/status', async (c) => {
 
     const result = await c.env.DB.prepare(
       'SELECT enabled, verified FROM totp_secrets WHERE user_id = ?'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     const backupCodes = await c.env.DB.prepare(
       'SELECT COUNT(*) as count FROM backup_codes WHERE user_id = ? AND used = 0'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     const hardwareTokens = await c.env.DB.prepare(
       'SELECT COUNT(*) as count FROM hardware_tokens WHERE user_id = ? AND enabled = 1'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     return c.json({
       totpEnabled: result?.enabled === 1,
@@ -286,7 +286,7 @@ totpRoutes.post('/disable', async (c) => {
     // Verify current code before disabling
     const result = await c.env.DB.prepare(
       'SELECT secret FROM totp_secrets WHERE user_id = ? AND enabled = 1'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     if (!result) {
       return c.json({ error: '2FA is not enabled' }, 404);
@@ -299,7 +299,7 @@ totpRoutes.post('/disable', async (c) => {
       const codeHash = await hashBackupCode(code);
       const backupCode = await c.env.DB.prepare(
         'SELECT id FROM backup_codes WHERE user_id = ? AND code_hash = ? AND used = 0'
-      ).bind(currentUser.id, codeHash).first();
+      ).bind(currentUser.userId, codeHash).first();
       isValid = !!backupCode;
     } else {
       // TOTP code
@@ -313,17 +313,17 @@ totpRoutes.post('/disable', async (c) => {
     // Disable 2FA
     await c.env.DB.prepare(
       'UPDATE totp_secrets SET enabled = 0 WHERE user_id = ?'
-    ).bind(currentUser.id).run();
+    ).bind(currentUser.userId).run();
 
     // Delete backup codes
     await c.env.DB.prepare(
       'DELETE FROM backup_codes WHERE user_id = ?'
-    ).bind(currentUser.id).run();
+    ).bind(currentUser.userId).run();
 
     // Disable hardware tokens
     await c.env.DB.prepare(
       'UPDATE hardware_tokens SET enabled = 0 WHERE user_id = ?'
-    ).bind(currentUser.id).run();
+    ).bind(currentUser.userId).run();
 
     return c.json({ success: true });
 
@@ -351,7 +351,7 @@ totpRoutes.post('/backup-codes/regenerate', async (c) => {
     // Verify 2FA is enabled
     const result = await c.env.DB.prepare(
       'SELECT secret FROM totp_secrets WHERE user_id = ? AND enabled = 1'
-    ).bind(currentUser.id).first();
+    ).bind(currentUser.userId).first();
 
     if (!result) {
       return c.json({ error: '2FA is not enabled' }, 404);
@@ -366,7 +366,7 @@ totpRoutes.post('/backup-codes/regenerate', async (c) => {
     // Delete old backup codes
     await c.env.DB.prepare(
       'DELETE FROM backup_codes WHERE user_id = ?'
-    ).bind(currentUser.id).run();
+    ).bind(currentUser.userId).run();
 
     // Generate new backup codes
     const backupCodes = generateBackupCodes(10);
@@ -378,7 +378,7 @@ totpRoutes.post('/backup-codes/regenerate', async (c) => {
     for (const hash of hashedCodes) {
       await c.env.DB.prepare(
         'INSERT INTO backup_codes (user_id, code_hash) VALUES (?, ?)'
-      ).bind(currentUser.id, hash).run();
+      ).bind(currentUser.userId, hash).run();
     }
 
     return c.json({
@@ -421,7 +421,7 @@ totpRoutes.post('/hardware/register', async (c) => {
     // Store hardware token
     await c.env.DB.prepare(
       'INSERT INTO hardware_tokens (user_id, token_name, secret, counter) VALUES (?, ?, ?, 1)'
-    ).bind(currentUser.id, tokenName, secret).run();
+    ).bind(currentUser.userId, tokenName, secret).run();
 
     return c.json({ success: true });
 

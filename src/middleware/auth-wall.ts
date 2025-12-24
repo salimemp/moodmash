@@ -191,14 +191,14 @@ export function requireRole(role: 'user' | 'admin' | 'moderator') {
   return async (c: Context<{ Bindings: Bindings }>, next: Next) => {
     const session = await getSession(c);
     
-    if (!session || !session.user_id) {
+    if (!session || !session.userId) {
       return c.json({ error: 'Authentication required' }, 401);
     }
 
     // Get user role from database
     const user = await c.env.DB.prepare(`
       SELECT role FROM users WHERE id = ?
-    `).bind(session.user_id).first();
+    `).bind(session.userId).first();
 
     if (!user || user.role !== role) {
       return c.json({ error: 'Insufficient permissions' }, 403);
