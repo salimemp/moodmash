@@ -64,8 +64,9 @@ export interface MoodStats {
 }
 
 export interface Bindings {
-  DB: D1Database;
-  R2?: R2Bucket;
+  DB: import('@cloudflare/workers-types').D1Database;
+  R2?: import('@cloudflare/workers-types').R2Bucket;
+  KV?: import('@cloudflare/workers-types').KVNamespace;
   SENTRY_DSN?: string;
   ENVIRONMENT?: string;
   RELEASE_VERSION?: string;
@@ -80,6 +81,12 @@ export interface Bindings {
   // Email Service
   RESEND_API_KEY?: string;
   
+  // AI API Keys
+  GEMINI_API_KEY?: string;
+  
+  // Security
+  TURNSTILE_SECRET_KEY?: string;
+  
   // Grafana Cloud Monitoring
   GRAFANA_PROMETHEUS_URL?: string;
   GRAFANA_PROMETHEUS_USER?: string;
@@ -88,4 +95,22 @@ export interface Bindings {
   GRAFANA_LOKI_USER?: string;
   GRAFANA_LOKI_TOKEN?: string;
   GRAFANA_STACK_URL?: string;
+}
+
+// Session type
+export interface Session {
+  userId: number;
+  email: string;
+  username: string;
+  name: string | null;
+  avatar_url: string | null;
+  isPremium?: boolean;
+}
+
+// Context Variables
+export interface Variables {
+  user_id?: number;
+  session?: Session;
+  subscription?: any;
+  isPremium?: boolean;
 }
