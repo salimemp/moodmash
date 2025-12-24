@@ -662,7 +662,8 @@ app.get('/api/moods', async (c) => {
       params.push(emotion);
     }
     
-    query += ` ORDER BY logged_at DESC LIMIT ${limit}`;
+    query += ` ORDER BY logged_at DESC LIMIT ?`;
+    params.push(String(limit));
     
     const result = await DB.prepare(query).bind(...params).all();
     
@@ -1658,11 +1659,11 @@ app.post('/api/auth/register', async (c) => {
     
     // Verify Turnstile token
     if (turnstileToken) {
-      const turnstileResult = await verifyTurnstile(c, turnstileToken, 'register');
+      const turnstileResult = await verifyTurnstile(c.env, turnstileToken, 'register');
       if (!turnstileResult.success) {
         return c.json({ 
           error: 'Bot verification failed. Please try again.',
-          turnstile_error: turnstileResult.error 
+          turnstile_error: (turnstileResult as any).error 
         }, 403);
       }
     }
@@ -1766,11 +1767,11 @@ app.post('/api/auth/login', async (c) => {
 
     // Verify Turnstile token
     if (turnstileToken) {
-      const turnstileResult = await verifyTurnstile(c, turnstileToken, 'login');
+      const turnstileResult = await verifyTurnstile(c.env, turnstileToken, 'login');
       if (!turnstileResult.success) {
         return c.json({ 
           error: 'Bot verification failed. Please try again.',
-          turnstile_error: turnstileResult.error 
+          turnstile_error: (turnstileResult as any).error 
         }, 403);
       }
     }
@@ -2883,7 +2884,7 @@ app.post('/api/files/upload', async (c) => {
     // Get form data
     const formData = await c.req.formData();
     const file = formData.get('file');
-    const fileType = formData.get('type') || 'document';
+    const uploadType = formData.get('type') || 'document';
     
     if (!file) {
       return c.json({ error: 'No file provided' }, 400);
@@ -2892,14 +2893,16 @@ app.post('/api/files/upload', async (c) => {
     // Generate unique file key
     const timestamp = Date.now();
     const randomStr = crypto.randomUUID().substring(0, 8);
-    const fileExtension = file.name.split('.').pop();
+    const fileName = (file as File).name;
+    const fileExtension = fileName.split('.').pop();
     const fileKey = `${session.user_id}/${timestamp}-${randomStr}.${fileExtension}`;
 
     // Upload to R2
-    const arrayBuffer = await file.arrayBuffer();
+    const arrayBuffer = await (file as File).arrayBuffer();
+    const fileType = (file as File).type;
     await R2.put(fileKey, arrayBuffer, {
       httpMetadata: {
-        contentType: file.type
+        contentType: fileType
       }
     });
 
@@ -2913,10 +2916,10 @@ app.post('/api/files/upload', async (c) => {
     `).bind(
       session.user_id,
       fileKey,
-      file.name,
+      fileName,
       fileKey,
       arrayBuffer.byteLength,
-      file.type,
+      fileType,
       fileType
     ).run();
 
@@ -2924,7 +2927,7 @@ app.post('/api/files/upload', async (c) => {
       success: true,
       file_id: result.meta.last_row_id,
       file_key: fileKey,
-      filename: file.name,
+      filename: fileName,
       size: arrayBuffer.byteLength,
       mime_type: file.type,
       access_url: `/api/files/${fileKey}`
