@@ -7,6 +7,8 @@ declare global {
       changeLanguage: (lang: string) => Promise<void>;
       language: string;
       languages: string[];
+      currentLanguage: string;
+      translations: Record<string, any>;
     };
   }
 }

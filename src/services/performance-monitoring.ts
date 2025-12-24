@@ -101,14 +101,14 @@ export async function getEndpointStats(
     .bind(endpoint, since)
     .first();
 
-  const total = result?.total_requests || 0;
-  const errors = result?.error_count || 0;
-  const cacheHits = result?.cache_hits || 0;
+  const total = Number(result?.total_requests) || 0;
+  const errors = Number(result?.error_count) || 0;
+  const cacheHits = Number(result?.cache_hits) || 0;
 
   return {
-    average_response_time: result?.avg_time || 0,
-    max_response_time: result?.max_time || 0,
-    min_response_time: result?.min_time || 0,
+    average_response_time: Number(result?.avg_time) || 0,
+    max_response_time: Number(result?.max_time) || 0,
+    min_response_time: Number(result?.min_time) || 0,
     total_requests: total,
     error_count: errors,
     error_rate: total > 0 ? (errors / total) * 100 : 0,
@@ -191,8 +191,8 @@ export async function getPerformanceDashboard(
   return {
     overall: {
       total_requests: total,
-      average_response_time: overallStats?.avg_response_time || 0,
-      max_response_time: overallStats?.max_response_time || 0,
+      average_response_time: Number(overallStats?.avg_response_time) || 0,
+      max_response_time: Number(overallStats?.max_response_time) || 0,
       error_count: errors,
       error_rate: total > 0 ? ((errors / total) * 100).toFixed(2) : '0.00',
       cache_hit_rate: total > 0 ? ((cacheHits / total) * 100).toFixed(2) : '0.00',

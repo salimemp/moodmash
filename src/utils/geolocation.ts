@@ -79,7 +79,7 @@ export async function getLocationWithDetails(): Promise<LocationData> {
     
     // Try to get additional details from Cloudflare headers (if available)
     // This is populated by Cloudflare Workers at the edge
-    const cfHeaders = await fetch('/api/location/info').then(r => r.json()).catch(() => ({}));
+    const cfHeaders: any = await fetch('/api/location/info').then(r => r.json()).catch(() => ({}));
     
     return {
       ...location,
@@ -121,7 +121,7 @@ export async function reverseGeocode(
       throw new Error('Geocoding failed');
     }
     
-    const data = await response.json();
+    const data: any = await response.json();
     
     return {
       city: data.address?.city || data.address?.town || data.address?.village,
