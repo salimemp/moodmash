@@ -2033,11 +2033,11 @@ app.post('/api/contact', async (c) => {
     // Send confirmation email to user
     try {
       const { generateContactConfirmationEmail } = await import('./utils/email');
-      await sendEmail(RESEND_API_KEY, {
-        to: session.email,
+      await sendEmail(RESEND_API_KEY || '', {
+        to: (session as any).email,
         subject: `Message Received - ${subject}`,
         html: generateContactConfirmationEmail(
-          session.name || session.username,
+          (session as any).name || (session as any).username,
           subject,
           category,
           submissionId as number
@@ -2053,20 +2053,20 @@ app.post('/api/contact', async (c) => {
     const adminEmail = 'support@moodmash.win'; // TODO: Make this configurable
     try {
       const { generateContactAdminNotificationEmail } = await import('./utils/email');
-      await sendEmail(RESEND_API_KEY, {
+      await sendEmail(RESEND_API_KEY || '', {
         to: adminEmail,
         subject: `[${priority.toUpperCase()}] New Contact: ${subject}`,
         html: generateContactAdminNotificationEmail(
-          session.name || session.username,
-          session.email,
-          session.user_id as number,
+          (session as any).name || (session as any).username,
+          (session as any).email,
+          (session as any).user_id as number,
           subject,
           category,
           priority,
           message,
           submissionId as number
         ),
-        replyTo: session.email
+        replyTo: (session as any).email
       });
       console.log(`[Contact] Admin notification sent to ${adminEmail}`);
     } catch (emailError) {
@@ -3191,6 +3191,10 @@ app.post('/api/media/upload', async (c) => {
     }
 
     // Generate file key and upload to R2
+    if (!env.R2) {
+      return c.json({ error: 'File storage not configured' }, 500);
+    }
+    
     const fileKey = generateFileKey(userId, file.name);
     const arrayBuffer = await file.arrayBuffer();
     
@@ -3251,6 +3255,10 @@ app.get('/api/media/:id', async (c) => {
     const mediaFile = await getMediaFile(env.DB, fileId, userId);
     if (!mediaFile) {
       return c.json({ error: 'File not found or access denied' }, 404);
+    }
+
+    if (!env.R2) {
+      return c.json({ error: 'File storage not configured' }, 500);
     }
 
     // Download from R2
@@ -3320,6 +3328,10 @@ app.delete('/api/media/:id', async (c) => {
 
     if (!session) {
       return c.json({ error: 'Invalid session' }, 401);
+    }
+
+    if (!env.R2) {
+      return c.json({ error: 'File storage not configured' }, 500);
     }
 
     const userId = session.user_id as number;
@@ -5345,7 +5357,7 @@ app.post('/api/email-test', async (c) => {
     }
     
     // Send email using custom verified domain
-    const result = await sendEmail(RESEND_API_KEY, {
+    const result = await sendEmail(RESEND_API_KEY || '', {
       to: testEmail,
       subject,
       html

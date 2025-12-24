@@ -8,14 +8,14 @@ describe('API Integration Tests', () => {
       const response = await fetch(`${API_BASE}/health`);
       expect(response.status).toBe(200);
       
-      const data = await response.json();
+      const data: any = await response.json();
       expect(data).toHaveProperty('status');
       expect(data.status).toBe('ok');
     });
 
     it('should return database connection status', async () => {
       const response = await fetch(`${API_BASE}/health`);
-      const data = await response.json();
+      const data: any = await response.json();
       
       expect(data).toHaveProperty('database');
       expect(data.database).toBe('connected');
@@ -27,7 +27,7 @@ describe('API Integration Tests', () => {
       const response = await fetch(`${API_BASE}/auth/me`);
       expect(response.status).toBe(401);
       
-      const data = await response.json();
+      const data: any = await response.json();
       expect(data).toHaveProperty('error');
     });
 
@@ -35,7 +35,7 @@ describe('API Integration Tests', () => {
       const response = await fetch(`${API_BASE}/stats`);
       expect(response.status).toBe(401);
       
-      const data = await response.json();
+      const data: any = await response.json();
       expect(data).toHaveProperty('error');
       expect(data.error).toContain('Authentication required');
     });
@@ -44,7 +44,7 @@ describe('API Integration Tests', () => {
       const response = await fetch(`${API_BASE}/moods`);
       expect(response.status).toBe(401);
       
-      const data = await response.json();
+      const data: any = await response.json();
       expect(data).toHaveProperty('error');
       expect(data.error).toContain('Authentication required');
     });

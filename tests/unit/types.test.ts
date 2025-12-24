@@ -47,7 +47,18 @@ describe('Type Definitions', () => {
         total_entries: 10,
         most_common_emotion: 'happy',
         average_intensity: 3.5,
-        mood_distribution: { happy: 5, calm: 3, neutral: 2 },
+        mood_distribution: { 
+          happy: 5, 
+          calm: 3, 
+          neutral: 2,
+          sad: 0,
+          anxious: 0,
+          energetic: 0,
+          tired: 0,
+          angry: 0,
+          peaceful: 0,
+          stressed: 0
+        },
         recent_trend: 'improving',
         insights: ['You tend to be happier in the morning']
       };
