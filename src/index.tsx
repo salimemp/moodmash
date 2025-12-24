@@ -340,6 +340,10 @@ app.get('/auth/google/callback', async (c) => {
       `).bind(oauthUser.picture, oauthUser.id, dbUser.id).run();
     }
     
+    if (!dbUser) {
+      return c.json({ error: 'Failed to create or retrieve user' }, 500);
+    }
+    
     // Create database session
     const sessionToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -348,7 +352,7 @@ app.get('/auth/google/callback', async (c) => {
       INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
       VALUES (?, ?, 1, ?, ?, ?)
     `).bind(
-      dbUser.id,
+      (dbUser as any).id,
       sessionToken,
       expiresAt.toISOString(),
       c.req.header('CF-Connecting-IP') || 'unknown',
@@ -360,7 +364,7 @@ app.get('/auth/google/callback', async (c) => {
       INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
       VALUES (?, 'oauth_login', ?, ?, 1)
     `).bind(
-      dbUser.id,
+      (dbUser as any).id,
       JSON.stringify({ provider: 'google' }),
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
@@ -537,6 +541,10 @@ app.get('/auth/github/callback', async (c) => {
       `).bind(oauthUser.avatar_url, oauthUser.id.toString(), dbUser.id).run();
     }
     
+    if (!dbUser) {
+      return c.json({ error: 'Failed to create or retrieve user' }, 500);
+    }
+    
     // Create database session
     const sessionToken = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -545,7 +553,7 @@ app.get('/auth/github/callback', async (c) => {
       INSERT INTO sessions (user_id, session_token, is_trusted, expires_at, ip_address, user_agent)
       VALUES (?, ?, 1, ?, ?, ?)
     `).bind(
-      dbUser.id,
+      (dbUser as any).id,
       sessionToken,
       expiresAt.toISOString(),
       c.req.header('CF-Connecting-IP') || 'unknown',
@@ -557,7 +565,7 @@ app.get('/auth/github/callback', async (c) => {
       INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
       VALUES (?, 'oauth_login', ?, ?, 1)
     `).bind(
-      dbUser.id,
+      (dbUser as any).id,
       JSON.stringify({ provider: 'github' }),
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
@@ -1729,7 +1737,7 @@ app.post('/api/auth/register', async (c) => {
     // Send verification email
     const verificationLink = `https://moodmash.win/verify-email?token=${verificationToken}`;
     try {
-      await sendEmail(c.env.RESEND_API_KEY, {
+      await sendEmail(c.env.RESEND_API_KEY || '', {
         to: email,
         subject: '✉️ Verify Your MoodMash Account',
         html: generateVerificationEmail(verificationLink, username, 60)
@@ -1848,7 +1856,7 @@ app.post('/api/auth/login', async (c) => {
       INSERT INTO security_audit_log (user_id, event_type, event_details, ip_address, success)
       VALUES (?, 'login', ?, ?, 1)
     `).bind(
-      user.id,
+      (user as any).id,
       JSON.stringify({ trusted: trustDevice }),
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
@@ -1859,10 +1867,10 @@ app.post('/api/auth/login', async (c) => {
     
     // Set Sentry user context for error tracking
     if (c.env.SENTRY_DSN) {
-      setSentryUser(user.id, user.username, user.email);
+      setSentryUser((user as any).id, (user as any).username, (user as any).email);
       addBreadcrumb('auth', 'User logged in', {
-        user_id: user.id,
-        username: user.username,
+        user_id: (user as any).id,
+        username: (user as any).username,
         trusted_device: trustDevice
       });
     }
@@ -2307,7 +2315,7 @@ app.get('/api/auth/verify-email', async (c) => {
     
     // Send welcome email
     try {
-      await sendEmail(c.env.RESEND_API_KEY, {
+      await sendEmail(c.env.RESEND_API_KEY || '', {
         to: verification.email,
         subject: '🌈 Welcome to MoodMash!',
         html: generateWelcomeEmail(verification.username)
@@ -2382,7 +2390,7 @@ app.post('/api/auth/resend-verification', async (c) => {
     // Send verification email
     const verificationLink = `https://moodmash.win/verify-email?token=${verificationToken}`;
     try {
-      await sendEmail(c.env.RESEND_API_KEY, {
+      await sendEmail(c.env.RESEND_API_KEY || '', {
         to: email,
         subject: '📧 Verify Your MoodMash Account',
         html: generateVerificationEmail(verificationLink, user.username, 60)
@@ -2426,7 +2434,7 @@ app.post('/api/auth/password-reset/request', async (c) => {
       // Send email with reset link
       const resetLink = `https://moodmash.win/reset-password?token=${resetToken}`;
       try {
-        await sendEmail(c.env.RESEND_API_KEY, {
+        await sendEmail(c.env.RESEND_API_KEY || '', {
           to: email,
           subject: 'Reset Your MoodMash Password',
           html: generatePasswordResetEmail(resetLink, 60)
@@ -2623,7 +2631,7 @@ app.post('/api/auth/magic-link/request', async (c) => {
     const magicLink = `https://moodmash.win/auth/magic?token=${token}`;
     
     try {
-      await sendEmail(c.env.RESEND_API_KEY, {
+      await sendEmail(c.env.RESEND_API_KEY || '', {
         to: email,
         subject: '🔐 Sign in to MoodMash',
         html: generateMagicLinkEmail(magicLink, 15)
@@ -2869,6 +2877,10 @@ app.delete('/api/tokens/user/:id', async (c) => {
 app.post('/api/files/upload', async (c) => {
   const { DB, R2 } = c.env;
   
+  if (!R2) {
+    return c.json({ error: 'File storage not configured' }, 500);
+  }
+  
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
                         getCookie(c, 'session_token');
@@ -2941,6 +2953,10 @@ app.post('/api/files/upload', async (c) => {
 // Download file from R2
 app.get('/api/files/:key{.+}', async (c) => {
   const { DB, R2 } = c.env;
+  
+  if (!R2) {
+    return c.json({ error: 'File storage not configured' }, 500);
+  }
   
   try {
     const fileKey = c.req.param('key');
@@ -3016,6 +3032,10 @@ app.get('/api/files', async (c) => {
 app.delete('/api/files/:id', async (c) => {
   const { DB, R2 } = c.env;
   
+  if (!R2) {
+    return c.json({ error: 'File storage not configured' }, 500);
+  }
+  
   try {
     const sessionToken = c.req.header('Authorization')?.replace('Bearer ', '') || 
                         getCookie(c, 'session_token');
@@ -3031,7 +3051,7 @@ app.delete('/api/files/:id', async (c) => {
     const fileId = c.req.param('id');
 
     // Get file info
-    const file = await DB.prepare(`
+    const file: any = await DB.prepare(`
       SELECT file_key FROM file_uploads WHERE id = ? AND user_id = ?
     `).bind(fileId, session.user_id).first();
 
@@ -3040,7 +3060,7 @@ app.delete('/api/files/:id', async (c) => {
     }
 
     // Delete from R2
-    await R2.delete(file.file_key);
+    await R2.delete(String(file.file_key));
 
     // Mark as deleted in database
     await DB.prepare(`
@@ -4619,7 +4639,7 @@ import { validatePasswordWithBreachCheck, getPasswordSuggestions } from './utils
 app.post('/api/ai/patterns', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     // Get user's mood entries from database
     const userId = 1; // TODO: Get from session
@@ -4643,7 +4663,7 @@ app.post('/api/ai/patterns', async (c) => {
 app.post('/api/ai/forecast', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     const body = await c.req.json();
     
     // Get user's mood history
@@ -4668,7 +4688,7 @@ app.post('/api/ai/forecast', async (c) => {
 app.post('/api/ai/context', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     const userId = 1; // TODO: Get from session
     const moods = await env.DB.prepare(`
@@ -4691,7 +4711,7 @@ app.post('/api/ai/context', async (c) => {
 app.post('/api/ai/causes', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     const userId = 1; // TODO: Get from session
     const moods = await env.DB.prepare(`
@@ -4714,7 +4734,7 @@ app.post('/api/ai/causes', async (c) => {
 app.post('/api/ai/recommend', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     const body = await c.req.json();
     
     const userId = 1; // TODO: Get from session
@@ -4743,7 +4763,7 @@ app.post('/api/ai/recommend', async (c) => {
 app.post('/api/ai/crisis-check', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     const userId = 1; // TODO: Get from session
     const moods = await env.DB.prepare(`
@@ -4766,7 +4786,7 @@ app.post('/api/ai/crisis-check', async (c) => {
 app.post('/api/ai/risk-detect', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     const userId = 1; // TODO: Get from session
     const moods = await env.DB.prepare(`
@@ -4789,7 +4809,7 @@ app.post('/api/ai/risk-detect', async (c) => {
 app.post('/api/ai/analytics', async (c) => {
   try {
     const { env } = c;
-    const aiService = createAIService(env.GEMINI_API_KEY);
+    const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     const userId = 1; // TODO: Get from session
     const moods = await env.DB.prepare(`
@@ -7273,8 +7293,8 @@ import {
 // Get user's feature flags
 app.get('/api/feature-flags', async (c) => {
   try {
-    const session = getCurrentUser(c);
-    const userId = session?.userId ? parseInt(session.userId) : undefined;
+    const session = await getCurrentUser(c);
+    const userId = session?.userId ? parseInt(String(session.userId)) : undefined;
 
     // Get all enabled flags for this user
     const flags = await getAllEnabledFlags(c, userId, {
@@ -7300,8 +7320,8 @@ app.get('/api/feature-flags', async (c) => {
 app.get('/api/feature-flags/:flagName', async (c) => {
   try {
     const flagName = c.req.param('flagName');
-    const session = getCurrentUser(c);
-    const userId = session?.userId ? parseInt(session.userId) : undefined;
+    const session = await getCurrentUser(c);
+    const userId = session?.userId ? parseInt(String(session.userId)) : undefined;
 
     const enabled = await isFeatureEnabled(c, flagName, userId, {
       sessionId: c.req.header('x-session-id'),
@@ -7349,12 +7369,12 @@ app.get('/api/admin/feature-flags', async (c) => {
 app.post('/api/admin/feature-flags', async (c) => {
   try {
     // TODO: Add admin authentication check
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
-    const userId = parseInt(session.userId);
+    const userId = parseInt(String(session.userId));
     const body = await c.req.json();
 
     const flag = await upsertFeatureFlag(c, body, userId);
@@ -7375,13 +7395,13 @@ app.post('/api/admin/feature-flags', async (c) => {
 app.delete('/api/admin/feature-flags/:flagName', async (c) => {
   try {
     // TODO: Add admin authentication check
-    const session = getCurrentUser(c);
+    const session = await getCurrentUser(c);
     if (!session) {
       return c.json({ error: 'Unauthorized' }, 401);
     }
 
     const flagName = c.req.param('flagName');
-    const userId = parseInt(session.userId);
+    const userId = parseInt(String(session.userId));
 
     const deleted = await deleteFeatureFlag(c, flagName, userId);
 
