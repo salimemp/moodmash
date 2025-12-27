@@ -13,11 +13,14 @@ A comprehensive mood tracking and mental wellness application with advanced AI i
 - **Monitoring Dashboard:** https://moodmash.win/monitoring
 - **AI Chat Assistant:** https://moodmash.win/ai-chat
 
-### 🎨 AR Experience (NEW!)
+### 🎨 AR Experience & Advanced Features (NEW!)
 - **AR Dashboard:** https://moodmash.win/ar-dashboard
 - **Voice Journal:** https://moodmash.win/voice-journal
 - **3D Mood Avatar:** https://moodmash.win/3d-avatar
 - **AR Mood Cards:** https://moodmash.win/ar-cards
+- **Social Network:** https://moodmash.win/social-network
+- **Gamification:** https://moodmash.win/gamification
+- **Biometrics:** https://moodmash.win/biometrics
 
 ---
 
@@ -55,6 +58,41 @@ MoodMash is a full-stack mental wellness platform that helps users track their e
 - **AR Experiences** - Scan cards to see 3D visualizations
 - **No App Required** - Works in mobile browsers
 - **Social Sharing** - Share cards with friends and family
+
+#### 👥 **Social Support Network** (NEW!)
+- **Friend Connections** - Connect with friends and supporters
+- **Direct Messaging** - Private, secure conversations
+- **Support Groups** - Join mood-based support communities
+- **Shared Moods** - Share mood updates with your network
+- **Privacy Controls** - Full control over who sees what
+- **Anonymous Mode** - Participate in groups anonymously
+
+#### 🏆 **Gamification & Progress** (NEW!)
+- **Daily Streaks** - Build healthy mood tracking habits
+- **Achievement System** - Unlock badges and milestones
+- **Points & XP** - Earn points for activities
+- **Level System** - Progress through wellness levels
+- **Leaderboards** - Compete with friends (optional)
+- **Rewards Catalog** - Redeem points for rewards
+- **Challenges** - Daily and weekly wellness challenges
+
+#### ⌚ **Biometric Integration** (NEW!)
+- **Fitbit Sync** - Connect Fitbit devices
+- **Apple Health** - Integrate with iOS Health app
+- **Samsung Health** - Connect Samsung wearables
+- **Google Fit** - Sync Android fitness data
+- **Heart Rate** - Track HR variability and stress
+- **Sleep Analysis** - Correlate sleep with mood
+- **Activity Data** - Steps, calories, exercise minutes
+- **Mood Correlations** - AI-powered insights on health-mood patterns
+
+#### 🎙️ **Voice Emotion Analysis** (NEW!)
+- **AI Voice Analysis** - Gemini AI emotion detection
+- **Sentiment Scoring** - Track emotional tone over time
+- **Voice Characteristics** - Analyze pace, pitch, energy
+- **Mental Health Indicators** - Early detection of distress signals
+- **Trend Analysis** - Long-term voice emotion patterns
+- **Wellness Recommendations** - Personalized based on voice data
 
 #### 🤖 **AI-Powered Insights**
 - **Gemini AI Integration** - Advanced natural language processing
