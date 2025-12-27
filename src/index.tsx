@@ -7940,6 +7940,731 @@ function getEmotionAnimation(emotion: string): string {
 }
 
 // =============================================================================
+// VOICE EMOTION ANALYSIS API ROUTES
+// =============================================================================
+
+// Analyze voice journal entry with Gemini AI
+app.post('/api/voice-journal/:id/analyze', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const entryId = c.req.param('id');
+    const db = c.env.DB;
+
+    // Get voice journal entry
+    const entry = await db.prepare(`
+      SELECT * FROM voice_journal_entries
+      WHERE id = ? AND user_id = ?
+    `).bind(entryId, userId).first() as any;
+
+    if (!entry) {
+      return c.json({ error: 'Entry not found' }, 404);
+    }
+
+    // Get Gemini API key
+    const geminiApiKey = c.env.GEMINI_API_KEY;
+    if (!geminiApiKey) {
+      return c.json({ error: 'AI service not configured' }, 503);
+    }
+
+    // Analyze transcription with Gemini
+    const analysisPrompt = `Analyze this voice journal transcription for emotional content and mental wellness:
+
+"${entry.transcription}"
+
+Provide analysis in JSON format:
+{
+  "primary_emotion": "emotion name",
+  "emotion_confidence": 0.0-1.0,
+  "emotion_scores": {"happy": 0.0, "sad": 0.0, "anxious": 0.0, "calm": 0.0, "excited": 0.0, "angry": 0.0},
+  "sentiment_score": -1.0 to 1.0,
+  "sentiment_magnitude": 0.0-infinity,
+  "stress_level": "low/medium/high",
+  "energy_level": "low/medium/high",
+  "cognitive_clarity": "low/medium/high",
+  "keywords": ["keyword1", "keyword2"],
+  "topics": ["topic1", "topic2"],
+  "recommendations": ["recommendation1", "recommendation2"]
+}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: analysisPrompt }] }]
+        })
+      }
+    );
+
+    const geminiData = await response.json() as any;
+    const analysisText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+    
+    // Parse JSON from Gemini response
+    const jsonMatch = analysisText.match(/\{[\s\S]*\}/);
+    const analysis = jsonMatch ? JSON.parse(jsonMatch[0]) : {};
+
+    // Store analysis in database
+    const result = await db.prepare(`
+      INSERT INTO voice_analysis_sessions (
+        voice_journal_id, user_id, analysis_model,
+        primary_emotion, emotion_confidence, emotion_scores,
+        sentiment_score, sentiment_magnitude,
+        stress_level, energy_level, cognitive_clarity,
+        keywords, topics, recommendations
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      entryId, userId, 'gemini',
+      analysis.primary_emotion || 'neutral',
+      analysis.emotion_confidence || 0.5,
+      JSON.stringify(analysis.emotion_scores || {}),
+      analysis.sentiment_score || 0,
+      analysis.sentiment_magnitude || 0,
+      analysis.stress_level || 'medium',
+      analysis.energy_level || 'medium',
+      analysis.cognitive_clarity || 'medium',
+      JSON.stringify(analysis.keywords || []),
+      JSON.stringify(analysis.topics || []),
+      JSON.stringify(analysis.recommendations || [])
+    ).run();
+
+    return c.json({
+      success: true,
+      analysis_id: result.meta.last_row_id,
+      analysis
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to analyze voice entry',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get voice emotion analysis
+app.get('/api/voice-journal/:id/analysis', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const entryId = c.req.param('id');
+    const db = c.env.DB;
+
+    const analysis = await db.prepare(`
+      SELECT * FROM voice_analysis_sessions
+      WHERE voice_journal_id = ? AND user_id = ?
+      ORDER BY analyzed_at DESC
+      LIMIT 1
+    `).bind(entryId, userId).first();
+
+    if (!analysis) {
+      return c.json({ error: 'Analysis not found' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      analysis
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch analysis',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
+// SOCIAL SUPPORT NETWORK API ROUTES
+// =============================================================================
+
+// Get user's connections
+app.get('/api/social/connections', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const connections = await db.prepare(`
+      SELECT 
+        uc.*,
+        u.username, u.name, u.avatar_url
+      FROM user_connections uc
+      JOIN users u ON u.id = uc.connected_user_id
+      WHERE uc.user_id = ? AND uc.status = 'accepted'
+      ORDER BY uc.accepted_at DESC
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      connections: connections.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch connections',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Send connection request
+app.post('/api/social/connections', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+    const { connected_user_id, connection_type, message } = body;
+
+    // Check if connection already exists
+    const existing = await db.prepare(`
+      SELECT id FROM user_connections
+      WHERE (user_id = ? AND connected_user_id = ?)
+         OR (user_id = ? AND connected_user_id = ?)
+    `).bind(userId, connected_user_id, connected_user_id, userId).first();
+
+    if (existing) {
+      return c.json({ error: 'Connection already exists' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO user_connections (
+        user_id, connected_user_id, connection_type, message, status
+      )
+      VALUES (?, ?, ?, ?, 'pending')
+    `).bind(userId, connected_user_id, connection_type || 'friend', message || null).run();
+
+    return c.json({
+      success: true,
+      connection_id: result.meta.last_row_id
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to create connection',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Accept/reject connection request
+app.put('/api/social/connections/:id', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const connectionId = c.req.param('id');
+    const db = c.env.DB;
+    const body = await c.req.json();
+    const { status } = body; // 'accepted' or 'rejected'
+
+    // Update connection status
+    await db.prepare(`
+      UPDATE user_connections
+      SET status = ?, accepted_at = CASE WHEN ? = 'accepted' THEN datetime('now') ELSE NULL END
+      WHERE id = ? AND connected_user_id = ?
+    `).bind(status, status, connectionId, userId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to update connection',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Send direct message
+app.post('/api/social/messages', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+    const { recipient_id, message } = body;
+
+    // Verify connection exists
+    const connection = await db.prepare(`
+      SELECT id FROM user_connections
+      WHERE ((user_id = ? AND connected_user_id = ?) OR (user_id = ? AND connected_user_id = ?))
+        AND status = 'accepted'
+    `).bind(userId, recipient_id, recipient_id, userId).first();
+
+    if (!connection) {
+      return c.json({ error: 'Not connected to this user' }, 403);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO direct_messages (sender_id, recipient_id, message)
+      VALUES (?, ?, ?)
+    `).bind(userId, recipient_id, message).run();
+
+    return c.json({
+      success: true,
+      message_id: result.meta.last_row_id
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to send message',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get messages with a user
+app.get('/api/social/messages/:userId', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const currentUserId = parseInt(String(session.userId));
+    const otherUserId = parseInt(c.req.param('userId'));
+    const db = c.env.DB;
+
+    const messages = await db.prepare(`
+      SELECT 
+        dm.*,
+        sender.username as sender_username,
+        sender.name as sender_name
+      FROM direct_messages dm
+      JOIN users sender ON sender.id = dm.sender_id
+      WHERE ((dm.sender_id = ? AND dm.recipient_id = ?) OR (dm.sender_id = ? AND dm.recipient_id = ?))
+        AND dm.is_deleted_by_sender = 0 AND dm.is_deleted_by_recipient = 0
+      ORDER BY dm.created_at DESC
+      LIMIT 100
+    `).bind(currentUserId, otherUserId, otherUserId, currentUserId).all();
+
+    // Mark as read
+    await db.prepare(`
+      UPDATE direct_messages
+      SET is_read = 1, read_at = datetime('now')
+      WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
+    `).bind(otherUserId, currentUserId).run();
+
+    return c.json({
+      success: true,
+      messages: messages.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch messages',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
+// GAMIFICATION & STREAKS API ROUTES
+// =============================================================================
+
+// Get user streaks
+app.get('/api/gamification/streaks', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const streaks = await db.prepare(`
+      SELECT * FROM user_streaks
+      WHERE user_id = ?
+      ORDER BY current_streak DESC
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      streaks: streaks.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch streaks',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Update streak (internal function - called when user logs mood, etc)
+async function updateStreak(c: any, userId: number, streakType: string) {
+  const db = c.env.DB;
+  const today = new Date().toISOString().split('T')[0];
+
+  // Get current streak
+  const streak = await db.prepare(`
+    SELECT * FROM user_streaks
+    WHERE user_id = ? AND streak_type = ?
+  `).bind(userId, streakType).first() as any;
+
+  if (!streak) {
+    // Create new streak
+    await db.prepare(`
+      INSERT INTO user_streaks (user_id, streak_type, current_streak, longest_streak, last_activity_date)
+      VALUES (?, ?, 1, 1, ?)
+    `).bind(userId, streakType, today).run();
+  } else {
+    const lastDate = new Date(streak.last_activity_date);
+    const todayDate = new Date(today);
+    const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      // Already logged today
+      return;
+    } else if (diffDays === 1) {
+      // Consecutive day
+      const newStreak = streak.current_streak + 1;
+      const longestStreak = Math.max(newStreak, streak.longest_streak);
+      await db.prepare(`
+        UPDATE user_streaks
+        SET current_streak = ?, longest_streak = ?, last_activity_date = ?
+        WHERE id = ?
+      `).bind(newStreak, longestStreak, today, streak.id).run();
+
+      // Check for achievements
+      await checkStreakAchievements(c, userId, streakType, newStreak);
+    } else {
+      // Streak broken
+      await db.prepare(`
+        UPDATE user_streaks
+        SET current_streak = 1, last_activity_date = ?
+        WHERE id = ?
+      `).bind(today, streak.id).run();
+    }
+  }
+}
+
+// Check and award streak achievements
+async function checkStreakAchievements(c: any, userId: number, streakType: string, streakCount: number) {
+  const db = c.env.DB;
+  
+  // Check for milestone achievements (7, 30, 100, 365 days)
+  const milestones = [7, 30, 100, 365];
+  for (const milestone of milestones) {
+    if (streakCount === milestone) {
+      const achievementKey = `${streakType}_streak_${milestone}`;
+      
+      // Get achievement
+      const achievement = await db.prepare(`
+        SELECT id, points FROM achievement_definitions
+        WHERE achievement_key = ?
+      `).bind(achievementKey).first() as any;
+
+      if (achievement) {
+        // Check if already unlocked
+        const existing = await db.prepare(`
+          SELECT id FROM user_unlocked_achievements
+          WHERE user_id = ? AND achievement_key = ?
+        `).bind(userId, achievementKey).first();
+
+        if (!existing) {
+          // Unlock achievement
+          await db.prepare(`
+            INSERT INTO user_unlocked_achievements (user_id, achievement_key)
+            VALUES (?, ?)
+          `).bind(userId, achievementKey).run();
+
+          // Award points
+          await awardPoints(c, userId, 'xp', achievement.points, `${achievementKey}_achieved`, achievement.id);
+        }
+      }
+    }
+  }
+}
+
+// Award points to user
+async function awardPoints(c: any, userId: number, pointsType: string, points: number, reason: string, referenceId?: number) {
+  const db = c.env.DB;
+
+  // Get or create user points record
+  let userPoints = await db.prepare(`
+    SELECT * FROM user_points
+    WHERE user_id = ? AND points_type = ?
+  `).bind(userId, pointsType).first() as any;
+
+  if (!userPoints) {
+    await db.prepare(`
+      INSERT INTO user_points (user_id, points_type, total_points)
+      VALUES (?, ?, 0)
+    `).bind(userId, pointsType).run();
+    
+    userPoints = { total_points: 0, level: 1, points_to_next_level: 100 };
+  }
+
+  // Calculate new totals
+  const newTotal = userPoints.total_points + points;
+  let newLevel = userPoints.level;
+  let pointsToNext = userPoints.points_to_next_level;
+
+  // Level up logic (exponential)
+  while (newTotal >= pointsToNext) {
+    newLevel++;
+    pointsToNext = newLevel * 100; // Simple: each level needs 100 more points
+  }
+
+  // Update points
+  await db.prepare(`
+    UPDATE user_points
+    SET total_points = ?, level = ?, points_to_next_level = ?, last_updated = datetime('now')
+    WHERE user_id = ? AND points_type = ?
+  `).bind(newTotal, newLevel, pointsToNext, userId, pointsType).run();
+
+  // Record history
+  await db.prepare(`
+    INSERT INTO points_history (user_id, points_type, points_earned, reason, reference_id)
+    VALUES (?, ?, ?, ?, ?)
+  `).bind(userId, pointsType, points, reason, referenceId || null).run();
+}
+
+// Get user achievements
+app.get('/api/gamification/achievements', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    // Get unlocked achievements
+    const unlocked = await db.prepare(`
+      SELECT 
+        ad.*,
+        ua.unlocked_at
+      FROM user_unlocked_achievements ua
+      JOIN achievement_definitions ad ON ad.achievement_key = ua.achievement_key
+      WHERE ua.user_id = ?
+      ORDER BY ua.unlocked_at DESC
+    `).bind(userId).all();
+
+    // Get all achievements for progress tracking
+    const all = await db.prepare(`
+      SELECT * FROM achievement_definitions
+      ORDER BY category, points DESC
+    `).all();
+
+    return c.json({
+      success: true,
+      unlocked: unlocked.results,
+      all: all.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch achievements',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get user points and level
+app.get('/api/gamification/points', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const points = await db.prepare(`
+      SELECT * FROM user_points
+      WHERE user_id = ?
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      points: points.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch points',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
+// BIOMETRIC INTEGRATION API ROUTES
+// =============================================================================
+
+// Connect biometric source
+app.post('/api/biometrics/connect', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+    const { source_type, access_token, refresh_token, token_expires_at } = body;
+
+    const result = await db.prepare(`
+      INSERT INTO biometric_sources (
+        user_id, source_type, access_token, refresh_token, token_expires_at
+      )
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(userId, source_type, access_token || null, refresh_token || null, token_expires_at || null).run();
+
+    return c.json({
+      success: true,
+      source_id: result.meta.last_row_id
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to connect biometric source',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get connected sources
+app.get('/api/biometrics/sources', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const sources = await db.prepare(`
+      SELECT id, source_type, is_active, last_sync_at, created_at
+      FROM biometric_sources
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      sources: sources.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch sources',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Sync biometric data (webhook endpoint)
+app.post('/api/biometrics/sync', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+    const { source_id, data_type, value, unit, recorded_at, metadata } = body;
+
+    await db.prepare(`
+      INSERT INTO biometric_data (
+        user_id, source_id, data_type, value, unit, recorded_at, metadata
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      userId,
+      source_id || null,
+      data_type,
+      value,
+      unit || null,
+      recorded_at,
+      metadata ? JSON.stringify(metadata) : null
+    ).run();
+
+    // Update last sync time
+    if (source_id) {
+      await db.prepare(`
+        UPDATE biometric_sources
+        SET last_sync_at = datetime('now')
+        WHERE id = ? AND user_id = ?
+      `).bind(source_id, userId).run();
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to sync data',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get biometric data
+app.get('/api/biometrics/data', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const dataType = c.req.query('type');
+    const days = parseInt(c.req.query('days') || '30');
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    let query = `
+      SELECT * FROM biometric_data
+      WHERE user_id = ? AND recorded_at >= ?
+    `;
+    const params: any[] = [userId, startDate.toISOString()];
+
+    if (dataType) {
+      query += ` AND data_type = ?`;
+      params.push(dataType);
+    }
+
+    query += ` ORDER BY recorded_at DESC LIMIT 1000`;
+
+    const data = await db.prepare(query).bind(...params).all();
+
+    return c.json({
+      success: true,
+      data: data.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch biometric data',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
 // CCPA (California Consumer Privacy Act) API ROUTES
 // =============================================================================
 
