@@ -10,5 +10,35 @@ export default defineConfig({
       adapter,
       entry: 'src/index.tsx'
     })
-  ]
+  ],
+  build: {
+    // Code splitting and tree shaking optimizations
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.debug', 'console.trace'],
+        passes: 2,
+      },
+      mangle: {
+        safari10: true,
+      },
+      format: {
+        comments: false,
+      },
+    },
+    // Note: Cloudflare Workers require inlineDynamicImports
+    // Manual chunks are not supported with this option
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 500,
+    // Disable source maps for production (smaller bundle)
+    sourcemap: false,
+  },
+  optimizeDeps: {
+    // Pre-bundle dependencies for faster dev server
+    include: ['hono', 'hono/cors', 'hono/cookie'],
+    exclude: [],
+  },
 })
