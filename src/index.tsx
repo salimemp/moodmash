@@ -7319,6 +7319,56 @@ app.get('/contact', (c) => {
   return c.html(content);
 });
 
+// =============================================================================
+// AR FEATURES & VOICE JOURNAL PAGES
+// =============================================================================
+
+// Voice Journal Page
+app.get('/voice-journal', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/voice-journal.js"></script>
+  `;
+  return c.html(renderHTML('Voice Journal', content, 'voice-journal'));
+});
+
+// AR Mood Cards Page
+app.get('/ar-cards', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <!-- AR.js Library -->
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="/static/ar-mood-cards.js"></script>
+  `;
+  return c.html(renderHTML('AR Mood Cards', content, 'ar-cards'));
+});
+
+// 3D Avatar Page
+app.get('/3d-avatar', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <!-- Google Model Viewer -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <script src="/static/3d-avatar.js"></script>
+  `;
+  return c.html(renderHTML('3D Mood Avatar', content, '3d-avatar'));
+});
+
+// AR Dashboard (combines all AR features)
+app.get('/ar-dashboard', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <!-- AR.js Library -->
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <!-- Google Model Viewer -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
+    <script src="/static/ar-dashboard.js"></script>
+  `;
+  return c.html(renderHTML('AR Experience Dashboard', content, 'ar-dashboard'));
+});
+
 // =============================================
 // FEATURE FLAGS API
 // =============================================
@@ -7509,6 +7559,380 @@ app.get('/api/admin/feature-flags/:flagName/analytics', async (c) => {
     }, 500);
   }
 });
+
+// =============================================================================
+// VOICE JOURNAL API ROUTES
+// =============================================================================
+
+// Get all voice journal entries for user
+app.get('/api/voice-journal', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const entries = await db.prepare(`
+      SELECT * FROM voice_journal_entries
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      entries: entries.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch voice journal entries',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Create new voice journal entry
+app.post('/api/voice-journal', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+
+    const { transcription, audio_url, duration_seconds, emotion, mood_score } = body;
+
+    if (!transcription) {
+      return c.json({ error: 'Transcription is required' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO voice_journal_entries (
+        user_id, transcription, audio_url, duration_seconds, 
+        emotion, mood_score, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      userId,
+      transcription,
+      audio_url || null,
+      duration_seconds || null,
+      emotion || null,
+      mood_score || null
+    ).run();
+
+    return c.json({
+      success: true,
+      entry_id: result.meta.last_row_id,
+      message: 'Voice journal entry created successfully'
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to create voice journal entry',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Upload voice recording to R2
+app.post('/api/voice-journal/upload', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const formData = await c.req.formData();
+    const audioFile = formData.get('audio') as File;
+
+    if (!audioFile) {
+      return c.json({ error: 'Audio file is required' }, 400);
+    }
+
+    // Generate unique key for audio file
+    const fileKey = `voice-journal/${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.webm`;
+    
+    // Upload to R2
+    const arrayBuffer = await audioFile.arrayBuffer();
+    await c.env.R2.put(fileKey, arrayBuffer, {
+      httpMetadata: {
+        contentType: 'audio/webm'
+      }
+    });
+
+    const audioUrl = `https://moodmash.win/api/r2/${fileKey}`;
+
+    return c.json({
+      success: true,
+      audio_url: audioUrl,
+      file_key: fileKey
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to upload audio file',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Get single voice journal entry
+app.get('/api/voice-journal/:id', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const entryId = c.req.param('id');
+    const db = c.env.DB;
+
+    const entry = await db.prepare(`
+      SELECT * FROM voice_journal_entries
+      WHERE id = ? AND user_id = ?
+    `).bind(entryId, userId).first();
+
+    if (!entry) {
+      return c.json({ error: 'Entry not found' }, 404);
+    }
+
+    return c.json({
+      success: true,
+      entry
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch voice journal entry',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Delete voice journal entry
+app.delete('/api/voice-journal/:id', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const entryId = c.req.param('id');
+    const db = c.env.DB;
+
+    // Get entry to check ownership and get audio_url
+    const entry = await db.prepare(`
+      SELECT * FROM voice_journal_entries
+      WHERE id = ? AND user_id = ?
+    `).bind(entryId, userId).first() as any;
+
+    if (!entry) {
+      return c.json({ error: 'Entry not found' }, 404);
+    }
+
+    // Delete from database
+    await db.prepare(`
+      DELETE FROM voice_journal_entries
+      WHERE id = ? AND user_id = ?
+    `).bind(entryId, userId).run();
+
+    // Delete audio file from R2 if exists
+    if (entry.audio_url) {
+      try {
+        const fileKey = entry.audio_url.split('/api/r2/')[1];
+        if (fileKey) {
+          await c.env.R2.delete(fileKey);
+        }
+      } catch (error) {
+        console.error('Failed to delete audio file from R2:', error);
+      }
+    }
+
+    return c.json({
+      success: true,
+      message: 'Voice journal entry deleted successfully'
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to delete voice journal entry',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
+// AR MOOD CARDS API ROUTES
+// =============================================================================
+
+// Get all AR mood cards
+app.get('/api/ar-cards', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    const cards = await db.prepare(`
+      SELECT * FROM ar_mood_cards
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 100
+    `).bind(userId).all();
+
+    return c.json({
+      success: true,
+      cards: cards.results
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch AR mood cards',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Create AR mood card
+app.post('/api/ar-cards', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+    const body = await c.req.json();
+
+    const { emotion, mood_score, color, message, marker_id } = body;
+
+    if (!emotion || mood_score === undefined) {
+      return c.json({ error: 'Emotion and mood score are required' }, 400);
+    }
+
+    const result = await db.prepare(`
+      INSERT INTO ar_mood_cards (
+        user_id, emotion, mood_score, color, message, marker_id, created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      userId,
+      emotion,
+      mood_score,
+      color || '#4F46E5',
+      message || '',
+      marker_id || null
+    ).run();
+
+    return c.json({
+      success: true,
+      card_id: result.meta.last_row_id,
+      message: 'AR mood card created successfully'
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to create AR mood card',
+      message: error.message
+    }, 500);
+  }
+});
+
+// =============================================================================
+// 3D MOOD AVATARS API ROUTES
+// =============================================================================
+
+// Get user's current 3D avatar state
+app.get('/api/avatar/state', async (c) => {
+  try {
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const userId = parseInt(String(session.userId));
+    const db = c.env.DB;
+
+    // Get recent mood entries to determine avatar state
+    const recentMoods = await db.prepare(`
+      SELECT emotion, mood_score FROM mood_entries
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+      LIMIT 10
+    `).bind(userId).all();
+
+    // Calculate average mood and dominant emotion
+    let totalMoodScore = 0;
+    const emotionCounts: Record<string, number> = {};
+
+    for (const mood of recentMoods.results as any[]) {
+      totalMoodScore += mood.mood_score || 5;
+      const emotion = mood.emotion || 'neutral';
+      emotionCounts[emotion] = (emotionCounts[emotion] || 0) + 1;
+    }
+
+    const avgMoodScore = recentMoods.results.length > 0 
+      ? totalMoodScore / recentMoods.results.length 
+      : 5;
+
+    const dominantEmotion = Object.keys(emotionCounts).reduce((a, b) => 
+      emotionCounts[a] > emotionCounts[b] ? a : b, 'neutral'
+    );
+
+    return c.json({
+      success: true,
+      avatar: {
+        emotion: dominantEmotion,
+        mood_score: avgMoodScore,
+        model_url: `/models/${dominantEmotion}.glb`,
+        color: getEmotionColor(dominantEmotion),
+        animation: getEmotionAnimation(dominantEmotion)
+      }
+    });
+  } catch (error: any) {
+    return c.json({
+      error: 'Failed to fetch avatar state',
+      message: error.message
+    }, 500);
+  }
+});
+
+// Helper functions for avatar state
+function getEmotionColor(emotion: string): string {
+  const colors: Record<string, string> = {
+    'happy': '#FCD34D',
+    'sad': '#3B82F6',
+    'anxious': '#EF4444',
+    'calm': '#10B981',
+    'excited': '#F59E0B',
+    'angry': '#DC2626',
+    'peaceful': '#8B5CF6',
+    'neutral': '#6B7280'
+  };
+  return colors[emotion] || colors['neutral'];
+}
+
+function getEmotionAnimation(emotion: string): string {
+  const animations: Record<string, string> = {
+    'happy': 'bounce',
+    'sad': 'droop',
+    'anxious': 'shake',
+    'calm': 'float',
+    'excited': 'spin',
+    'angry': 'pulse',
+    'peaceful': 'sway',
+    'neutral': 'idle'
+  };
+  return animations[emotion] || animations['neutral'];
+}
 
 // =============================================================================
 // CCPA (California Consumer Privacy Act) API ROUTES
