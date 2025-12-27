@@ -7657,6 +7657,11 @@ app.post('/api/voice-journal/upload', async (c) => {
     }
 
     // Generate unique key for audio file
+    // Check R2 availability
+    if (!c.env.R2) {
+      return c.json({ error: 'Storage service unavailable' }, 503);
+    }
+
     const fileKey = `voice-journal/${userId}/${Date.now()}-${Math.random().toString(36).substring(7)}.webm`;
     
     // Upload to R2
@@ -7744,7 +7749,7 @@ app.delete('/api/voice-journal/:id', async (c) => {
     `).bind(entryId, userId).run();
 
     // Delete audio file from R2 if exists
-    if (entry.audio_url) {
+    if (entry.audio_url && c.env.R2) {
       try {
         const fileKey = entry.audio_url.split('/api/r2/')[1];
         if (fileKey) {
