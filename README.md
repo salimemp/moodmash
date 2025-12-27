@@ -13,6 +13,12 @@ A comprehensive mood tracking and mental wellness application with advanced AI i
 - **Monitoring Dashboard:** https://moodmash.win/monitoring
 - **AI Chat Assistant:** https://moodmash.win/ai-chat
 
+### 🎨 AR Experience (NEW!)
+- **AR Dashboard:** https://moodmash.win/ar-dashboard
+- **Voice Journal:** https://moodmash.win/voice-journal
+- **3D Mood Avatar:** https://moodmash.win/3d-avatar
+- **AR Mood Cards:** https://moodmash.win/ar-cards
+
 ---
 
 ## 📊 Project Overview
@@ -28,6 +34,27 @@ MoodMash is a full-stack mental wellness platform that helps users track their e
 - Activity tracking with categories and difficulty levels
 - Photo attachments via R2 storage
 - Private notes and reflections
+
+#### 🎤 **Voice Journal** (NEW!)
+- **Web Speech API** - Real-time speech-to-text transcription
+- **Audio Recording** - Save voice recordings to R2 storage
+- **Emotion Detection** - AI-powered voice sentiment analysis
+- **Private Storage** - Secure audio and text storage
+- **Playback Support** - Listen to past entries
+
+#### 🤖 **3D Mood Avatars** (NEW!)
+- **Interactive 3D Characters** - Your emotions visualized in 3D
+- **Google Model Viewer** - Hardware-accelerated rendering
+- **Dynamic Colors** - Each emotion has unique colors
+- **Real-time Sync** - Updates with new mood entries
+- **Snapshot Export** - Capture and share your avatar
+
+#### 🃏 **AR Mood Cards** (NEW!)
+- **Marker-based AR** - Powered by AR.js
+- **Printable Cards** - Create custom mood cards with QR codes
+- **AR Experiences** - Scan cards to see 3D visualizations
+- **No App Required** - Works in mobile browsers
+- **Social Sharing** - Share cards with friends and family
 
 #### 🤖 **AI-Powered Insights**
 - **Gemini AI Integration** - Advanced natural language processing
@@ -73,6 +100,13 @@ MoodMash is a full-stack mental wellness platform that helps users track their e
 - **Chart.js** - Data visualization
 - **Font Awesome** - Icon library
 - **Responsive Design** - Mobile-first approach
+
+### **AR/3D Technologies** (NEW!)
+- **AR.js** - Marker-based augmented reality
+- **Google Model Viewer** - 3D model rendering with AR support
+- **WebXR Device API** - Foundation for immersive experiences
+- **Web Speech API** - Voice transcription and recognition
+- **MediaRecorder API** - Audio recording and processing
 
 ### **Backend**
 - **Hono Framework** - Lightweight edge-first web framework
