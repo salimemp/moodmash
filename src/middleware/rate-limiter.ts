@@ -178,8 +178,8 @@ class RateLimitStore {
 // Global store instance
 const rateLimitStore = new RateLimitStore()
 
-// Cleanup old entries every 5 minutes
-setInterval(() => rateLimitStore.cleanup(), 5 * 60 * 1000)
+// Note: Cloudflare Workers don't support setInterval in global scope
+// Cleanup will happen lazily during get operations
 
 /**
  * Get rate limit configuration for an endpoint
