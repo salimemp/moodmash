@@ -208,6 +208,45 @@ function renderNavigation(currentPage = '') {
                         <a href="/activities" class="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'activities' ? 'border-b-2 border-primary' : ''}">
                             ${i18n.t('nav_activities')}
                         </a>
+                        
+                        <!-- Features Dropdown -->
+                        <div class="relative group">
+                            <button class="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium flex items-center">
+                                Features
+                                <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                            </button>
+                            <div class="hidden group-hover:block absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                                <div class="py-2">
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">AR & Voice</div>
+                                    <a href="/ar-dashboard" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-cube mr-2 text-purple-600"></i>AR Dashboard
+                                    </a>
+                                    <a href="/voice-journal" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-microphone mr-2 text-blue-600"></i>Voice Journal
+                                    </a>
+                                    <a href="/3d-avatar" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-robot mr-2 text-indigo-600"></i>3D Avatar
+                                    </a>
+                                    <a href="/ar-cards" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-qrcode mr-2 text-pink-600"></i>AR Mood Cards
+                                    </a>
+                                    <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Social & Progress</div>
+                                    <a href="/social-network" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-users mr-2 text-green-600"></i>Social Network
+                                    </a>
+                                    <a href="/gamification" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-trophy mr-2 text-yellow-600"></i>Achievements
+                                    </a>
+                                    <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Health</div>
+                                    <a href="/biometrics" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                        <i class="fas fa-heartbeat mr-2 text-red-600"></i>Biometrics
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <a href="/about" class="text-gray-700 dark:text-gray-300 hover:text-primary px-3 py-2 rounded-md text-sm font-medium ${currentPage === 'about' ? 'border-b-2 border-primary' : ''}">
                             ${i18n.t('nav_about')}
                         </a>

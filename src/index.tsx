@@ -7369,6 +7369,37 @@ app.get('/ar-dashboard', (c) => {
   return c.html(renderHTML('AR Experience Dashboard', content, 'ar-dashboard'));
 });
 
+// =============================================================================
+// SOCIAL, GAMIFICATION & BIOMETRICS PAGES
+// =============================================================================
+
+// Social Support Network Page
+app.get('/social-network', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/social-network.js"></script>
+  `;
+  return c.html(renderHTML('Social Support Network', content, 'social-network'));
+});
+
+// Gamification Dashboard Page
+app.get('/gamification', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/gamification.js"></script>
+  `;
+  return c.html(renderHTML('Achievements & Progress', content, 'gamification'));
+});
+
+// Biometrics Dashboard Page
+app.get('/biometrics', (c) => {
+  const content = `
+    ${renderLoadingState()}
+    <script src="/static/biometrics.js"></script>
+  `;
+  return c.html(renderHTML('Health & Biometrics', content, 'biometrics'));
+});
+
 // =============================================
 // FEATURE FLAGS API
 // =============================================
