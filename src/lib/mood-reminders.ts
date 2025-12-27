@@ -121,7 +121,8 @@ export async function saveReminder(
   const db = c.env.DB
   const id = reminder.id || crypto.randomUUID()
   
-  const times = reminder.times || DEFAULT_REMINDER_TIMES[reminder.frequency || 'daily']
+  const frequency = reminder.frequency || 'daily'
+  const times = reminder.times || (frequency === 'custom' ? ['12:00'] : DEFAULT_REMINDER_TIMES[frequency])
   const timezone = reminder.timezone || 'UTC'
   const enabled = reminder.enabled !== undefined ? reminder.enabled : true
   
@@ -463,18 +464,18 @@ export async function getReminderStats(
       (SELECT COUNT(*) FROM reminder_notifications WHERE user_id = ? AND action_taken = 'dismissed') as dismissed
   `).bind(userId, userId, userId, userId, userId, userId).first()
 
-  const total_sent = stats?.total_sent || 0
-  const logged = stats?.logged || 0
+  const total_sent = Number(stats?.total_sent) || 0
+  const logged = Number(stats?.logged) || 0
   const response_rate = total_sent > 0 ? (logged / total_sent) * 100 : 0
 
   return {
-    total_reminders: stats?.total_reminders || 0,
+    total_reminders: Number(stats?.total_reminders) || 0,
     total_sent,
-    total_opened: stats?.total_opened || 0,
+    total_opened: Number(stats?.total_opened) || 0,
     actions: {
       logged,
-      snoozed: stats?.snoozed || 0,
-      dismissed: stats?.dismissed || 0,
+      snoozed: Number(stats?.snoozed) || 0,
+      dismissed: Number(stats?.dismissed) || 0,
     },
     response_rate: Math.round(response_rate * 100) / 100,
   }
