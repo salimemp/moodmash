@@ -58,6 +58,26 @@ import {
 // Authentication Wall
 import { authWall, apiAuthWall } from './middleware/auth-wall';
 
+// Rate Limiting
+import { rateLimiter as apiRateLimiterMiddleware, distributedRateLimiter } from './middleware/rate-limiter';
+
+// API Response Caching
+import { cacheMiddleware, distributedCacheMiddleware, invalidateCache } from './middleware/cache';
+
+// Security Headers
+import { securityHeaders, productionSecurityHeaders } from './middleware/security-headers';
+
+// Database Connection Pooling
+import { createDatabasePool, initializeDatabase, QueryBuilder } from './utils/database-pool';
+
+// Image Optimization
+import { 
+  optimizeImage,
+  serveOptimizedImage,
+  uploadOptimizedImage,
+  imageOptimizationMiddleware 
+} from './utils/image-optimization';
+
 // Sentry Error Tracking
 import { 
   isSentryConfigured,
@@ -129,8 +149,17 @@ app.use('*', sentryMiddleware);
 // Global Security Middleware (applies to all routes)
 app.use('*', securityMiddleware);
 
+// Security Headers Middleware (OWASP best practices)
+app.use('*', productionSecurityHeaders());
+
 // Analytics Middleware (track all API calls)
 app.use('/api/*', analyticsMiddleware);
+
+// Rate Limiting Middleware (per-endpoint limits)
+app.use('/api/*', apiRateLimiterMiddleware);
+
+// API Response Caching Middleware
+app.use('/api/*', cacheMiddleware);
 
 // Performance Tracking Middleware
 app.use('/api/*', async (c, next) => {
