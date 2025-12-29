@@ -16,7 +16,8 @@ class BiometricUI {
   async init(user = null) {
     this.currentUser = user;
     
-    if (!this.biometric.isSupported) {
+    // Check if biometricAuth is loaded
+    if (!this.biometric || !this.biometric.isSupported) {
       console.log('[BiometricUI] Biometrics not supported on this device');
       return;
     }

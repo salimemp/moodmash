@@ -269,6 +269,33 @@ export function renderHTML(title: string, content: string, currentPage: string =
                 </div>
             </div>
         </nav>
+        
+        <!-- AI Chatbot Button (Fixed Bottom Right) -->
+        <button 
+            id="ai-chat-toggle" 
+            class="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 z-40 flex items-center justify-center group"
+            onclick="window.location.href='/ai-chat'"
+            title="AI Chat Assistant"
+        >
+            <i class="fas fa-robot text-xl"></i>
+            <span class="absolute right-16 bg-gray-900 text-white text-sm px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                AI Assistant
+            </span>
+        </button>
+        
+        <!-- Accessibility Button (Fixed Bottom Left) -->
+        <button 
+            id="accessibility-toggle" 
+            class="fixed bottom-20 left-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 z-40 flex items-center justify-center group"
+            onclick="if(window.accessibilityMenu) window.accessibilityMenu.toggle()"
+            title="Accessibility Options"
+        >
+            <i class="fas fa-universal-access text-xl"></i>
+            <span class="absolute left-16 bg-gray-900 text-white text-sm px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                Accessibility
+            </span>
+        </button>
+        
         <script>
             // Initialize theme manager and check auth status
             document.addEventListener('DOMContentLoaded', () => {
