@@ -128,32 +128,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/mobile-responsive.css" rel="stylesheet">
-    </head>
-    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
-        <!-- Load i18n and utils first -->
-        <script src="/static/i18n.js"></script>
-        <script src="/static/utils.js"></script>
-        <script src="/static/auth.js"></script>
-        <script src="/static/onboarding.js"></script>
-        <script src="/static/chatbot.js"></script>
-        <script src="/static/accessibility.js"></script>
-        <script src="/static/cookie-consent.js"></script>
-        <script src="/static/bottom-nav.js"></script>
-        <script src="/static/touch-gestures.js"></script>
-        <script src="/static/pwa-advanced.js"></script>
-        <script src="/static/onboarding-v2.js"></script>
-        <script src="/static/biometrics.js"></script>
-        <script src="/static/biometric-ui.js"></script>
         
-        <!-- External Libraries (Load before app scripts) -->
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
-        
-        <!-- Cloudflare Turnstile (Bot Protection) -->
-        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-        
-        <!-- Load Tailwind AFTER our scripts so it can scan dynamically rendered content -->
+        <!-- Load Tailwind CSS FIRST for immediate styling -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
           tailwind.config = {
@@ -168,6 +144,31 @@ export function renderHTML(title: string, content: string, currentPage: string =
             }
           }
         </script>
+    </head>
+    <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
+        <!-- External Libraries (Load FIRST) -->
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+        
+        <!-- Load i18n and utils BEFORE any UI rendering -->
+        <script src="/static/i18n.js"></script>
+        <script src="/static/utils.js"></script>
+        <script src="/static/auth.js"></script>
+        
+        <!-- Cloudflare Turnstile (Bot Protection) -->
+        <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+        
+        <!-- Secondary scripts (load after core) -->
+        <script defer src="/static/onboarding.js"></script>
+        <script defer src="/static/chatbot.js"></script>
+        <script defer src="/static/accessibility.js"></script>
+        <script defer src="/static/cookie-consent.js"></script>
+        <script defer src="/static/bottom-nav.js"></script>
+        <script defer src="/static/touch-gestures.js"></script>
+        <script defer src="/static/pwa-advanced.js"></script>
+        <script defer src="/static/onboarding-v2.js"></script>
+        <script defer src="/static/biometric-ui.js"></script>
         
         <!-- Microsoft Clarity - Session Recording & Heatmaps -->
         <script type="text/javascript">
@@ -179,20 +180,61 @@ export function renderHTML(title: string, content: string, currentPage: string =
         </script>
         
         <!-- Navigation (rendered by utils.js) -->
-        <div id="nav-container"></div>
+        <div id="nav-container">
+            <!-- Loading placeholder to prevent FOUC -->
+            <nav class="bg-white dark:bg-gray-800 shadow-sm">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-16">
+                        <div class="flex items-center">
+                            <div class="animate-pulse flex space-x-4">
+                                <div class="rounded-full bg-gray-200 h-8 w-8"></div>
+                                <div class="h-6 bg-gray-200 rounded w-32 self-center"></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="animate-pulse flex space-x-4">
+                                <div class="h-4 bg-gray-200 rounded w-16"></div>
+                                <div class="h-4 bg-gray-200 rounded w-16"></div>
+                                <div class="h-4 bg-gray-200 rounded w-20"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
         <script>
-            // Wait for i18n and check auth status before rendering navigation
-            async function renderNav() {
-                if (typeof i18n !== 'undefined' && i18n.translations) {
+            // Wait for ALL dependencies before rendering navigation
+            function waitForDependencies() {
+                return new Promise((resolve) => {
+                    const checkDependencies = () => {
+                        if (typeof i18n !== 'undefined' && 
+                            i18n.translations && 
+                            typeof themeManager !== 'undefined' &&
+                            typeof checkAuthStatus === 'function' &&
+                            typeof renderNavigation === 'function') {
+                            resolve();
+                        } else {
+                            setTimeout(checkDependencies, 50);
+                        }
+                    };
+                    checkDependencies();
+                });
+            }
+            
+            // Render navigation once everything is ready
+            waitForDependencies().then(async () => {
+                try {
                     await checkAuthStatus();
-                    document.getElementById('nav-container').innerHTML = renderNavigation('${currentPage}');
+                    const navHtml = renderNavigation('${currentPage}');
+                    document.getElementById('nav-container').innerHTML = navHtml;
                     // Dispatch event to notify that auth is ready
                     window.dispatchEvent(new CustomEvent('authReady', { detail: { user: currentUser } }));
-                } else {
-                    setTimeout(renderNav, 50); // Check every 50ms
+                } catch (error) {
+                    console.error('Navigation rendering error:', error);
+                    // Fallback: render minimal navigation
+                    document.getElementById('nav-container').innerHTML = '<nav class="bg-white dark:bg-gray-800 shadow-sm p-4"><a href="/" class="text-xl font-bold">MoodMash</a></nav>';
                 }
-            }
-            renderNav();
+            });
         </script>
 
         <!-- Main Content -->
