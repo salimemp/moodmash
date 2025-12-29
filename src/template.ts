@@ -126,44 +126,9 @@ export function renderHTML(title: string, content: string, currentPage: string =
         
         <!-- Stylesheets -->
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <link href="/static/tailwind-config.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/mobile-responsive.css" rel="stylesheet">
-        
-        <!-- Load Tailwind CSS FIRST for immediate styling -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-          // Wait for Tailwind to be available before configuring
-          if (typeof tailwind !== 'undefined') {
-            tailwind.config = {
-              darkMode: 'class',
-              theme: {
-                extend: {
-                  colors: {
-                    primary: '#6366f1',
-                    secondary: '#8b5cf6',
-                  }
-                }
-              }
-            }
-          } else {
-            // Retry after a short delay
-            setTimeout(() => {
-              if (typeof tailwind !== 'undefined') {
-                tailwind.config = {
-                  darkMode: 'class',
-                  theme: {
-                    extend: {
-                      colors: {
-                        primary: '#6366f1',
-                        secondary: '#8b5cf6',
-                      }
-                    }
-                  }
-                }
-              }
-            }, 100);
-          }
-        </script>
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
         <!-- External Libraries (Load FIRST) -->
