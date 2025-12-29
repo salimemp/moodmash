@@ -4358,11 +4358,15 @@ self.addEventListener('fetch', e => {
 
 // Home page
 app.get('/', (c) => {
+  // Set proper content type with UTF-8 encoding
   const content = `
     ${renderLoadingState()}
     <script src="/static/app.js"></script>
   `;
-  return c.html(renderHTML('Dashboard', content, 'dashboard'));
+  const html = renderHTML('Dashboard', content, 'dashboard');
+  return c.html(html, 200, {
+    'Content-Type': 'text/html; charset=utf-8'
+  });
 });
 
 // Log mood page
