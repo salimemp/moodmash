@@ -228,27 +228,49 @@ export function renderHTML(title: string, content: string, currentPage: string =
                         <div class="relative group">
                             <button class="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition-colors flex items-center" title="Select Language">
                                 <i class="fas fa-globe mr-1"></i>
-                                <span class="text-sm font-medium" id="current-language">EN</span>
+                                <span class="text-sm font-medium" id="current-language">🇺🇸 EN</span>
                             </button>
-                            <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                            <div class="hidden group-hover:block absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50" id="lang-dropdown">
                                 <div class="py-2">
+                                    <!-- Languages will be dynamically loaded -->
                                     <button onclick="if(window.i18n) window.i18n.changeLanguage('en')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>English
+                                        🇺🇸 English
                                     </button>
                                     <button onclick="if(window.i18n) window.i18n.changeLanguage('es')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>Español
-                                    </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('fr')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>Français
-                                    </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('de')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>Deutsch
+                                        🇪🇸 Español
                                     </button>
                                     <button onclick="if(window.i18n) window.i18n.changeLanguage('zh')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>中文
+                                        🇨🇳 中文
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('fr')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇫🇷 Français
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('de')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇩🇪 Deutsch
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('it')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇮🇹 Italiano
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ar')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇸🇦 العربية
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('hi')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇮🇳 हिन्दी
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('bn')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇧🇩 বাংলা
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ta')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇮🇳 தமிழ்
                                     </button>
                                     <button onclick="if(window.i18n) window.i18n.changeLanguage('ja')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                                        <i class="fas fa-flag mr-2"></i>日本語
+                                        🇯🇵 日本語
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ko')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇰🇷 한국어
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ms')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        🇲🇾 Bahasa Melayu
                                     </button>
                                 </div>
                             </div>
@@ -305,7 +327,6 @@ export function renderHTML(title: string, content: string, currentPage: string =
             id="ai-chat-toggle" 
             class="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center group"
             style="z-index: 9999;"
-            onclick="window.location.href='/ai-chat'"
             title="AI Chat Assistant"
         >
             <i class="fas fa-robot text-xl"></i>
@@ -319,7 +340,6 @@ export function renderHTML(title: string, content: string, currentPage: string =
             id="accessibility-toggle" 
             class="fixed bottom-20 left-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center group"
             style="z-index: 9999;"
-            onclick="if(window.accessibilityMenu) window.accessibilityMenu.toggle()"
             title="Accessibility Options"
         >
             <i class="fas fa-universal-access text-xl"></i>
@@ -329,8 +349,53 @@ export function renderHTML(title: string, content: string, currentPage: string =
         </button>
         
         <script>
-            // Initialize theme manager and check auth status
+            // Initialize theme manager, language selector, chatbot, accessibility, and check auth status
             document.addEventListener('DOMContentLoaded', () => {
+                // Initialize language selector with all 13 languages
+                if (window.i18n) {
+                    const langs = i18n.getAvailableLanguages();
+                    const currentLangBtn = document.getElementById('current-language');
+                    
+                    // Update current language display
+                    const updateCurrentLanguage = () => {
+                        const current = langs.find(l => l.code === i18n.currentLanguage);
+                        if (current && currentLangBtn) {
+                            currentLangBtn.textContent = current.flag + ' ' + current.code.toUpperCase();
+                        }
+                    };
+                    
+                    // Initial update
+                    updateCurrentLanguage();
+                    
+                    // Listen for language changes
+                    window.addEventListener('languageChanged', updateCurrentLanguage);
+                }
+                
+                // Initialize AI Chatbot button
+                const aiChatBtn = document.getElementById('ai-chat-toggle');
+                if (aiChatBtn) {
+                    aiChatBtn.addEventListener('click', () => {
+                        // Navigate to AI chat page
+                        window.location.href = '/ai-chat';
+                    });
+                }
+                
+                // Initialize Accessibility button
+                const a11yBtn = document.getElementById('accessibility-toggle');
+                if (a11yBtn) {
+                    a11yBtn.addEventListener('click', () => {
+                        // The accessibility.js file handles the menu rendering
+                        // Just need to trigger the accessibility panel
+                        const a11yPanel = document.getElementById('accessibility-panel');
+                        if (a11yPanel) {
+                            a11yPanel.classList.toggle('hidden');
+                        } else {
+                            // If panel doesn't exist, the accessibilityManager will create it on first click
+                            console.log('Accessibility features loaded');
+                        }
+                    });
+                }
+                
                 // Check authentication and update nav if needed
                 if (typeof checkAuthStatus === 'function') {
                     checkAuthStatus().then(() => {
