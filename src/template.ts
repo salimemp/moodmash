@@ -202,60 +202,116 @@ export function renderHTML(title: string, content: string, currentPage: string =
         </script>
         -->
         
-        <!-- Navigation (rendered by utils.js) -->
-        <div id="nav-container">
-            <!-- Loading placeholder to prevent FOUC -->
-            <nav class="bg-white dark:bg-gray-800 shadow-sm">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex items-center">
-                            <div class="animate-pulse flex space-x-4">
-                                <div class="rounded-full bg-gray-200 h-8 w-8"></div>
-                                <div class="h-6 bg-gray-200 rounded w-32 self-center"></div>
+        <!-- Static Navigation (No JavaScript Required) -->
+        <nav class="bg-white dark:bg-gray-800 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <!-- Logo -->
+                    <div class="flex items-center">
+                        <a href="/" class="flex items-center space-x-3">
+                            <i class="fas fa-brain text-indigo-600 text-2xl"></i>
+                            <span class="text-2xl font-bold text-gray-800 dark:text-white">MoodMash</span>
+                        </a>
+                    </div>
+                    
+                    <!-- Navigation Links -->
+                    <div class="hidden md:flex items-center space-x-6">
+                        <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-home mr-1"></i> Dashboard
+                        </a>
+                        <a href="/log" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-smile mr-1"></i> Log Mood
+                        </a>
+                        <a href="/activities" class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-heart mr-1"></i> Activities
+                        </a>
+                        
+                        <!-- Features Dropdown -->
+                        <div class="relative group">
+                            <button class="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-md text-sm font-medium flex items-center transition-colors">
+                                <i class="fas fa-star mr-1"></i> Features
+                                <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                            </button>
+                            <div class="hidden group-hover:block absolute left-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                                <div class="py-2">
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">AR & Voice</div>
+                                    <a href="/ar-dashboard" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-cube mr-2 text-purple-600"></i>AR Dashboard
+                                    </a>
+                                    <a href="/voice-journal" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-microphone mr-2 text-blue-600"></i>Voice Journal
+                                    </a>
+                                    <a href="/3d-avatar" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-robot mr-2 text-indigo-600"></i>3D Avatar
+                                    </a>
+                                    <div class="my-1 border-t border-gray-200 dark:border-gray-700"></div>
+                                    <div class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Social & Progress</div>
+                                    <a href="/social-network" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-users mr-2 text-green-600"></i>Social Network
+                                    </a>
+                                    <a href="/gamification" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-trophy mr-2 text-yellow-600"></i>Achievements
+                                    </a>
+                                    <a href="/biometrics" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-heartbeat mr-2 text-red-600"></i>Biometrics
+                                    </a>
+                                </div>
                             </div>
                         </div>
-                        <div class="flex items-center space-x-4">
-                            <div class="animate-pulse flex space-x-4">
-                                <div class="h-4 bg-gray-200 rounded w-16"></div>
-                                <div class="h-4 bg-gray-200 rounded w-16"></div>
-                                <div class="h-4 bg-gray-200 rounded w-20"></div>
-                            </div>
+                        
+                        <!-- Theme Toggle -->
+                        <button onclick="themeManager?.toggle()" class="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition-colors" title="Toggle theme">
+                            <i class="fas fa-moon dark:hidden"></i>
+                            <i class="fas fa-sun hidden dark:inline"></i>
+                        </button>
+                        
+                        <!-- Auth Buttons -->
+                        <div class="flex items-center space-x-2 pl-4 border-l border-gray-200 dark:border-gray-700">
+                            <a href="/login" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                                <i class="fas fa-sign-in-alt mr-1"></i> Login
+                            </a>
+                            <a href="/register" class="px-4 py-2 text-sm font-medium bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-sm hover:shadow-md">
+                                <i class="fas fa-user-plus mr-1"></i> Sign Up
+                            </a>
                         </div>
                     </div>
+                    
+                    <!-- Mobile Menu Button -->
+                    <button class="md:hidden p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md" onclick="document.getElementById('mobile-menu').classList.toggle('hidden')">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
                 </div>
-            </nav>
-        </div>
+                
+                <!-- Mobile Menu -->
+                <div id="mobile-menu" class="hidden md:hidden pb-4">
+                    <div class="flex flex-col space-y-2">
+                        <a href="/" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-home mr-2"></i> Dashboard
+                        </a>
+                        <a href="/log" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-smile mr-2"></i> Log Mood
+                        </a>
+                        <a href="/activities" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-heart mr-2"></i> Activities
+                        </a>
+                        <a href="/login" class="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Login
+                        </a>
+                        <a href="/register" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-md">
+                            <i class="fas fa-user-plus mr-2"></i> Sign Up
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
         <script>
-            // Wait for ALL dependencies before rendering navigation
-            function waitForDependencies() {
-                return new Promise((resolve) => {
-                    const checkDependencies = () => {
-                        if (typeof i18n !== 'undefined' && 
-                            i18n.translations && 
-                            typeof themeManager !== 'undefined' &&
-                            typeof checkAuthStatus === 'function' &&
-                            typeof renderNavigation === 'function') {
-                            resolve();
-                        } else {
-                            setTimeout(checkDependencies, 50);
-                        }
-                    };
-                    checkDependencies();
-                });
-            }
-            
-            // Render navigation once everything is ready
-            waitForDependencies().then(async () => {
-                try {
-                    await checkAuthStatus();
-                    const navHtml = renderNavigation('${currentPage}');
-                    document.getElementById('nav-container').innerHTML = navHtml;
-                    // Dispatch event to notify that auth is ready
-                    window.dispatchEvent(new CustomEvent('authReady', { detail: { user: currentUser } }));
-                } catch (error) {
-                    console.error('Navigation rendering error:', error);
-                    // Fallback: render minimal navigation
-                    document.getElementById('nav-container').innerHTML = '<nav class="bg-white dark:bg-gray-800 shadow-sm p-4"><a href="/" class="text-xl font-bold">MoodMash</a></nav>';
+            // Initialize theme manager and check auth status
+            document.addEventListener('DOMContentLoaded', () => {
+                // Check authentication and update nav if needed
+                if (typeof checkAuthStatus === 'function') {
+                    checkAuthStatus().then(() => {
+                        window.dispatchEvent(new CustomEvent('authReady', { detail: { user: currentUser } }));
+                    });
                 }
             });
         </script>
