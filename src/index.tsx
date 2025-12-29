@@ -3660,7 +3660,7 @@ app.get('/login', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
     </head>
@@ -3691,7 +3691,7 @@ app.get('/register', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Register - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
     </head>
@@ -3726,7 +3726,7 @@ app.get('/verify-email', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Verify Email - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center p-4">
@@ -3925,7 +3925,7 @@ app.get('/auth/magic', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Magic Link - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
     </head>
@@ -3949,7 +3949,7 @@ app.get('/security-test', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Security Features Test - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     </head>
     <body class="bg-gray-50 p-8">
@@ -6906,20 +6906,8 @@ app.get('/about', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>About - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <script>
-          tailwind.config = {
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
-                }
-              }
-            }
-          }
-        </script>
         <link href="/static/styles.css" rel="stylesheet">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen">
@@ -7045,7 +7033,7 @@ app.get('/contact', (c) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Contact Us - MoodMash</title>
-        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
     </head>
