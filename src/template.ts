@@ -132,16 +132,36 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Load Tailwind CSS FIRST for immediate styling -->
         <script src="https://cdn.tailwindcss.com"></script>
         <script>
-          tailwind.config = {
-            darkMode: 'class',
-            theme: {
-              extend: {
-                colors: {
-                  primary: '#6366f1',
-                  secondary: '#8b5cf6',
+          // Wait for Tailwind to be available before configuring
+          if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+              darkMode: 'class',
+              theme: {
+                extend: {
+                  colors: {
+                    primary: '#6366f1',
+                    secondary: '#8b5cf6',
+                  }
                 }
               }
             }
+          } else {
+            // Retry after a short delay
+            setTimeout(() => {
+              if (typeof tailwind !== 'undefined') {
+                tailwind.config = {
+                  darkMode: 'class',
+                  theme: {
+                    extend: {
+                      colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                      }
+                    }
+                  }
+                }
+              }
+            }, 100);
           }
         </script>
     </head>
@@ -171,6 +191,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script defer src="/static/biometric-ui.js"></script>
         
         <!-- Microsoft Clarity - Session Recording & Heatmaps -->
+        <!-- Disabled due to CSP restrictions on Cloudflare Pages -->
+        <!-- 
         <script type="text/javascript">
           (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -178,6 +200,7 @@ export function renderHTML(title: string, content: string, currentPage: string =
             y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
           })(window, document, "clarity", "script", "ue56xoult3");
         </script>
+        -->
         
         <!-- Navigation (rendered by utils.js) -->
         <div id="nav-container">
