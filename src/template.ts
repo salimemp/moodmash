@@ -126,7 +126,7 @@ export function renderHTML(title: string, content: string, currentPage: string =
         
         <!-- Stylesheets -->
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
-        <link href="/static/tailwind-config.css" rel="stylesheet">
+        <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/mobile-responsive.css" rel="stylesheet">
     </head>
