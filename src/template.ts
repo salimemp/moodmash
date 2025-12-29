@@ -224,6 +224,36 @@ export function renderHTML(title: string, content: string, currentPage: string =
                             </div>
                         </div>
                         
+                        <!-- Language Selector -->
+                        <div class="relative group">
+                            <button class="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition-colors flex items-center" title="Select Language">
+                                <i class="fas fa-globe mr-1"></i>
+                                <span class="text-sm font-medium" id="current-language">EN</span>
+                            </button>
+                            <div class="hidden group-hover:block absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50">
+                                <div class="py-2">
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('en')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>English
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('es')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>Español
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('fr')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>Français
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('de')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>Deutsch
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('zh')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>中文
+                                    </button>
+                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ja')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                        <i class="fas fa-flag mr-2"></i>日本語
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Theme Toggle -->
                         <button onclick="themeManager?.toggle()" class="p-2 text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 rounded-md transition-colors" title="Toggle theme">
                             <i class="fas fa-moon dark:hidden"></i>
@@ -273,7 +303,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- AI Chatbot Button (Fixed Bottom Right) -->
         <button 
             id="ai-chat-toggle" 
-            class="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 z-40 flex items-center justify-center group"
+            class="fixed bottom-20 right-6 w-14 h-14 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center group"
+            style="z-index: 9999;"
             onclick="window.location.href='/ai-chat'"
             title="AI Chat Assistant"
         >
@@ -286,7 +317,8 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Accessibility Button (Fixed Bottom Left) -->
         <button 
             id="accessibility-toggle" 
-            class="fixed bottom-20 left-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 z-40 flex items-center justify-center group"
+            class="fixed bottom-20 left-6 w-14 h-14 bg-green-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all transform hover:scale-110 flex items-center justify-center group"
+            style="z-index: 9999;"
             onclick="if(window.accessibilityMenu) window.accessibilityMenu.toggle()"
             title="Accessibility Options"
         >

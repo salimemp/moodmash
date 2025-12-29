@@ -3695,12 +3695,8 @@ app.get('/register', (c) => {
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
     </head>
-    <body>
-        <div id="auth-container"></div>
-        
         <!-- Cloudflare Turnstile (Bot Protection) -->
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-        <link href="/static/styles.css" rel="stylesheet">
     </head>
     <body>
         <div id="auth-container"></div>
