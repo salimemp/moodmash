@@ -377,20 +377,25 @@ class MoodMashAuth {
   renderOAuthProviders() {
     const providers = [
       { 
-        id: 'google', 
-        icon: 'fab fa-google', 
+        id: 'google',
+        svg: `<svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17.64 9.20454C17.64 8.56636 17.5827 7.95272 17.4764 7.36363H9V10.845H13.8436C13.635 11.97 13.0009 12.9231 12.0477 13.5613V15.8195H14.9564C16.6582 14.2527 17.64 11.9454 17.64 9.20454Z" fill="#4285F4"/>
+          <path d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.5613C11.2418 14.1013 10.2109 14.4204 9 14.4204C6.65591 14.4204 4.67182 12.8372 3.96409 10.71H0.957275V13.0418C2.43818 15.9831 5.48182 18 9 18Z" fill="#34A853"/>
+          <path d="M3.96409 10.71C3.78409 10.17 3.68182 9.59318 3.68182 9C3.68182 8.40682 3.78409 7.83 3.96409 7.29V4.95818H0.957275C0.347727 6.17318 0 7.54773 0 9C0 10.4523 0.347727 11.8268 0.957275 13.0418L3.96409 10.71Z" fill="#FBBC05"/>
+          <path d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4405 4.92545L15.0218 2.34409C13.4632 0.891818 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957275 4.95818L3.96409 7.29C4.67182 5.16273 6.65591 3.57955 9 3.57955Z" fill="#EA4335"/>
+        </svg>`,
         bgColor: 'bg-white hover:bg-gray-50',
         textColor: 'text-gray-700',
-        border: 'border-gray-300',
-        gradient: 'bg-gradient-to-r from-blue-500 via-red-500 to-yellow-500'
+        border: 'border-gray-300'
       },
       { 
-        id: 'github', 
-        icon: 'fab fa-github', 
-        bgColor: 'bg-[#6e5494] hover:bg-[#5d4785]',
+        id: 'github',
+        svg: `<svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.17 6.839 9.49.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0110 4.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.137 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z"/>
+        </svg>`,
+        bgColor: 'bg-gray-900 hover:bg-gray-800',
         textColor: 'text-white',
-        border: 'border-[#6e5494]',
-        gradient: 'bg-[#6e5494]'
+        border: 'border-gray-900'
       }
     ];
 
@@ -398,10 +403,10 @@ class MoodMashAuth {
       <button 
         type="button"
         onclick="authManager.oauthLogin('${provider.id}')" 
-        class="w-full py-4 ${provider.bgColor} rounded-lg flex items-center justify-center ${provider.textColor} text-base font-medium transition-all duration-300 hover:shadow-lg border ${provider.border} space-x-2"
+        class="w-full py-3 ${provider.bgColor} rounded-lg flex items-center justify-center ${provider.textColor} text-sm font-medium transition-all duration-300 hover:shadow-lg border ${provider.border} space-x-3"
         title="${this.t('auth_continue_with')} ${provider.id.charAt(0).toUpperCase() + provider.id.slice(1)}"
       >
-        <i class="${provider.icon} text-xl"></i>
+        <span class="flex-shrink-0">${provider.svg}</span>
         <span>Continue with ${provider.id.charAt(0).toUpperCase() + provider.id.slice(1)}</span>
       </button>
     `).join('');
