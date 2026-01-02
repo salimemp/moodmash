@@ -141,6 +141,9 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <script src="/static/utils.js"></script>
         <script src="/static/auth.js"></script>
         
+        <!-- Emergency UI Fixes -->
+        <script src="/static/emergency-fix-v2.js"></script>
+        
         <!-- Cloudflare Turnstile (Bot Protection) -->
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         
