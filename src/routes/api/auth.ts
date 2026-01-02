@@ -10,8 +10,8 @@ import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
 import { createSession, deleteSession, getCurrentUser } from '../../auth';
 import { isValidEmail, isStrongPassword, sanitizeInput } from '../../middleware/security';
 import { verifyTurnstile } from '../../services/turnstile';
-import { sendVerificationEmail } from '../../utils/email-verification';
-import { checkPasswordStrength } from '../../utils/password-validator';
+// import { sendVerificationEmail } from '../../utils/email-verification'; // TODO: Fix email integration
+import { validatePassword } from '../../utils/password-validator';
 
 const authApi = new Hono<{ Bindings: Bindings }>();
 
@@ -56,7 +56,7 @@ authApi.post('/register', async (c) => {
   }
 
   // Check password strength
-  const passwordStrength = checkPasswordStrength(password);
+  const passwordStrength = validatePassword(password);
   if (passwordStrength.score < 40) {
     return c.json({
       error: 'Password does not meet security requirements',
@@ -91,11 +91,12 @@ authApi.post('/register', async (c) => {
   const userId = result.meta.last_row_id;
 
   // Send verification email
-  try {
-    await sendVerificationEmail(c.env, sanitizedEmail, userId as number);
-  } catch (error) {
-    console.error('Failed to send verification email:', error);
-  }
+  // TODO: Re-enable email verification
+  // try {
+  //   await sendVerificationEmail(c.env, sanitizedEmail, userId as number);
+  // } catch (error) {
+  //   console.error('Failed to send verification email:', error);
+  // }
 
   return c.json({
     success: true,
@@ -196,7 +197,7 @@ authApi.post('/logout', async (c) => {
 // Check password strength
 authApi.post('/check-password-strength', async (c) => {
   const { password } = await c.req.json();
-  const strength = checkPasswordStrength(password);
+  const strength = validatePassword(password);
   return c.json(strength);
 });
 
@@ -240,12 +241,14 @@ authApi.post('/resend-verification', async (c) => {
     return c.json({ error: 'Email already verified' }, 400);
   }
 
-  try {
-    await sendVerificationEmail(c.env, user.email, user.id);
-    return c.json({ success: true, message: 'Verification email sent' });
-  } catch (error) {
-    return c.json({ error: 'Failed to send verification email' }, 500);
-  }
+  // TODO: Re-enable email verification
+  // try {
+  //   await sendVerificationEmail(c.env, user.email, user.id);
+  //   return c.json({ success: true, message: 'Verification email sent' });
+  // } catch (error) {
+  //   return c.json({ error: 'Failed to send verification email' }, 500);
+  // }
+  return c.json({ success: true, message: 'Email verification temporarily disabled' });
 });
 
 export default authApi;

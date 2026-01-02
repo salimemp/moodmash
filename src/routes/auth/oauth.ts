@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import type { Bindings } from '../types';
+import type { Bindings } from '../../types';
 import * as bcrypt from 'bcryptjs';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import {
@@ -15,9 +15,9 @@ import {
   getCurrentUser,
   requireAuth,
   type Session
-} from '../auth';
-import { isValidEmail, isStrongPassword } from '../middleware/security';
-import { verifyTurnstile } from '../services/turnstile';
+} from '../../auth';
+import { isValidEmail, isStrongPassword } from '../../middleware/security';
+import { verifyTurnstile } from '../../services/turnstile';
 import { sendVerificationEmail } from '../utils/email-verification';
 
 const auth = new Hono<{ Bindings: Bindings }>();
