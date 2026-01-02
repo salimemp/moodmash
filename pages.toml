@@ -1,0 +1,18 @@
+# Cloudflare Pages Configuration
+
+# Build settings
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_VERSION = "10"
+
+# Preview settings (for branch deployments)
+[preview]
+  compatibility_date = "2025-11-11"
+
+# Production settings
+[production]
+  compatibility_date = "2025-11-11"
