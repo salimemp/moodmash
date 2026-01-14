@@ -139,32 +139,37 @@ export function renderHTML(title: string, content: string, currentPage: string =
         
         <!-- Preload critical scripts -->
         <link rel="preload" href="/static/utils.js" as="script">
-        <link rel="preload" href="/static/auth.js" as="script">
+        <link rel="preload" href="/static/i18n-loader.js" as="script">
+        
+        <!-- Resource hints for external resources -->
+        <link rel="preconnect" href="https://cdn.jsdelivr.net">
+        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+        <link rel="preconnect" href="https://challenges.cloudflare.com">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
-        <!-- External Libraries with SRI (Load FIRST) -->
+        <!-- External Libraries with SRI (defer for non-blocking) -->
         <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js" 
                 integrity="sha384-VekiXfVDZuqx75T/YaGfn7/p6+e+D0f/G8UoZ5GBOCMZ89kMW4wTo8PSn6GSzOEl" 
-                crossorigin="anonymous"></script>
+                crossorigin="anonymous" defer></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
                 integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" 
-                crossorigin="anonymous"></script>
+                crossorigin="anonymous" defer></script>
         <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js" 
                 integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky" 
-                crossorigin="anonymous"></script>
+                crossorigin="anonymous" defer></script>
         
-        <!-- Load i18n and utils BEFORE any UI rendering -->
-        <script src="/static/i18n.js"></script>
+        <!-- Load i18n (lazy-loading) and utils BEFORE any UI rendering -->
+        <script src="/static/i18n-loader.js"></script>
         <script src="/static/utils.js"></script>
-        <script src="/static/auth.js"></script>
+        <script src="/static/auth.js" defer></script>
         
         <!-- Emergency UI Fixes -->
-        <script src="/static/emergency-fix-v2.js"></script>
+        <script src="/static/emergency-fix-v2.js" defer></script>
         
         <!-- Cloudflare Turnstile (Bot Protection) -->
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         
-        <!-- Secondary scripts (load after core) -->
+        <!-- Secondary scripts (load after core with defer for non-blocking) -->
         <script defer src="/static/onboarding.js"></script>
         <script defer src="/static/chatbot.js"></script>
         <script defer src="/static/accessibility.js"></script>

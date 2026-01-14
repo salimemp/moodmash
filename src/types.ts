@@ -131,6 +131,7 @@ export interface Variables {
   session?: Session;
   subscription?: SubscriptionInfo | null;
   isPremium?: boolean;
+  monitoring?: import('./lib/monitoring').GrafanaMonitoring;
 }
 
 // Turnstile Verification

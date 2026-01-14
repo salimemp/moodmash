@@ -8,35 +8,34 @@ export default defineConfig({
     build(),
     devServer({
       adapter,
-      entry: 'src/index.tsx'
+      entry: 'src/index.tsx' // Main entry point (modular version)
     })
   ],
   build: {
     target: 'esnext',
-    minify: 'esbuild', // Enable minification for production builds
+    minify: 'esbuild',
     sourcemap: false,
-    chunkSizeWarningLimit: 500, // Lower threshold to catch large chunks
+    // Note: Cloudflare Pages requires inlineDynamicImports which is incompatible with manualChunks
+    // Code splitting is achieved at the source level through modular route organization
     rollupOptions: {
       onwarn(warning, warn) {
-        // Suppress certain warnings
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
         warn(warning);
       },
       output: {
-        // Code splitting configuration
-        manualChunks: {
-          // Vendor chunks
-          'vendor-hono': ['hono', 'hono/cors', 'hono/cookie'],
-        }
+        // Ensure consistent output names
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
   optimizeDeps: {
-    include: ['hono', 'hono/cors', 'hono/cookie']
+    include: ['hono', 'hono/cors', 'hono/cookie', 'bcryptjs']
   },
-  // Enable tree shaking
   esbuild: {
     treeShaking: true,
-    drop: ['debugger'], // Remove debugger statements in production
+    drop: ['debugger'],
+    // Remove console.log in production
+    pure: process.env.NODE_ENV === 'production' ? ['console.log'] : []
   }
 })

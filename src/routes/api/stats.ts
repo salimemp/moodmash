@@ -4,8 +4,20 @@
  */
 
 import { Hono } from 'hono';
-import type { Bindings, MoodStats } from '../../types';
+import type { Bindings } from '../../types';
 import { getCurrentUser, requireAuth } from '../../auth';
+
+interface MoodEntryResult {
+  id: number;
+  user_id: number;
+  emotion: string;
+  intensity: number;
+  note?: string;
+  weather?: string;
+  sleep_hours?: number;
+  social_interaction?: string;
+  created_at: string;
+}
 
 const stats = new Hono<{ Bindings: Bindings }>();
 
@@ -39,14 +51,14 @@ stats.get('/', async (c) => {
   }
 
   // Calculate statistics
-  const entries = moods.results as any[];
+  const entries = moods.results as unknown as MoodEntryResult[];
   const totalEntries = entries.length;
-  const totalIntensity = entries.reduce((sum: number, m: any) => sum + m.intensity, 0);
+  const totalIntensity = entries.reduce((sum, m) => sum + m.intensity, 0);
   const averageIntensity = totalIntensity / totalEntries;
 
   // Emotion distribution
   const emotionCounts: Record<string, number> = {};
-  entries.forEach((m: any) => {
+  entries.forEach((m) => {
     emotionCounts[m.emotion] = (emotionCounts[m.emotion] || 0) + 1;
   });
 
@@ -60,9 +72,9 @@ stats.get('/', async (c) => {
     date.setDate(date.getDate() - i);
     const dateStr = date.toISOString().split('T')[0];
 
-    const dayMoods = entries.filter((m: any) => m.created_at.startsWith(dateStr));
+    const dayMoods = entries.filter((m) => m.created_at.startsWith(dateStr));
     const dayAvg = dayMoods.length > 0
-      ? dayMoods.reduce((sum: number, m: any) => sum + m.intensity, 0) / dayMoods.length
+      ? dayMoods.reduce((sum, m) => sum + m.intensity, 0) / dayMoods.length
       : 0;
 
     intensityTrend.push({
@@ -102,19 +114,19 @@ stats.get('/insights', async (c) => {
     });
   }
 
-  const entries = moods.results as any[];
+  const entries = moods.results as unknown as MoodEntryResult[];
 
   // Simple pattern detection
-  const insights = [];
-  const patterns = [];
-  const recommendations = [];
+  const insights: string[] = [];
+  const patterns: string[] = [];
+  const recommendations: string[] = [];
 
   // Check for trends
-  const recentIntensities = entries.slice(0, 7).map((m: any) => m.intensity);
-  const avgRecent = recentIntensities.reduce((a: number, b: number) => a + b, 0) / recentIntensities.length;
-  const olderIntensities = entries.slice(7, 14).map((m: any) => m.intensity);
+  const recentIntensities = entries.slice(0, 7).map((m) => m.intensity);
+  const avgRecent = recentIntensities.reduce((a, b) => a + b, 0) / recentIntensities.length;
+  const olderIntensities = entries.slice(7, 14).map((m) => m.intensity);
   const avgOlder = olderIntensities.length > 0
-    ? olderIntensities.reduce((a: number, b: number) => a + b, 0) / olderIntensities.length
+    ? olderIntensities.reduce((a, b) => a + b, 0) / olderIntensities.length
     : avgRecent;
 
   if (avgRecent > avgOlder + 1) {
@@ -126,7 +138,7 @@ stats.get('/insights', async (c) => {
   }
 
   // Check for consistency
-  const hasLogged3Days = entries.filter((m: any) => {
+  const hasLogged3Days = entries.filter((m) => {
     const daysAgo = (Date.now() - new Date(m.created_at).getTime()) / (1000 * 60 * 60 * 24);
     return daysAgo <= 3;
   }).length >= 3;
@@ -136,14 +148,14 @@ stats.get('/insights', async (c) => {
   }
 
   // Weather correlation
-  const weatherMoods = entries.filter((m: any) => m.weather);
+  const weatherMoods = entries.filter((m) => m.weather);
   if (weatherMoods.length > 5) {
-    const sunnyMoods = weatherMoods.filter((m: any) => m.weather === 'sunny');
-    const rainyMoods = weatherMoods.filter((m: any) => m.weather === 'rainy');
+    const sunnyMoods = weatherMoods.filter((m) => m.weather === 'sunny');
+    const rainyMoods = weatherMoods.filter((m) => m.weather === 'rainy');
 
     if (sunnyMoods.length > 0 && rainyMoods.length > 0) {
-      const sunnyAvg = sunnyMoods.reduce((sum: number, m: any) => sum + m.intensity, 0) / sunnyMoods.length;
-      const rainyAvg = rainyMoods.reduce((sum: number, m: any) => sum + m.intensity, 0) / rainyMoods.length;
+      const sunnyAvg = sunnyMoods.reduce((sum, m) => sum + m.intensity, 0) / sunnyMoods.length;
+      const rainyAvg = rainyMoods.reduce((sum, m) => sum + m.intensity, 0) / rainyMoods.length;
 
       if (sunnyAvg > rainyAvg + 1.5) {
         patterns.push('You tend to feel better on sunny days ☀️');
@@ -153,14 +165,14 @@ stats.get('/insights', async (c) => {
   }
 
   // Sleep correlation
-  const sleepMoods = entries.filter((m: any) => m.sleep_hours !== null);
+  const sleepMoods = entries.filter((m) => m.sleep_hours !== undefined && m.sleep_hours !== null);
   if (sleepMoods.length > 5) {
-    const goodSleep = sleepMoods.filter((m: any) => m.sleep_hours >= 7);
-    const poorSleep = sleepMoods.filter((m: any) => m.sleep_hours < 6);
+    const goodSleep = sleepMoods.filter((m) => (m.sleep_hours ?? 0) >= 7);
+    const poorSleep = sleepMoods.filter((m) => (m.sleep_hours ?? 0) < 6);
 
     if (goodSleep.length > 0 && poorSleep.length > 0) {
-      const goodSleepAvg = goodSleep.reduce((sum: number, m: any) => sum + m.intensity, 0) / goodSleep.length;
-      const poorSleepAvg = poorSleep.reduce((sum: number, m: any) => sum + m.intensity, 0) / poorSleep.length;
+      const goodSleepAvg = goodSleep.reduce((sum, m) => sum + m.intensity, 0) / goodSleep.length;
+      const poorSleepAvg = poorSleep.reduce((sum, m) => sum + m.intensity, 0) / poorSleep.length;
 
       if (goodSleepAvg > poorSleepAvg + 1) {
         patterns.push('Better sleep is linked to better mood 😴');
@@ -170,14 +182,14 @@ stats.get('/insights', async (c) => {
   }
 
   // Social interaction
-  const socialMoods = entries.filter((m: any) => m.social_interaction);
+  const socialMoods = entries.filter((m) => m.social_interaction);
   if (socialMoods.length > 5) {
-    const highSocial = socialMoods.filter((m: any) => m.social_interaction === 'high');
-    const lowSocial = socialMoods.filter((m: any) => m.social_interaction === 'low');
+    const highSocial = socialMoods.filter((m) => m.social_interaction === 'high');
+    const lowSocial = socialMoods.filter((m) => m.social_interaction === 'low');
 
     if (highSocial.length > 0 && lowSocial.length > 0) {
-      const highSocialAvg = highSocial.reduce((sum: number, m: any) => sum + m.intensity, 0) / highSocial.length;
-      const lowSocialAvg = lowSocial.reduce((sum: number, m: any) => sum + m.intensity, 0) / lowSocial.length;
+      const highSocialAvg = highSocial.reduce((sum, m) => sum + m.intensity, 0) / highSocial.length;
+      const lowSocialAvg = lowSocial.reduce((sum, m) => sum + m.intensity, 0) / lowSocial.length;
 
       if (highSocialAvg > lowSocialAvg + 1) {
         patterns.push('Social connection boosts your mood 🤝');
