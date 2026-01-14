@@ -43,3 +43,5 @@ playwright/.cache/
 *.webm
 .dev.vars
 *.pdf
+
+# CI trigger - Wed Jan 14 19:42:11 UTC 2026
