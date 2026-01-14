@@ -4,14 +4,14 @@
  */
 
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 import * as bcrypt from 'bcryptjs';
 import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
-import { createSession, deleteSession, getCurrentUser } from '../../auth';
+import { createDbSession, deleteDbSession, getCurrentUser } from '../../auth';
 import { isValidEmail, isStrongPassword, sanitizeInput } from '../../middleware/security';
 import { verifyTurnstile } from '../../services/turnstile';
 // import { sendVerificationEmail } from '../../utils/email-verification'; // TODO: Fix email integration
-import { validatePassword } from '../../utils/password-validator';
+import { validatePassword, getPasswordSuggestions } from '../../utils/password-validator';
 
 const authApi = new Hono<{ Bindings: Bindings }>();
 
@@ -60,7 +60,8 @@ authApi.post('/register', async (c) => {
   if (passwordStrength.score < 40) {
     return c.json({
       error: 'Password does not meet security requirements',
-      details: passwordStrength.feedback,
+      details: passwordStrength.errors,
+      suggestions: getPasswordSuggestions(passwordStrength.errors),
       score: passwordStrength.score,
     }, 400);
   }
@@ -157,8 +158,9 @@ authApi.post('/login', async (c) => {
   }
 
   // Create session
-  const session = await createSession(DB, user.id);
-  const maxAge = trustDevice ? 60 * 60 * 24 * 30 : 60 * 60 * 24; // 30 days or 1 day
+  const durationDays = trustDevice ? 30 : 1;
+  const session = await createDbSession(DB, user.id, durationDays);
+  const maxAge = durationDays * 24 * 60 * 60;
 
   setCookie(c, 'session_token', session.token, {
     httpOnly: true,
@@ -181,13 +183,10 @@ authApi.post('/login', async (c) => {
 // Logout
 authApi.post('/logout', async (c) => {
   const { DB } = c.env;
-  const user = await getCurrentUser(c);
-
-  if (user) {
-    const token = getCookie(c, 'session_token');
-    if (token) {
-      await deleteSession(DB, token);
-    }
+  const token = getCookie(c, 'session_token');
+  
+  if (token) {
+    await deleteDbSession(DB, token);
   }
 
   deleteCookie(c, 'session_token');

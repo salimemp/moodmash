@@ -1,12 +1,14 @@
 /**
- * MoodMash - Main Application Entry Point
+ * MoodMash - Main Application Entry Point (Modular Version)
  * Clean, modular architecture with separate route files
+ * 
+ * NOTE: This is the modular version. The main entry point is src/index.tsx
+ * This file demonstrates the target architecture for future refactoring.
  */
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { serveStatic } from 'hono/cloudflare-workers';
-import type { Bindings } from './types';
+import type { Bindings, Variables } from './types';
 import { renderHTML } from './template';
 
 // Import route modules
@@ -17,18 +19,18 @@ import statsRoutes from './routes/api/stats';
 import activitiesRoutes from './routes/api/activities';
 
 // Import middleware
-import { securityHeaders } from './middleware/security-headers';
+import { productionSecurityHeaders } from './middleware/security-headers';
 import { analyticsMiddleware } from './middleware/analytics';
 
 // Create main app
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // ============================================================================
 // Global Middleware
 // ============================================================================
 
 // Security headers (HSTS, CSP, etc.)
-app.use('*', securityHeaders);
+app.use('*', productionSecurityHeaders());
 
 // Analytics tracking
 app.use('*', analyticsMiddleware);
@@ -40,18 +42,10 @@ app.use('/api/*', cors({
 }));
 
 // ============================================================================
-// Static Files
+// Static Files (handled by Cloudflare Pages automatically)
 // ============================================================================
-
-app.use('/static/*', serveStatic({ root: './public' }));
-app.use('/icons/*', serveStatic({ root: './public' }));
-app.use('/*.png', serveStatic({ root: './public' }));
-app.use('/*.svg', serveStatic({ root: './public' }));
-app.use('/*.ico', serveStatic({ root: './public' }));
-app.use('/*.xml', serveStatic({ root: './public' }));
-app.use('/*.txt', serveStatic({ root: './public' }));
-app.use('/*.json', serveStatic({ root: './public' }));
-app.use('/sw-*.js', serveStatic({ root: './public' }));
+// Note: In Cloudflare Pages, static files in /public are served automatically
+// No serveStatic middleware needed in production
 
 // ============================================================================
 // Route Registration

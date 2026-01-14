@@ -4683,7 +4683,11 @@ app.post('/api/ai/patterns', async (c) => {
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
     // Get user's mood entries from database
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4708,7 +4712,11 @@ app.post('/api/ai/forecast', async (c) => {
     const body = await c.req.json();
     
     // Get user's mood history
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4731,7 +4739,11 @@ app.post('/api/ai/context', async (c) => {
     const { env } = c;
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4754,7 +4766,11 @@ app.post('/api/ai/causes', async (c) => {
     const { env } = c;
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4778,7 +4794,11 @@ app.post('/api/ai/recommend', async (c) => {
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     const body = await c.req.json();
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4806,7 +4826,11 @@ app.post('/api/ai/crisis-check', async (c) => {
     const { env } = c;
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4829,7 +4853,11 @@ app.post('/api/ai/risk-detect', async (c) => {
     const { env } = c;
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -4852,7 +4880,11 @@ app.post('/api/ai/analytics', async (c) => {
     const { env } = c;
     const aiService = createAIService(env.GEMINI_API_KEY || '');
     
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moods = await env.DB.prepare(`
       SELECT * FROM mood_entries 
       WHERE user_id = ? 
@@ -5472,7 +5504,11 @@ app.get('/monitoring', (c) => {
 app.get('/api/health/metrics', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     
     // Get mood data for last 30 days
     const moods = await env.DB.prepare(`
@@ -5520,7 +5556,11 @@ app.get('/api/health/metrics', async (c) => {
 app.get('/api/health/trends/:period', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const period = c.req.param('period'); // "7d", "30d", "90d"
     
     const days = period === '7d' ? 7 : period === '30d' ? 30 : 90;
@@ -5559,7 +5599,11 @@ app.get('/api/health/trends/:period', async (c) => {
 app.get('/api/health/history', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     
     const history = await env.DB.prepare(`
       SELECT * FROM health_metrics 
@@ -5899,7 +5943,11 @@ app.get('/api/security/rate-limits', async (c) => {
 app.get('/api/social/feed', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const limit = parseInt(c.req.query('limit') || '20');
     
     // Get mood shares from friends
@@ -5931,7 +5979,11 @@ app.get('/api/social/feed', async (c) => {
 app.post('/api/social/share', async (c) => {
   try {
     const { env } = c;
-    const userId = 1;
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const { mood_entry_id, share_type, caption, allow_comments } = await c.req.json();
     
     const result = await env.DB.prepare(`
@@ -5949,7 +6001,11 @@ app.post('/api/social/share', async (c) => {
 app.post('/api/social/friends/request', async (c) => {
   try {
     const { env } = c;
-    const userId = 1;
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const { friend_id } = await c.req.json();
     
     await env.DB.prepare(`
@@ -5967,7 +6023,11 @@ app.post('/api/social/friends/request', async (c) => {
 app.get('/api/social/friends', async (c) => {
   try {
     const { env } = c;
-    const userId = 1;
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     
     const friends = await env.DB.prepare(`
       SELECT f.*, u.name, u.email, up.display_name, up.avatar_url
@@ -5988,7 +6048,11 @@ app.get('/api/social/friends', async (c) => {
 app.post('/api/groups', async (c) => {
   try {
     const { env } = c;
-    const userId = 1;
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const { name, description, group_type } = await c.req.json();
     
     const result = await env.DB.prepare(`
@@ -6036,7 +6100,11 @@ app.get('/api/groups', async (c) => {
 app.post('/api/groups/:id/join', async (c) => {
   try {
     const { env } = c;
-    const userId = 1;
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const groupId = c.req.param('id');
     
     await env.DB.prepare(`
@@ -6520,7 +6588,11 @@ app.post('/api/research/export', async (c) => {
 app.get('/api/user/data-summary', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     
     // Count all user data
     const moodCount = await env.DB.prepare('SELECT COUNT(*) as count FROM mood_entries WHERE user_id = ?').bind(userId).first();
@@ -6562,7 +6634,11 @@ app.get('/api/user/data-summary', async (c) => {
 app.get('/api/user/export-data', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const format = c.req.query('format') || 'json'; // json, csv
     
     // Fetch all user data
@@ -6610,7 +6686,11 @@ app.get('/api/user/export-data', async (c) => {
 app.delete('/api/moods/:id', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const moodId = c.req.param('id');
     
     // Verify ownership and delete
@@ -6631,7 +6711,11 @@ app.delete('/api/moods/:id', async (c) => {
 app.delete('/api/user/delete-account', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const confirmation = c.req.query('confirm');
     
     if (confirmation !== 'DELETE_MY_ACCOUNT') {
@@ -6659,7 +6743,11 @@ app.delete('/api/user/delete-account', async (c) => {
 app.post('/api/consent/update', async (c) => {
   try {
     const { env } = c;
-    const userId = 1; // TODO: Get from session
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     const { consent_type, consent_given } = await c.req.json();
     
     // Validate consent type
@@ -6763,7 +6851,11 @@ app.post('/api/support/log-access', async (c) => {
     const { resource_type, resource_id, resource_title, accessed_from } = await c.req.json();
     
     // Optional: only log if user is logged in
-    const userId = 1; // TODO: Get from session, or null for anonymous
+    const session = await getCurrentUser(c);
+    if (!session) {
+      return c.json({ success: false, error: 'Unauthorized' }, 401);
+    }
+    const userId = session.userId;
     
     await env.DB.prepare(`
       INSERT INTO support_access_log (user_id, resource_type, resource_id, resource_title, accessed_from)

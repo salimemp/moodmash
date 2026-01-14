@@ -81,6 +81,45 @@ export function deleteSession(token: string): void {
     sessions.delete(token);
 }
 
+// Database session interface
+export interface DbSession {
+    token: string;
+    expiresAt: Date;
+}
+
+/**
+ * Create a database-backed session
+ * @param db - D1 database instance
+ * @param userId - User ID to create session for
+ * @param durationDays - Session duration in days (default: 7)
+ * @returns Session token info
+ */
+export async function createDbSession(
+    db: import('@cloudflare/workers-types').D1Database,
+    userId: number,
+    durationDays: number = 7
+): Promise<DbSession> {
+    const token = generateSessionToken();
+    const expiresAt = new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000);
+    
+    await db.prepare(`
+        INSERT INTO sessions (session_token, user_id, expires_at, created_at, last_activity_at)
+        VALUES (?, ?, ?, datetime('now'), datetime('now'))
+    `).bind(token, userId, expiresAt.toISOString()).run();
+    
+    return { token, expiresAt };
+}
+
+/**
+ * Delete a database-backed session
+ */
+export async function deleteDbSession(
+    db: import('@cloudflare/workers-types').D1Database,
+    token: string
+): Promise<void> {
+    await db.prepare('DELETE FROM sessions WHERE session_token = ?').bind(token).run();
+}
+
 // Middleware to check authentication
 export async function requireAuth(c: Context, next: () => Promise<void>) {
     const token = getCookie(c, 'session_token');
@@ -114,8 +153,21 @@ export async function requirePremium(c: Context, next: () => Promise<void>) {
     await next();
 }
 
+// User session data returned by getCurrentUser
+export interface CurrentUser {
+    id: number;  // Alias for userId for backward compatibility
+    userId: number;
+    email: string;
+    username: string;
+    name: string | null;
+    avatar_url: string | null;
+    isPremium: boolean;
+    is_verified?: boolean;
+    created_at?: string;
+}
+
 // Helper to get current user from database session
-export async function getCurrentUser(c: Context): Promise<{ userId: number; email: string; username: string; name: string | null; avatar_url: string | null; isPremium?: boolean } | null> {
+export async function getCurrentUser(c: Context): Promise<CurrentUser | null> {
     const { DB } = c.env;
     const token = getCookie(c, 'session_token');
     if (!token) return null;
@@ -123,7 +175,8 @@ export async function getCurrentUser(c: Context): Promise<{ userId: number; emai
     try {
         // Query database for session with user data
         const session = await DB.prepare(`
-            SELECT s.user_id as userId, u.email, u.username, u.name, u.avatar_url
+            SELECT s.user_id as userId, u.email, u.username, u.name, u.avatar_url, 
+                   u.is_verified, u.created_at
             FROM sessions s
             JOIN users u ON s.user_id = u.id
             WHERE s.session_token = ? 
@@ -133,20 +186,24 @@ export async function getCurrentUser(c: Context): Promise<{ userId: number; emai
         
         if (!session) return null;
         
-        // Update last activity
-        await DB.prepare(`
+        // Update last activity (non-blocking)
+        DB.prepare(`
             UPDATE sessions 
             SET last_activity_at = datetime('now') 
             WHERE session_token = ?
-        `).bind(token).run();
+        `).bind(token).run().catch(() => {});
         
+        const userId = session.userId as number;
         return {
-            userId: session.userId as number,
+            id: userId,  // Alias for backward compatibility
+            userId: userId,
             email: session.email as string,
             username: session.username as string,
             name: session.name as string | null,
             avatar_url: session.avatar_url as string | null,
-            isPremium: false // TODO: Check actual subscription status
+            isPremium: false, // TODO: Check actual subscription status
+            is_verified: session.is_verified === 1,
+            created_at: session.created_at as string | undefined
         };
     } catch (error) {
         console.error('[Auth] Error getting current user:', error);

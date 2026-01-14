@@ -69,9 +69,10 @@ mood.post('/', async (c) => {
 
   // Upload photo if provided
   let photoUrl: string | null = null;
-  if (photo && photo.size > 0) {
+  if (photo && photo.size > 0 && R2) {
     const key = generateFileKey(user!.id, photo.name);
-    await uploadToR2(R2, key, photo);
+    const fileBuffer = await photo.arrayBuffer();
+    await uploadToR2(R2, key, fileBuffer);
     photoUrl = `/api/files/${key}`;
   }
 
@@ -131,7 +132,7 @@ mood.put('/:id', async (c) => {
 
   // Handle photo update
   let photoUrl = existing.photo_url;
-  if (photo && photo.size > 0) {
+  if (photo && photo.size > 0 && R2) {
     // Delete old photo
     if (existing.photo_url) {
       const oldKey = existing.photo_url.replace('/api/files/', '');
@@ -140,7 +141,8 @@ mood.put('/:id', async (c) => {
     
     // Upload new photo
     const key = generateFileKey(user!.id, photo.name);
-    await uploadToR2(R2, key, photo);
+    const fileBuffer = await photo.arrayBuffer();
+    await uploadToR2(R2, key, fileBuffer);
     photoUrl = `/api/files/${key}`;
   }
 
@@ -191,7 +193,7 @@ mood.delete('/:id', async (c) => {
   }
 
   // Delete photo from R2
-  if (existing.photo_url) {
+  if (existing.photo_url && R2) {
     const key = existing.photo_url.replace('/api/files/', '');
     await deleteFromR2(R2, key);
   }

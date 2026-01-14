@@ -13,18 +13,30 @@ export default defineConfig({
   ],
   build: {
     target: 'esnext',
-    minify: false, // Disable minification
+    minify: 'esbuild', // Enable minification for production builds
     sourcemap: false,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 500, // Lower threshold to catch large chunks
     rollupOptions: {
       onwarn(warning, warn) {
         // Suppress certain warnings
         if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
         warn(warning);
+      },
+      output: {
+        // Code splitting configuration
+        manualChunks: {
+          // Vendor chunks
+          'vendor-hono': ['hono', 'hono/cors', 'hono/cookie'],
+        }
       }
     }
   },
   optimizeDeps: {
     include: ['hono', 'hono/cors', 'hono/cookie']
+  },
+  // Enable tree shaking
+  esbuild: {
+    treeShaking: true,
+    drop: ['debugger'], // Remove debugger statements in production
   }
 })

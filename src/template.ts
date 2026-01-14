@@ -124,17 +124,34 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Splash screens for iOS -->
         <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png">
         
-        <!-- Stylesheets -->
-        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
+        <!-- Stylesheets with SRI -->
+        <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" 
+              rel="stylesheet" 
+              integrity="sha384-iw3OoTErCYJJB9mCa8LNS2hbsQ7M3C0EpIsO/H5+EGAkPGc6rk+V8i04oW/K5xq0" 
+              crossorigin="anonymous">
         <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/mobile-responsive.css" rel="stylesheet">
+        
+        <!-- DNS Prefetch for performance -->
+        <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+        <link rel="dns-prefetch" href="//challenges.cloudflare.com">
+        
+        <!-- Preload critical scripts -->
+        <link rel="preload" href="/static/utils.js" as="script">
+        <link rel="preload" href="/static/auth.js" as="script">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
-        <!-- External Libraries (Load FIRST) -->
-        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js"></script>
+        <!-- External Libraries with SRI (Load FIRST) -->
+        <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js" 
+                integrity="sha384-VekiXfVDZuqx75T/YaGfn7/p6+e+D0f/G8UoZ5GBOCMZ89kMW4wTo8PSn6GSzOEl" 
+                crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" 
+                integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" 
+                crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.10/dayjs.min.js" 
+                integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky" 
+                crossorigin="anonymous"></script>
         
         <!-- Load i18n and utils BEFORE any UI rendering -->
         <script src="/static/i18n.js"></script>

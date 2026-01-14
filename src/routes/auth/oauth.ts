@@ -1,30 +1,28 @@
 /**
  * Authentication Routes
- * Handles all authentication-related endpoints
+ * Handles all authentication-related endpoints (OAuth flows)
  */
 
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
-import * as bcrypt from 'bcryptjs';
+import type { Bindings, Variables } from '../../types';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import {
   initOAuthProviders,
-  createSession,
-  getSession,
-  deleteSession,
+  createDbSession,
+  deleteDbSession,
   getCurrentUser,
-  requireAuth,
-  type Session
 } from '../../auth';
-import { isValidEmail, isStrongPassword } from '../../middleware/security';
-import { verifyTurnstile } from '../../services/turnstile';
-import { sendVerificationEmail } from '../utils/email-verification';
 
-const auth = new Hono<{ Bindings: Bindings }>();
+const auth = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Google OAuth - Initiate
 auth.get('/google', async (c) => {
-  const providers = await initOAuthProviders(c.env);
+  const providers = initOAuthProviders(c.env);
+  
+  if (!providers.google) {
+    return c.json({ error: 'Google OAuth not configured' }, 500);
+  }
+  
   const state = crypto.randomUUID();
   const codeVerifier = crypto.randomUUID();
   
@@ -32,7 +30,7 @@ auth.get('/google', async (c) => {
   setCookie(c, 'oauth_state', state, { httpOnly: true, secure: true, sameSite: 'Lax' });
   setCookie(c, 'code_verifier', codeVerifier, { httpOnly: true, secure: true, sameSite: 'Lax' });
   
-  const authUrl = await providers.google.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email']);
+  const authUrl = providers.google.createAuthorizationURL(state, codeVerifier, ['openid', 'profile', 'email']);
   return c.redirect(authUrl.toString());
 });
 
@@ -49,7 +47,12 @@ auth.get('/google/callback', async (c) => {
   }
 
   try {
-    const providers = await initOAuthProviders(c.env);
+    const providers = initOAuthProviders(c.env);
+    
+    if (!providers.google) {
+      return c.redirect('/?error=oauth_not_configured');
+    }
+    
     const tokens = await providers.google.validateAuthorizationCode(code, codeVerifier);
     
     // Fetch user info
@@ -59,9 +62,15 @@ auth.get('/google/callback', async (c) => {
     const oauthUser = await userResponse.json() as { email: string; name: string; id: string };
 
     // Check if user exists
+    interface DbUserRow {
+      id: number;
+      email: string;
+      username: string;
+    }
+    
     let dbUser = await DB.prepare('SELECT * FROM users WHERE email = ?')
       .bind(oauthUser.email)
-      .first() as any;
+      .first<DbUserRow>();
 
     if (!dbUser) {
       // Create new user
@@ -73,11 +82,15 @@ auth.get('/google/callback', async (c) => {
 
       dbUser = await DB.prepare('SELECT * FROM users WHERE id = ?')
         .bind(result.meta.last_row_id)
-        .first();
+        .first<DbUserRow>();
+    }
+
+    if (!dbUser) {
+      return c.redirect('/?error=user_creation_failed');
     }
 
     // Create session
-    const session = await createSession(DB, dbUser.id);
+    const session = await createDbSession(DB, dbUser.id, 30);
     setCookie(c, 'session_token', session.token, {
       httpOnly: true,
       secure: true,
@@ -98,7 +111,12 @@ auth.get('/google/callback', async (c) => {
 
 // GitHub OAuth - Initiate
 auth.get('/github', async (c) => {
-  const providers = await initOAuthProviders(c.env);
+  const providers = initOAuthProviders(c.env);
+  
+  if (!providers.github) {
+    return c.json({ error: 'GitHub OAuth not configured' }, 500);
+  }
+  
   const state = crypto.randomUUID();
   
   setCookie(c, 'oauth_state', state, { httpOnly: true, secure: true, sameSite: 'Lax' });
@@ -119,7 +137,12 @@ auth.get('/github/callback', async (c) => {
   }
 
   try {
-    const providers = await initOAuthProviders(c.env);
+    const providers = initOAuthProviders(c.env);
+    
+    if (!providers.github) {
+      return c.redirect('/?error=oauth_not_configured');
+    }
+    
     const tokens = await providers.github.validateAuthorizationCode(code);
     
     // Fetch user info
@@ -132,9 +155,15 @@ auth.get('/github/callback', async (c) => {
     const oauthUser = await userResponse.json() as { email: string; login: string; id: number };
 
     // Check if user exists
+    interface DbUserRow {
+      id: number;
+      email: string;
+      username: string;
+    }
+    
     let dbUser = await DB.prepare('SELECT * FROM users WHERE email = ?')
       .bind(oauthUser.email)
-      .first() as any;
+      .first<DbUserRow>();
 
     if (!dbUser) {
       // Create new user
@@ -146,11 +175,15 @@ auth.get('/github/callback', async (c) => {
 
       dbUser = await DB.prepare('SELECT * FROM users WHERE id = ?')
         .bind(result.meta.last_row_id)
-        .first();
+        .first<DbUserRow>();
+    }
+
+    if (!dbUser) {
+      return c.redirect('/?error=user_creation_failed');
     }
 
     // Create session
-    const session = await createSession(DB, dbUser.id);
+    const session = await createDbSession(DB, dbUser.id, 30);
     setCookie(c, 'session_token', session.token, {
       httpOnly: true,
       secure: true,
@@ -173,7 +206,7 @@ auth.post('/logout', async (c) => {
   const token = getCookie(c, 'session_token');
 
   if (token) {
-    await deleteSession(DB, token);
+    await deleteDbSession(DB, token);
     deleteCookie(c, 'session_token');
   }
 
