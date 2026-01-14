@@ -144,7 +144,7 @@ export async function measurePerformance<T>(
     const result = await fn();
     const duration = performance.now() - start;
     
-    console.log(`[Performance] ${name}: ${duration.toFixed(2)}ms`);
+    // Performance metric recorded (debug logging removed for production)
     
     // Record to Performance API if available
     if (performance.mark && performance.measure) {

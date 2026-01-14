@@ -258,7 +258,7 @@ export class SecurityMonitoringService {
       openIncidentsCount = result?.count ?? 0;
     } catch (e) {
       // Table might not exist or column name mismatch, default to 0
-      console.log('[Security] No security_incidents data available');
+      // No security_incidents data available
     }
     
     // Top event types

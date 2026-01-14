@@ -4,7 +4,7 @@
  */
 
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import { type Bindings, getErrorMessage } from '../../types';
 import { getCurrentUser, requireAuth } from '../../auth';
 
 interface SocialPost {
@@ -78,8 +78,7 @@ social.get('/feed', async (c) => {
 
     return c.json({ posts: posts.results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -117,8 +116,7 @@ social.post('/posts', async (c) => {
       message: 'Post created successfully'
     }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -160,8 +158,7 @@ social.post('/posts/:id/like', async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -183,8 +180,7 @@ social.get('/posts/:id/comments', async (c) => {
 
     return c.json({ comments: comments.results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -217,8 +213,7 @@ social.post('/posts/:id/comments', async (c) => {
       message: 'Comment added successfully'
     }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -237,8 +232,7 @@ social.get('/profile/:userId', async (c) => {
 
     return c.json({ profile });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -271,8 +265,7 @@ social.post('/share', async (c) => {
 
     return c.json({ id: result.meta.last_row_id }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -300,8 +293,7 @@ social.post('/friends/request', async (c) => {
 
     return c.json({ message: 'Friend request sent' }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -320,8 +312,7 @@ social.get('/friends', async (c) => {
 
     return c.json({ friends: friends.results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -341,8 +332,7 @@ social.get('/connections', async (c) => {
 
     return c.json({ connections: connections.results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -361,8 +351,7 @@ social.post('/connections', async (c) => {
 
     return c.json({ id: result.meta.last_row_id }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -383,8 +372,7 @@ social.put('/connections/:id', async (c) => {
 
     return c.json({ success: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -403,8 +391,7 @@ social.post('/messages', async (c) => {
 
     return c.json({ id: result.meta.last_row_id }, 201);
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -425,8 +412,7 @@ social.get('/messages/:userId', async (c) => {
 
     return c.json({ messages: messages.results });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    return c.json({ error: message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 

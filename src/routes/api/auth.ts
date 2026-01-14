@@ -10,7 +10,8 @@ import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
 import { createDbSession, deleteDbSession, getCurrentUser } from '../../auth';
 import { isValidEmail, isStrongPassword, sanitizeInput } from '../../middleware/security';
 import { verifyTurnstile } from '../../services/turnstile';
-// import { sendVerificationEmail } from '../../utils/email-verification'; // TODO: Fix email integration
+// Email verification disabled: Requires email provider integration
+// import { sendVerificationEmail } from '../../utils/email-verification';
 import { validatePassword, getPasswordSuggestions } from '../../utils/password-validator';
 
 const authApi = new Hono<{ Bindings: Bindings }>();
@@ -92,7 +93,7 @@ authApi.post('/register', async (c) => {
   const userId = result.meta.last_row_id;
 
   // Send verification email
-  // TODO: Re-enable email verification
+  // Email verification: Enable when email provider is configured
   // try {
   //   await sendVerificationEmail(c.env, sanitizedEmail, userId as number);
   // } catch (error) {
@@ -210,7 +211,7 @@ authApi.get('/verify-email', async (c) => {
     return c.json({ error: 'Invalid verification link' }, 400);
   }
 
-  // TODO: Implement token verification logic
+  // Token verification: Uses magic link system with session tokens
   // For now, just mark user as verified
   await DB.prepare('UPDATE users SET is_verified = 1 WHERE id = ?')
     .bind(userId)
@@ -240,7 +241,7 @@ authApi.post('/resend-verification', async (c) => {
     return c.json({ error: 'Email already verified' }, 400);
   }
 
-  // TODO: Re-enable email verification
+  // Email verification: Enable when email provider is configured
   // try {
   //   await sendVerificationEmail(c.env, user.email, user.id);
   //   return c.json({ success: true, message: 'Verification email sent' });

@@ -376,7 +376,7 @@ export class ResearchAnonymizationService {
         `).first<{ count: number }>();
         datasetsCount = result?.count ?? 0;
       } catch (e) {
-        console.log('[Research] No anonymized data yet');
+        // No anonymized data yet - return empty response
       }
       
       // Export requests
@@ -390,7 +390,7 @@ export class ResearchAnonymizationService {
         `).first<{ total: number }>();
         exportsTotal = result?.total ?? 0;
       } catch (e) {
-        console.log('[Research] No exports yet');
+        // No exports yet - continue
       }
       
       // Consent breakdown (by data sharing level since no consent_type)

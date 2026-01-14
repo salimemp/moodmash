@@ -42,3 +42,4 @@ playwright/.cache/
 *.mp4
 *.webm
 .dev.vars
+*.pdf

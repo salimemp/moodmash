@@ -397,7 +397,7 @@ async function sendPushNotification(
   // This is a placeholder - actual implementation would use Web Push API
   // with VAPID keys and push subscriptions stored in the database
   
-  console.log(`Push notification sent to user ${userId}:`, notification)
+  // Push notification sent to user (debug logging removed)
   
   // In production, you would:
   // 1. Get user's push subscription from database

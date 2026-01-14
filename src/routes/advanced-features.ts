@@ -6,6 +6,7 @@ import { getErrorMessage, CalendarMoodEntry } from '../types';
 
 import { Hono } from 'hono';
 import type { D1Database } from '@cloudflare/workers-types';
+import { getCurrentUser, requireAuth } from '../auth';
 import { buildSearchQuery, buildFilterClause, highlightSearchTerms } from '../utils/search';
 import { generateCalendarMonth, populateCalendarWithMoods, generateICalExport } from '../utils/calendar';
 import { exportToJSON, exportToCSV, exportToPDFHTML, generateExportFilename, ExportData, ExportMoodEntry } from '../utils/data-export';
@@ -16,6 +17,9 @@ type Bindings = {
 
 const app = new Hono<{ Bindings: Bindings }>();
 
+// Apply authentication middleware to all routes
+app.use('*', requireAuth);
+
 // =============================================================================
 // PUSH NOTIFICATIONS
 // =============================================================================
@@ -23,7 +27,9 @@ const app = new Hono<{ Bindings: Bindings }>();
 // Subscribe to push notifications
 app.post('/push/subscribe', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const { endpoint, keys } = await c.req.json();
@@ -64,7 +70,9 @@ app.post('/push/subscribe', async (c) => {
 // Unsubscribe from push notifications
 app.post('/push/unsubscribe', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const { endpoint } = await c.req.json();
@@ -83,7 +91,9 @@ app.post('/push/unsubscribe', async (c) => {
 // Get notification preferences
 app.get('/push/preferences', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     let prefs = await DB.prepare(`
@@ -110,7 +120,9 @@ app.get('/push/preferences', async (c) => {
 // Update notification preferences
 app.put('/push/preferences', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const prefs = await c.req.json();
@@ -192,7 +204,9 @@ app.post('/location/save', async (c) => {
 // Get location preferences
 app.get('/location/preferences', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     let prefs = await DB.prepare(`
@@ -218,7 +232,9 @@ app.get('/location/preferences', async (c) => {
 // Update location preferences
 app.put('/location/preferences', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const prefs = await c.req.json();
@@ -250,7 +266,9 @@ app.put('/location/preferences', async (c) => {
 // Search mood entries
 app.post('/search', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const { query, filters, limit = 50, offset = 0 } = await c.req.json();
@@ -313,7 +331,9 @@ app.post('/search', async (c) => {
 // Get search history
 app.get('/search/history', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const results = await DB.prepare(`
@@ -338,7 +358,9 @@ app.get('/search/history', async (c) => {
 // Get calendar data for a month
 app.get('/calendar/:year/:month', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const year = parseInt(c.req.param('year'));
@@ -375,7 +397,9 @@ app.get('/calendar/:year/:month', async (c) => {
 // Export calendar to iCal format
 app.get('/calendar/export/ical', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const dateFrom = c.req.query('from');
@@ -416,7 +440,9 @@ app.get('/calendar/export/ical', async (c) => {
 // Export mood data
 app.post('/export', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const { format, dateFrom, dateTo, includeNotes, includeActivities, includeInsights } = await c.req.json();
@@ -447,7 +473,7 @@ app.post('/export', async (c) => {
     // Prepare export data
     const exportData: ExportData = {
       user: {
-        username: 'user', // TODO: Get from session
+        username: user?.username || 'user',
         email: 'user@moodmash.win'
       },
       exportDate: new Date().toISOString(),
@@ -504,7 +530,9 @@ app.post('/export', async (c) => {
 // Get export history
 app.get('/export/history', async (c) => {
   const { DB } = c.env;
-  const userId = 1; // TODO: Get from session
+  const user = await getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+  const userId = user.id;
   
   try {
     const results = await DB.prepare(`

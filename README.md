@@ -129,6 +129,15 @@ MoodMash is a full-stack mental wellness platform that helps users track their e
 - Rate limiting and security monitoring
 - Sentry.io error tracking
 
+#### 🌍 **Localization & Regional Support** (NEW!)
+- **Multi-Language Support** - 10+ languages (English, Spanish, French, German, Japanese, Chinese, Arabic, Portuguese, Russian, Hindi)
+- **Currency Formatting** - 12 currencies with regional symbols (USD, EUR, GBP, JPY, CNY, INR, BRL, RUB, SAR, AED, CAD, AUD)
+- **Regional Taxation** - VAT/GST/Sales Tax calculations for 17 countries
+- **Date/Time Formatting** - Regional formats (MM/DD/YYYY, DD/MM/YYYY, YYYY-MM-DD)
+- **Number Formatting** - Locale-specific decimal and thousands separators
+- **Auto-Detection** - Automatic region detection from Cloudflare headers
+- **RTL Support** - Right-to-left language support for Arabic
+
 ---
 
 ## 🛠️ Technology Stack
@@ -362,6 +371,38 @@ pm2 logs moodmash --nostream
 
 ### **Testing**
 
+MoodMash has a comprehensive test suite with **131+ tests** covering:
+
+| Test Type | Count | Framework | Command |
+|-----------|-------|-----------|---------|
+| Unit Tests | 107 | Vitest | `npm run test:unit` |
+| Integration Tests | 18 | Vitest | `npm run test:integration` |
+| E2E Tests | 10 | Playwright | `npm run test:playwright` |
+| Security Tests | 22 | Vitest | Included in unit tests |
+| Performance Tests | 11 | Vitest | Included in unit tests |
+| Localization Tests | 68 | Vitest | Included in unit/integration |
+
+```bash
+# Run all tests
+npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests
+npm run test:integration
+
+# Run E2E tests (requires browser)
+npm run test:playwright
+
+# Run tests with coverage
+npm run test:coverage
+
+# Watch mode for development
+npm run test:watch
+```
+
+#### Manual API Testing
 ```bash
 # Test API health
 curl http://localhost:3000/api/health/status

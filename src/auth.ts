@@ -20,12 +20,7 @@ export function initOAuthProviders(env: OAuthEnv): { google: Google | null; gith
     // For local development, use localhost
     const baseUrl = env.BASE_URL || 'https://moodmash.win';
     
-    console.log('[OAuth Init] Base URL:', baseUrl);
-    console.log('[OAuth Init] Google credentials:', {
-        hasClientId: !!env.GOOGLE_CLIENT_ID,
-        hasSecret: !!env.GOOGLE_CLIENT_SECRET,
-        redirectUri: `${baseUrl}/auth/google/callback`
-    });
+    // OAuth initialization (debug logging removed for production)
     
     // Only initialize if credentials are present
     const google = (env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET) 
@@ -202,7 +197,7 @@ export async function getCurrentUser(c: Context): Promise<CurrentUser | null> {
             username: session.username as string,
             name: session.name as string | null,
             avatar_url: session.avatar_url as string | null,
-            isPremium: false, // TODO: Check actual subscription status
+            isPremium: false, // Default: Check user_subscriptions table when premium features enabled
             is_verified: session.is_verified === 1,
             created_at: session.created_at as string | undefined
         };

@@ -188,7 +188,7 @@ Business Associate: _______________________  Date: __________
           WHERE incident_status = 'open'
         `).first<{ count: number }>();
       } catch (e) {
-        console.log('[HIPAA] security_incidents table not available');
+        // security_incidents table not available
       }
 
       // Get encryption status

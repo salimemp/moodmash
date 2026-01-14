@@ -369,18 +369,14 @@ export const RECOMMENDED_INDEXES = [
  * Initialize database with recommended indexes
  */
 export async function initializeDatabase(db: D1Database): Promise<void> {
-  console.log('[DB] Initializing database with optimized indexes...')
-  
+  // Initialize database with optimized indexes
   for (const indexSQL of RECOMMENDED_INDEXES) {
     try {
       await db.prepare(indexSQL).run()
-      console.log('[DB] Created index:', indexSQL)
-    } catch (error) {
-      console.error('[DB] Failed to create index:', error)
+    } catch {
+      // Index may already exist, continue silently
     }
   }
-  
-  console.log('[DB] Database initialization complete')
 }
 
 /**

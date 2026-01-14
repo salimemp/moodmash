@@ -35,7 +35,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   }
   
   const permission = await Notification.requestPermission();
-  console.log('[Push] Permission:', permission);
+  // Permission checked: debug logging removed
   return permission;
 }
 

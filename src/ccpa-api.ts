@@ -240,7 +240,8 @@ export async function submitCCPARequest(c: Context) {
       dueDate.toISOString()
     ).run();
 
-    // TODO: Send verification email with verification_code
+    // Email verification: Requires email provider integration (e.g., SendGrid, Resend)
+    // Verification code generated above can be sent when email service is configured
 
     return c.json({
       success: true,
