@@ -9,8 +9,8 @@
  * - Response caching
  */
 
-export interface CacheEntry {
-  data: any;
+export interface CacheEntry<T = unknown> {
+  data: T;
   expires_at: number;
   created_at: number;
 }
@@ -93,7 +93,7 @@ export function get<T>(key: string): T | null {
 /**
  * Set value in cache with TTL (in seconds)
  */
-export function set(key: string, data: any, ttl: number = 300): void {
+export function set<T = unknown>(key: string, data: T, ttl: number = 300): void {
   const now = Date.now();
   
   // Memory leak fix: Enforce size limit (LRU-style eviction)

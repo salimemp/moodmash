@@ -3,6 +3,37 @@
  * Supports JSON, CSV, and PDF formats for mood data export
  */
 
+/** Mood entry for export */
+export interface ExportMoodEntry {
+  id: number;
+  emotion: string;
+  intensity: number;
+  notes?: string | null;
+  logged_at: string;
+  weather?: string | null;
+  activities?: string | null;
+  tags?: string[];
+  privacy?: string | null;
+  entry_mode?: string | null;
+}
+
+/** Activity for export */
+export interface ExportActivity {
+  id: number;
+  name: string;
+  category: string;
+  duration_minutes?: number;
+  completed_at: string;
+}
+
+/** Insights data for export */
+export interface ExportInsights {
+  averageIntensity: number;
+  mostFrequentEmotion: string;
+  totalEntries: number;
+  daysTracked: number;
+}
+
 export interface ExportOptions {
   format: 'json' | 'csv' | 'pdf';
   dateFrom?: string;
@@ -22,9 +53,9 @@ export interface ExportData {
     from: string;
     to: string;
   };
-  moodEntries: any[];
-  activities?: any[];
-  insights?: any;
+  moodEntries: ExportMoodEntry[];
+  activities?: ExportActivity[];
+  insights?: ExportInsights;
 }
 
 /**
@@ -358,7 +389,7 @@ export function exportToPDFHTML(data: ExportData): string {
 /**
  * Helper: Calculate average intensity
  */
-function calculateAverageIntensity(entries: any[]): number {
+function calculateAverageIntensity(entries: ExportMoodEntry[]): number {
   if (entries.length === 0) return 0;
   const sum = entries.reduce((acc, e) => acc + (e.intensity || 0), 0);
   return sum / entries.length;
@@ -367,7 +398,7 @@ function calculateAverageIntensity(entries: any[]): number {
 /**
  * Helper: Get most frequent emotion
  */
-function getMostFrequentEmotion(entries: any[]): string {
+function getMostFrequentEmotion(entries: ExportMoodEntry[]): string {
   if (entries.length === 0) return 'N/A';
   
   const counts = new Map<string, number>();
@@ -391,7 +422,7 @@ function getMostFrequentEmotion(entries: any[]): string {
 /**
  * Helper: Calculate days tracked
  */
-function calculateDaysTracked(entries: any[]): number {
+function calculateDaysTracked(entries: ExportMoodEntry[]): number {
   if (entries.length === 0) return 0;
   
   const dates = new Set<string>();

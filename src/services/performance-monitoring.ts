@@ -121,7 +121,7 @@ export async function getEndpointStats(
  */
 export async function getPerformanceDashboard(
   env: Bindings
-): Promise<any> {
+): Promise<Record<string, unknown>> {
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
 
   // Overall stats

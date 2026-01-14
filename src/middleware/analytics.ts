@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../types';
 /**
  * Analytics Middleware for MoodMash
  * Tracks page views, API calls, and user events
@@ -204,7 +205,7 @@ export async function logError(
     sessionId?: string;
     endpoint?: string;
     method?: string;
-    requestBody?: any;
+    requestBody?: Record<string, unknown>;
   }
 ) {
   try {
@@ -267,7 +268,7 @@ export async function analyticsMiddleware(c: Context, next: () => Promise<void>)
     // Track the API call
     await trackApiCall(c, endpoint, method, statusCode, responseTime, userId);
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     const responseTime = Date.now() - startTime;
     const statusCode = c.res?.status || 500;
     
@@ -280,8 +281,8 @@ export async function analyticsMiddleware(c: Context, next: () => Promise<void>)
       responseTime,
       undefined,
       {
-        type: error.name || 'Error',
-        message: error.message || 'Unknown error'
+        type: error instanceof Error ? error.name : 'Error',
+        message: getErrorMessage(error) || 'Unknown error'
       }
     );
     
@@ -289,10 +290,10 @@ export async function analyticsMiddleware(c: Context, next: () => Promise<void>)
     await logError(
       c,
       'api',
-      error.message || 'Unknown error',
+      getErrorMessage(error) || 'Unknown error',
       statusCode >= 500 ? 'critical' : 'high',
       {
-        stackTrace: error.stack,
+        stackTrace: error instanceof Error ? error.stack : undefined,
         endpoint,
         method
       }

@@ -7,8 +7,19 @@
 
 import type { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
-import type { Bindings, Variables } from '../types';
+import type { Bindings, Variables, Session } from '../types';
 import { getSession } from '../auth';
+
+/** Database session row type */
+interface SessionDbRow {
+  user_id: number;
+  username: string;
+  email: string;
+  name?: string | null;
+  avatar_url?: string | null;
+  is_verified?: number;
+  expires_at: string;
+}
 
 /**
  * Public routes that don't require authentication
@@ -76,27 +87,37 @@ export async function authWall(c: Context<{ Bindings: Bindings; Variables: Varia
 
   try {
     // Validate session from database and check if user is verified
-    const session = await DB.prepare(`
-      SELECT s.*, u.id as user_id, u.username, u.email, u.is_verified
+    const dbSession = await DB.prepare(`
+      SELECT s.*, u.id as user_id, u.username, u.email, u.name, u.avatar_url, u.is_verified
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
-    `).bind(sessionToken).first();
+    `).bind(sessionToken).first<SessionDbRow>();
 
-    if (!session) {
+    if (!dbSession) {
       // Invalid or expired session - redirect to login
       const intendedUrl = path + (c.req.url.includes('?') ? '?' + c.req.url.split('?')[1] : '');
       return c.redirect(`/login?redirect=${encodeURIComponent(intendedUrl)}`);
     }
 
     // Check if email is verified (optional - can be enabled if needed)
-    // if (!session.is_verified) {
+    // if (!dbSession.is_verified) {
     //   return c.redirect('/verify-email?message=Please verify your email to continue');
     // }
 
+    // Create typed Session object
+    const session: Session = {
+      userId: dbSession.user_id,
+      email: dbSession.email,
+      username: dbSession.username,
+      name: dbSession.name ?? null,
+      avatar_url: dbSession.avatar_url ?? null,
+      is_verified: dbSession.is_verified === 1
+    };
+
     // Attach user info to context
-    c.set('user_id', session.user_id as number);
-    c.set('session', session as any);
+    c.set('user_id', session.userId);
+    c.set('session', session);
 
     // User is authenticated and verified, proceed
     await next();
@@ -143,14 +164,14 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings; Variables: Va
 
   try {
     // Validate session from database
-    const session = await DB.prepare(`
-      SELECT s.*, u.id as user_id, u.username, u.email
+    const dbSession = await DB.prepare(`
+      SELECT s.*, u.id as user_id, u.username, u.email, u.name, u.avatar_url, u.is_verified
       FROM sessions s
       JOIN users u ON s.user_id = u.id
       WHERE s.session_token = ? AND s.expires_at > datetime('now') AND u.is_active = 1
-    `).bind(sessionToken).first();
+    `).bind(sessionToken).first<SessionDbRow>();
 
-    if (!session) {
+    if (!dbSession) {
       return c.json({
         error: 'Authentication required',
         message: 'Invalid or expired session',
@@ -158,9 +179,19 @@ export async function apiAuthWall(c: Context<{ Bindings: Bindings; Variables: Va
       }, 401);
     }
 
+    // Create typed Session object
+    const session: Session = {
+      userId: dbSession.user_id,
+      email: dbSession.email,
+      username: dbSession.username,
+      name: dbSession.name ?? null,
+      avatar_url: dbSession.avatar_url ?? null,
+      is_verified: dbSession.is_verified === 1
+    };
+
     // Attach user info to context
-    c.set('user_id', session.user_id as number);
-    c.set('session', session as any);
+    c.set('user_id', session.userId);
+    c.set('session', session);
 
     await next();
   } catch (error) {

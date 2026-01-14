@@ -41,14 +41,14 @@ export async function sendEmail(
     });
 
     if (!response.ok) {
-      const error = await response.json() as any;
+      const error = await response.json() as { error?: string; message?: string };
       console.error('[Email] Send failed:', error);
       throw new Error(`Email API error: ${response.status} - ${error.message || 'Unknown error'}`);
     }
 
-    const result = await response.json() as any;
+    const result = await response.json() as { id?: string };
     return {
-      id: result.id,
+      id: result.id || '',
       success: true
     };
   } catch (error) {

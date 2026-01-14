@@ -6,20 +6,40 @@
 import { Context } from 'hono';
 import type { R2Bucket, R2ObjectBody } from '@cloudflare/workers-types';
 
+
+/** Database row type for media files */
+interface MediaRow {
+  id: string;
+  user_id: number;
+  file_key: string;
+  original_filename: string;
+  file_type: 'image' | 'video' | 'audio' | 'document';
+  mime_type: string;
+  file_size_bytes: number;
+  duration_seconds?: number | null;
+  width?: number | null;
+  height?: number | null;
+  processing_status: 'pending' | 'processing' | 'completed' | 'failed';
+  variants?: string | null;
+  metadata?: string | null;
+  visibility: 'private' | 'public' | 'friends';
+  created_at: string;
+}
+
 export interface MediaFile {
-  id?: number;
+  id?: number | string;
   userId: number;
   fileKey: string;
   originalFilename: string;
   fileType: 'image' | 'video' | 'audio' | 'document';
   mimeType: string;
   fileSizeBytes: number;
-  duration?: number;
-  width?: number;
-  height?: number;
+  duration?: number | null;
+  width?: number | null;
+  height?: number | null;
   processingStatus: 'pending' | 'processing' | 'completed' | 'failed';
   variants?: Record<string, string>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   visibility: 'private' | 'public' | 'friends';
 }
 
@@ -154,7 +174,7 @@ export async function getMediaFile(
   let query = `
     SELECT * FROM media_files WHERE id = ?
   `;
-  const bindings: any[] = [fileId];
+  const bindings: (string | number | null)[] = [fileId];
 
   // If userId provided, check ownership or public visibility
   if (userId) {
@@ -199,7 +219,7 @@ export async function listUserMediaFiles(
     SELECT * FROM media_files
     WHERE user_id = ?
   `;
-  const bindings: any[] = [userId];
+  const bindings: (string | number | null)[] = [userId];
 
   if (fileType) {
     query += ` AND file_type = ?`;
@@ -209,9 +229,9 @@ export async function listUserMediaFiles(
   query += ` ORDER BY created_at DESC LIMIT ?`;
   bindings.push(limit);
 
-  const results = await db.prepare(query).bind(...bindings).all();
+  const results = await db.prepare(query).bind(...bindings).all<MediaRow>();
   
-  return results.results.map((row: any) => ({
+  return (results.results || []).map((row) => ({
     id: row.id,
     userId: row.user_id,
     fileKey: row.file_key,
@@ -223,8 +243,8 @@ export async function listUserMediaFiles(
     width: row.width,
     height: row.height,
     processingStatus: row.processing_status,
-    variants: JSON.parse(row.variants || '{}'),
-    metadata: JSON.parse(row.metadata || '{}'),
+    variants: JSON.parse(row.variants || '{}') as Record<string, string>,
+    metadata: JSON.parse(row.metadata || '{}') as Record<string, unknown>,
     visibility: row.visibility
   }));
 }

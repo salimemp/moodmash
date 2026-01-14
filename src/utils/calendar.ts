@@ -3,6 +3,8 @@
  * Provides mood calendar views and iCal export
  */
 
+import type { CalendarMoodEntry } from '../types';
+
 export interface CalendarDay {
   date: string; // YYYY-MM-DD
   dayOfWeek: number; // 0-6 (Sunday-Saturday)
@@ -63,7 +65,7 @@ export function generateCalendarMonth(year: number, month: number): CalendarMont
  */
 export function populateCalendarWithMoods(
   calendar: CalendarMonth,
-  moodEntries: any[]
+  moodEntries: CalendarMoodEntry[]
 ): CalendarMonth {
   const dayMap = new Map<string, CalendarDay>();
   
@@ -82,7 +84,7 @@ export function populateCalendarWithMoods(
         id: entry.id,
         emotion: entry.emotion,
         intensity: entry.intensity,
-        notes: entry.notes,
+        notes: entry.notes ?? undefined,
         logged_at: entry.logged_at
       });
       day.entryCount++;
@@ -184,7 +186,7 @@ export function navigateMonth(year: number, month: number, direction: 'prev' | '
  * Generate iCal format for mood entries
  * Allows users to import mood history into calendar apps
  */
-export function generateICalExport(moodEntries: any[], userEmail: string = 'user@moodmash.win'): string {
+export function generateICalExport(moodEntries: CalendarMoodEntry[], userEmail: string = 'user@moodmash.win'): string {
   const lines: string[] = [];
   
   // Calendar header

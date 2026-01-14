@@ -8,6 +8,8 @@
  * - Error tracking
  */
 
+import type { Context, Next } from 'hono';
+
 // Types for Cloudflare environment bindings
 export interface MonitoringEnv {
   GRAFANA_PROMETHEUS_URL?: string;
@@ -36,12 +38,20 @@ export interface Metric {
   timestamp?: number;
 }
 
+// Loki push payload format
+interface LokiPushPayload {
+  streams: Array<{
+    stream: Record<string, string>;
+    values: [string, string][];
+  }>;
+}
+
 // Log entry
 export interface LogEntry {
   level: LogLevel;
   message: string;
   labels?: Record<string, string>;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
   timestamp?: number;
 }
 
@@ -273,8 +283,8 @@ export class GrafanaMonitoring {
   /**
    * Format logs for Loki
    */
-  private formatLokiLogs(logs: LogEntry[]): any {
-    const streams: Record<string, any[]> = {};
+  private formatLokiLogs(logs: LogEntry[]): LokiPushPayload {
+    const streams: Record<string, [string, string][]> = {};
 
     for (const log of logs) {
       const labels = {
@@ -322,7 +332,7 @@ export function createMonitoring(env: MonitoringEnv, appName?: string, environme
  * Middleware to track HTTP requests
  */
 export function monitoringMiddleware(monitoring: GrafanaMonitoring) {
-  return async (c: any, next: any) => {
+  return async (c: Context, next: Next) => {
     const startTime = Date.now();
     
     try {

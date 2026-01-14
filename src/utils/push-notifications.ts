@@ -18,7 +18,7 @@ export interface NotificationPayload {
   icon?: string;
   badge?: string;
   tag?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   actions?: Array<{
     action: string;
     title: string;
@@ -53,9 +53,11 @@ export async function subscribeToPush(
   const registration = await navigator.serviceWorker.ready;
   
   // Subscribe to push
+  // Web Push API applicationServerKey accepts ArrayBuffer
+  const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
   const subscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey) as any
+    applicationServerKey: applicationServerKey.buffer as ArrayBuffer
   });
   
   // Extract subscription data
@@ -109,7 +111,14 @@ export async function showLocalNotification(
   
   const registration = await navigator.serviceWorker.ready;
   
-  const options: any = {
+  // Extended notification options for service worker notifications
+  interface ExtendedNotificationOptions extends NotificationOptions {
+    data?: Record<string, unknown>;
+    vibrate?: number[];
+    actions?: Array<{ action: string; title: string; icon?: string }>;
+  }
+  
+  const options: ExtendedNotificationOptions = {
     body: payload.body,
     icon: payload.icon || '/static/icons/icon-192x192.png',
     badge: payload.badge || '/static/icons/badge-72x72.png',

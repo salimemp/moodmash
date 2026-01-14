@@ -579,6 +579,7 @@ export const translations: Translations = {
  */
 export function getTranslation(translations: Translation, keyPath: string): string {
   const keys = keyPath.split('.')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any - Dynamic nested object access
   let value: any = translations
 
   for (const key of keys) {
@@ -611,7 +612,8 @@ export class I18n {
   private detectLanguage(): Language {
     if (typeof navigator === 'undefined') return 'en'
     
-    const browserLang = navigator.language || (navigator as any).userLanguage
+    // userLanguage is a non-standard IE property
+    const browserLang = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage || 'en'
     const lang = browserLang.split('-')[0] as Language
     
     return this.isSupported(lang) ? lang : 'en'

@@ -189,7 +189,7 @@ export async function listSecrets(
     SELECT key_name, description, category, last_accessed_at, access_count
     FROM app_secrets
   `;
-  const bindings: any[] = [];
+  const bindings: (string | number | null)[] = [];
 
   if (category) {
     query += ` WHERE category = ?`;
@@ -198,9 +198,16 @@ export async function listSecrets(
 
   query += ` ORDER BY created_at DESC`;
 
-  const results = await db.prepare(query).bind(...bindings).all();
+  interface SecretListRow {
+    key_name: string;
+    description: string;
+    category: string;
+    last_accessed_at?: string;
+    access_count: number;
+  }
+  const results = await db.prepare(query).bind(...bindings).all<SecretListRow>();
 
-  return results.results.map((row: any) => ({
+  return (results.results || []).map((row) => ({
     keyName: row.key_name,
     description: row.description,
     category: row.category,
@@ -265,7 +272,8 @@ export async function setEnvVar(
  * This accesses secrets set via `wrangler secret put`
  */
 export function getCloudflareSecret(c: Context, secretName: string): string | undefined {
-  return (c.env as any)[secretName];
+  return // Dynamic env binding access
+  (c.env as Record<string, unknown>)[secretName];
 }
 
 /**
@@ -276,15 +284,20 @@ export async function checkSecretRotation(db: D1Database): Promise<Array<{
   lastRotated?: string;
   nextRotation?: string;
 }>> {
+  interface RotationRow {
+    key_name: string;
+    last_rotated_at?: string;
+    next_rotation_at?: string;
+  }
   const results = await db.prepare(`
     SELECT key_name, last_rotated_at, next_rotation_at
     FROM app_secrets
     WHERE rotation_required = 1
       AND (next_rotation_at IS NULL OR next_rotation_at <= datetime('now'))
     ORDER BY next_rotation_at ASC
-  `).all();
+  `).all<RotationRow>();
 
-  return results.results.map((row: any) => ({
+  return (results.results || []).map((row) => ({
     keyName: row.key_name,
     lastRotated: row.last_rotated_at,
     nextRotation: row.next_rotation_at

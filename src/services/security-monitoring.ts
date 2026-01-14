@@ -1,3 +1,4 @@
+import type { D1Database } from '@cloudflare/workers-types';
 /**
  * Security Monitoring Service
  * Event tracking, failed logins, alerts, compliance checks
@@ -42,7 +43,7 @@ export class SecurityMonitoringService {
   /**
    * Log security event
    */
-  static async logEvent(db: any, event: SecurityEvent): Promise<void> {
+  static async logEvent(db: D1Database, event: SecurityEvent): Promise<void> {
     await db.prepare(`
       INSERT INTO security_events (
         event_type, severity, details, user_id, 
@@ -64,7 +65,7 @@ export class SecurityMonitoringService {
   /**
    * Log failed login attempt
    */
-  static async logFailedLogin(db: any, failedLogin: FailedLogin): Promise<void> {
+  static async logFailedLogin(db: D1Database, failedLogin: FailedLogin): Promise<void> {
     await db.prepare(`
       INSERT INTO failed_logins (username_or_email, ip_address, failure_reason)
       VALUES (?, ?, ?)
@@ -81,7 +82,7 @@ export class SecurityMonitoringService {
   /**
    * Log rate limit hit
    */
-  static async logRateLimitHit(db: any, rateLimit: RateLimitHit): Promise<void> {
+  static async logRateLimitHit(db: D1Database, rateLimit: RateLimitHit): Promise<void> {
     // Check if entry exists for this IP + endpoint
     const existing = await db.prepare(`
       SELECT id, hit_count FROM rate_limit_hits 
@@ -121,7 +122,7 @@ export class SecurityMonitoringService {
   /**
    * Create security alert
    */
-  static async createAlert(db: any, alert: SecurityAlert): Promise<number> {
+  static async createAlert(db: D1Database, alert: SecurityAlert): Promise<number> {
     const result = await db.prepare(`
       INSERT INTO security_alerts (
         alert_type, severity, title, description, 
@@ -143,20 +144,21 @@ export class SecurityMonitoringService {
   /**
    * Detect brute force attempts
    */
-  static async detectBruteForce(db: any, ipAddress: string, email: string): Promise<void> {
+  static async detectBruteForce(db: D1Database, ipAddress: string, email: string): Promise<void> {
     // Check failed logins in last hour
     const recentFailures = await db.prepare(`
       SELECT COUNT(*) as count FROM failed_logins 
       WHERE ip_address = ? AND timestamp >= datetime('now', '-1 hour')
-    `).bind(ipAddress).first();
+    `).bind(ipAddress).first<{ count: number }>();
     
-    if (recentFailures && recentFailures.count >= 5) {
+    const failureCount = recentFailures?.count ?? 0;
+    if (failureCount >= 5) {
       // Create alert for brute force attempt
       await this.createAlert(db, {
         alert_type: 'BRUTE_FORCE_ATTEMPT',
         severity: 'high',
         title: 'Brute Force Attack Detected',
-        description: `${recentFailures.count} failed login attempts from IP ${ipAddress} for ${email}`,
+        description: `${failureCount} failed login attempts from IP ${ipAddress} for ${email}`,
         affected_users: 1,
         auto_resolved: false,
         alert_status: 'active'
@@ -166,9 +168,9 @@ export class SecurityMonitoringService {
       await this.logEvent(db, {
         event_type: 'BRUTE_FORCE_DETECTED',
         severity: 'high',
-        description: `Brute force attack detected: ${recentFailures.count} failed attempts`,
+        description: `Brute force attack detected: ${failureCount} failed attempts`,
         ip_address: ipAddress,
-        metadata: JSON.stringify({ email, attempts: recentFailures.count })
+        metadata: JSON.stringify({ email, attempts: failureCount })
       });
     }
   }
@@ -176,7 +178,7 @@ export class SecurityMonitoringService {
   /**
    * Check if event should trigger alerts
    */
-  static async checkForAlerts(db: any, event: SecurityEvent): Promise<void> {
+  static async checkForAlerts(db: D1Database, event: SecurityEvent): Promise<void> {
     // High/Critical events always trigger alerts
     if (event.severity === 'high' || event.severity === 'critical') {
       await this.createAlert(db, {
@@ -194,7 +196,24 @@ export class SecurityMonitoringService {
   /**
    * Get security dashboard stats
    */
-  static async getDashboardStats(db: any): Promise<any> {
+  static async getDashboardStats(db: D1Database): Promise<Record<string, unknown>> {
+    interface EventStats {
+      total: number;
+      critical: number;
+      high: number;
+      medium: number;
+      low: number;
+    }
+    interface AlertStats {
+      total: number;
+      critical: number;
+      high: number;
+    }
+    interface RateLimitStats {
+      count: number;
+      total_hits: number;
+    }
+
     // Events in last 24h
     const recentEvents = await db.prepare(`
       SELECT 
@@ -205,19 +224,19 @@ export class SecurityMonitoringService {
         SUM(CASE WHEN severity = 'low' THEN 1 ELSE 0 END) as low
       FROM security_events 
       WHERE timestamp >= datetime('now', '-24 hours')
-    `).first();
+    `).first<EventStats>();
     
     // Failed logins in last 24h
     const failedLogins = await db.prepare(`
       SELECT COUNT(*) as count FROM failed_logins 
       WHERE timestamp >= datetime('now', '-24 hours')
-    `).first();
+    `).first<{ count: number }>();
     
     // Rate limit hits in last hour
     const rateLimitHits = await db.prepare(`
       SELECT COUNT(*) as count, SUM(hit_count) as total_hits FROM rate_limit_hits 
       WHERE timestamp >= datetime('now', '-1 hour')
-    `).first();
+    `).first<RateLimitStats>();
     
     // Active alerts
     const activeAlerts = await db.prepare(`
@@ -227,15 +246,16 @@ export class SecurityMonitoringService {
         SUM(CASE WHEN severity = 'high' THEN 1 ELSE 0 END) as high
       FROM security_alerts 
       WHERE alert_status = 'active'
-    `).first();
+    `).first<AlertStats>();
     
     // Recent incidents (from HIPAA table)
-    let openIncidents = { count: 0 };
+    let openIncidentsCount = 0;
     try {
-      openIncidents = await db.prepare(`
+      const result = await db.prepare(`
         SELECT COUNT(*) as count FROM security_incidents 
         WHERE incident_status = 'open'
-      `).first();
+      `).first<{ count: number }>();
+      openIncidentsCount = result?.count ?? 0;
     } catch (e) {
       // Table might not exist or column name mismatch, default to 0
       console.log('[Security] No security_incidents data available');
@@ -279,7 +299,7 @@ export class SecurityMonitoringService {
         critical: activeAlerts?.critical || 0,
         high: activeAlerts?.high || 0
       },
-      open_incidents: openIncidents?.count || 0,
+      open_incidents: openIncidentsCount,
       top_event_types: topEvents.results,
       top_failed_ips: topFailedIPs.results,
       last_updated: new Date().toISOString()
@@ -289,7 +309,7 @@ export class SecurityMonitoringService {
   /**
    * Get compliance checklist
    */
-  static async getComplianceChecklist(db: any): Promise<any[]> {
+  static async getComplianceChecklist(db: D1Database): Promise<Record<string, unknown>[]> {
     const checklist = await db.prepare(`
       SELECT * FROM compliance_checklist 
       ORDER BY check_category, id
@@ -302,7 +322,7 @@ export class SecurityMonitoringService {
    * Update compliance check
    */
   static async updateComplianceCheck(
-    db: any, 
+    db: D1Database, 
     checkId: number, 
     is_compliant: boolean, 
     notes?: string
@@ -317,7 +337,7 @@ export class SecurityMonitoringService {
   /**
    * Initialize compliance checklist (run once)
    */
-  static async initializeComplianceChecklist(db: any): Promise<void> {
+  static async initializeComplianceChecklist(db: D1Database): Promise<void> {
     const checks = [
       // HIPAA Technical Safeguards
       { category: 'HIPAA_TECHNICAL', name: 'Access Control', description: 'Implement user authentication and authorization', required: true },

@@ -1,3 +1,4 @@
+import type { Context, Next } from 'hono';
 // Metrics Service for MoodMash
 // Prometheus-compatible metrics collection
 
@@ -164,7 +165,7 @@ export const metricsCollector = new MetricsCollector();
  * Middleware to track HTTP metrics
  */
 export function metricsMiddleware() {
-  return async (c: any, next: any) => {
+  return async (c: Context, next: Next) => {
     const start = Date.now();
     const path = new URL(c.req.url).pathname;
     

@@ -136,7 +136,7 @@ authApi.post('/login', async (c) => {
     'SELECT * FROM users WHERE username = ? OR email = ?'
   )
     .bind(username, username.toLowerCase())
-    .first() as any;
+    .first<{ id: number; email: string; username: string; password_hash: string | null; name: string | null; avatar_url: string | null; is_active: number; is_verified: number; created_at: string; }>();
 
   if (!user || !user.password_hash) {
     return c.json({ error: 'Invalid credentials' }, 401);
@@ -230,7 +230,7 @@ authApi.post('/resend-verification', async (c) => {
 
   const user = await DB.prepare('SELECT id, email, is_verified FROM users WHERE email = ?')
     .bind(email.toLowerCase())
-    .first() as any;
+    .first<{ id: number; email: string; username: string; password_hash: string | null; name: string | null; avatar_url: string | null; is_active: number; is_verified: number; created_at: string; }>();
 
   if (!user) {
     return c.json({ error: 'User not found' }, 404);

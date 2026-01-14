@@ -13,7 +13,10 @@
  */
 
 import type { D1Database, D1Result } from '@cloudflare/workers-types'
-import type { Bindings } from '../types'
+import type { Bindings, SqlParams } from '../types'
+
+/** Type for SQL parameter values */
+type SqlParamValue = string | number | boolean | null | Uint8Array;
 
 interface QueryOptions {
   cache?: boolean
@@ -29,8 +32,8 @@ interface PreparedStatementCache {
   useCount: number
 }
 
-interface QueryResultCache {
-  result: any
+interface QueryResultCache<T = unknown> {
+  result: T
   timestamp: number
   ttl: number
 }
@@ -38,7 +41,7 @@ interface QueryResultCache {
 class DatabasePool {
   private db: D1Database
   private preparedStatements: Map<string, PreparedStatementCache> = new Map()
-  private queryCache: Map<string, QueryResultCache> = new Map()
+  private queryCache: Map<string, QueryResultCache<unknown>> = new Map()
   private queryMetrics: Map<string, { count: number; totalTime: number; avgTime: number }> = new Map()
 
   constructor(db: D1Database) {
@@ -51,7 +54,7 @@ class DatabasePool {
   /**
    * Generate cache key for query
    */
-  private generateCacheKey(sql: string, params?: any[]): string {
+  private generateCacheKey(sql: string, params?: SqlParamValue[]): string {
     const paramStr = params ? JSON.stringify(params) : ''
     return `query:${sql}:${paramStr}`
   }
@@ -59,7 +62,7 @@ class DatabasePool {
   /**
    * Check if query result is cached
    */
-  private getCachedResult(cacheKey: string): any | null {
+  private getCachedResult<T = unknown>(cacheKey: string): T | null {
     const cached = this.queryCache.get(cacheKey)
     if (!cached) return null
 
@@ -69,13 +72,13 @@ class DatabasePool {
       return null
     }
 
-    return cached.result
+    return cached.result as T
   }
 
   /**
    * Cache query result
    */
-  private cacheResult(cacheKey: string, result: any, ttl: number): void {
+  private cacheResult<T = unknown>(cacheKey: string, result: T, ttl: number): void {
     this.queryCache.set(cacheKey, {
       result,
       timestamp: Date.now(),
@@ -125,9 +128,9 @@ class DatabasePool {
   /**
    * Execute query with caching and performance tracking
    */
-  async query<T = any>(
+  async query<T = Record<string, unknown>>(
     sql: string,
-    params?: any[],
+    params?: SqlParamValue[],
     options: QueryOptions = {}
   ): Promise<D1Result<T>> {
     const {
@@ -142,7 +145,7 @@ class DatabasePool {
 
     // Check cache
     if (cache) {
-      const cached = this.getCachedResult(cacheKey)
+      const cached = this.getCachedResult<D1Result<T>>(cacheKey)
       if (cached) {
         return cached
       }
@@ -204,9 +207,9 @@ class DatabasePool {
   /**
    * Execute single query (first row only)
    */
-  async queryFirst<T = any>(
+  async queryFirst<T = Record<string, unknown>>(
     sql: string,
-    params?: any[],
+    params?: SqlParamValue[],
     options: QueryOptions = {}
   ): Promise<T | null> {
     const result = await this.query<T>(sql, params, options)
@@ -216,9 +219,9 @@ class DatabasePool {
   /**
    * Execute query and return all rows
    */
-  async queryAll<T = any>(
+  async queryAll<T = Record<string, unknown>>(
     sql: string,
-    params?: any[],
+    params?: SqlParamValue[],
     options: QueryOptions = {}
   ): Promise<T[]> {
     const result = await this.query<T>(sql, params, options)
@@ -228,10 +231,10 @@ class DatabasePool {
   /**
    * Execute multiple queries in a batch
    */
-  async batch<T = any>(
-    queries: Array<{ sql: string; params?: any[] }>,
+  async batch<T = Record<string, unknown>>(
+    queries: Array<{ sql: string; params?: SqlParamValue[] }>,
     options: QueryOptions = {}
-  ): Promise<Array<D1Result<any>>> {
+  ): Promise<Array<D1Result<T>>> {
     const statements = queries.map(q => {
       const stmt = this.db.prepare(q.sql)
       return q.params && q.params.length > 0 ? stmt.bind(...q.params) : stmt
@@ -245,7 +248,7 @@ class DatabasePool {
       console.log(`[DB] Batch query (${queries.length} queries) completed in ${executionTime}ms`)
     }
 
-    return results as Array<D1Result<any>>
+    return results as Array<D1Result<T>>
   }
 
   /**
@@ -253,7 +256,7 @@ class DatabasePool {
    */
   async execute(
     sql: string,
-    params?: any[],
+    params?: SqlParamValue[],
     options: QueryOptions = {}
   ): Promise<D1Result> {
     const stmt = this.db.prepare(sql)
@@ -386,11 +389,11 @@ export async function initializeDatabase(db: D1Database): Promise<void> {
 export class QueryBuilder {
   private table: string
   private selectFields: string[] = ['*']
-  private whereConditions: Array<{ field: string; operator: string; value: any }> = []
+  private whereConditions: Array<{ field: string; operator: string; value: SqlParamValue }> = []
   private orderByFields: Array<{ field: string; direction: 'ASC' | 'DESC' }> = []
   private limitValue?: number
   private offsetValue?: number
-  private params: any[] = []
+  private params: SqlParamValue[] = []
 
   constructor(table: string) {
     this.table = table
@@ -401,7 +404,7 @@ export class QueryBuilder {
     return this
   }
 
-  where(field: string, operator: string, value: any): this {
+  where(field: string, operator: string, value: SqlParamValue): this {
     this.whereConditions.push({ field, operator, value })
     this.params.push(value)
     return this
@@ -422,7 +425,7 @@ export class QueryBuilder {
     return this
   }
 
-  build(): { sql: string; params: any[] } {
+  build(): { sql: string; params: SqlParamValue[] } {
     let sql = `SELECT ${this.selectFields.join(', ')} FROM ${this.table}`
 
     if (this.whereConditions.length > 0) {

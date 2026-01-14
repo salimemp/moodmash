@@ -1,3 +1,5 @@
+import type { D1Database } from '@cloudflare/workers-types';
+import { getErrorMessage } from '../types';
 /**
  * Research Anonymization Service
  * Consent management, data anonymization, research exports
@@ -41,7 +43,7 @@ export class ResearchAnonymizationService {
   /**
    * Create or update research consent (simplified for current schema)
    */
-  static async manageConsent(db: any, consent: ResearchConsent): Promise<void> {
+  static async manageConsent(db: D1Database, consent: ResearchConsent): Promise<void> {
     // Check if consent exists for this user
     const existing = await db.prepare(`
       SELECT id FROM research_consents 
@@ -75,7 +77,7 @@ export class ResearchAnonymizationService {
   /**
    * Get user's research consents
    */
-  static async getUserConsents(db: any, userId: number): Promise<any[]> {
+  static async getUserConsents(db: D1Database, userId: number): Promise<any[]> {
     const consents = await db.prepare(`
       SELECT * FROM research_consents 
       WHERE user_id = ? 
@@ -88,7 +90,7 @@ export class ResearchAnonymizationService {
   /**
    * Anonymize mood data for research
    */
-  static async anonymizeMoodData(db: any, userId: number): Promise<any> {
+  static async anonymizeMoodData(db: D1Database, userId: number): Promise<Record<string, unknown>> {
     // Check consent
     const consent = await db.prepare(`
       SELECT consent_given FROM research_consents 
@@ -111,13 +113,20 @@ export class ResearchAnonymizationService {
       FROM mood_entries 
       WHERE user_id = ?
       ORDER BY created_at DESC
-    `).bind(userId).all();
+    `).bind(userId).all<{
+      emotion: string;
+      intensity: number;
+      context_weather?: string;
+      context_sleep_hours?: number;
+      context_activities?: string;
+      created_at: string;
+    }>();
     
     // Generate anonymous ID
     const anonymousId = this.generateAnonymousId(userId);
     
     // Anonymize data (remove any identifying information)
-    const anonymizedMoods = moods.results.map((mood: any) => ({
+    const anonymizedMoods = (moods.results || []).map((mood) => ({
       emotion: mood.emotion,
       intensity: mood.intensity,
       weather: mood.context_weather,
@@ -145,7 +154,7 @@ export class ResearchAnonymizationService {
   /**
    * Anonymize health metrics for research
    */
-  static async anonymizeHealthMetrics(db: any, userId: number): Promise<any> {
+  static async anonymizeHealthMetrics(db: D1Database, userId: number): Promise<Record<string, unknown>> {
     // Check consent
     const consent = await db.prepare(`
       SELECT consent_given FROM research_consents 
@@ -157,6 +166,15 @@ export class ResearchAnonymizationService {
     }
     
     // Get health metrics
+    interface HealthMetricRow {
+      mental_health_score: number;
+      mood_stability_index: number;
+      sleep_quality_score: number;
+      activity_consistency: number;
+      stress_level: number;
+      crisis_risk_level: string;
+      calculated_at: string;
+    }
     const metrics = await db.prepare(`
       SELECT 
         mental_health_score,
@@ -170,13 +188,13 @@ export class ResearchAnonymizationService {
       WHERE user_id = ?
       ORDER BY calculated_at DESC
       LIMIT 90
-    `).bind(userId).all();
+    `).bind(userId).all<HealthMetricRow>();
     
     // Generate anonymous ID
     const anonymousId = this.generateAnonymousId(userId);
     
     // Anonymize data
-    const anonymizedMetrics = metrics.results.map((metric: any) => ({
+    const anonymizedMetrics = (metrics.results || []).map((metric) => ({
       mental_health_score: metric.mental_health_score,
       mood_stability: metric.mood_stability_index,
       sleep_quality: metric.sleep_quality_score,
@@ -205,7 +223,7 @@ export class ResearchAnonymizationService {
   /**
    * Store anonymized data
    */
-  static async storeAnonymizedData(db: any, data: AnonymizedData): Promise<void> {
+  static async storeAnonymizedData(db: D1Database, data: AnonymizedData): Promise<void> {
     // Check if data already exists
     const existing = await db.prepare(`
       SELECT id FROM anonymized_research_data 
@@ -236,7 +254,7 @@ export class ResearchAnonymizationService {
   /**
    * Create research export request
    */
-  static async createExportRequest(db: any, exportReq: ResearchExport): Promise<number> {
+  static async createExportRequest(db: D1Database, exportReq: ResearchExport): Promise<number> {
     const result = await db.prepare(`
       INSERT INTO research_exports (export_type, requester_name, requester_email, purpose, irb_approval, export_status)
       VALUES (?, ?, ?, ?, ?, 'pending')
@@ -254,14 +272,14 @@ export class ResearchAnonymizationService {
   /**
    * Get aggregated research statistics (fully anonymized)
    */
-  static async getAggregatedStats(db: any): Promise<any> {
+  static async getAggregatedStats(db: D1Database): Promise<Record<string, unknown>> {
     // Only users who have consented
     const consentedUsers = await db.prepare(`
       SELECT DISTINCT user_id FROM research_consents 
       WHERE consent_given = 1
-    `).all();
+    `).all<{ user_id: number }>();
     
-    const userIds = consentedUsers.results.map((u: any) => u.user_id);
+    const userIds = (consentedUsers.results || []).map((u) => u.user_id);
     
     if (userIds.length === 0) {
       return {
@@ -273,12 +291,13 @@ export class ResearchAnonymizationService {
     }
     
     // Mood distribution
+    interface MoodDistRow { emotion: string; count: number; }
     const moodDist = await db.prepare(`
       SELECT emotion, COUNT(*) as count 
       FROM mood_entries 
       WHERE user_id IN (${userIds.map(() => '?').join(',')})
       GROUP BY emotion
-    `).bind(...userIds).all();
+    `).bind(...userIds).all<MoodDistRow>();
     
     // Average metrics
     const avgMetrics = await db.prepare(`
@@ -288,7 +307,7 @@ export class ResearchAnonymizationService {
         AVG(stress_level) as avg_stress
       FROM health_metrics 
       WHERE user_id IN (${userIds.map(() => '?').join(',')})
-    `).bind(...userIds).first();
+    `).bind(...userIds).first<{ avg_mental_health: number; avg_sleep: number; avg_stress: number }>();
     
     // Average sleep hours
     const avgSleep = await db.prepare(`
@@ -296,14 +315,14 @@ export class ResearchAnonymizationService {
       FROM mood_entries 
       WHERE user_id IN (${userIds.map(() => '?').join(',')})
       AND context_sleep_hours IS NOT NULL
-    `).bind(...userIds).first();
+    `).bind(...userIds).first<{ avg_hours: number }>();
     
     return {
       total_participants: userIds.length,
-      mood_distribution: moodDist.results.reduce((acc: any, item: any) => {
+      mood_distribution: (moodDist.results || []).reduce((acc: Record<string, number>, item: MoodDistRow) => {
         acc[item.emotion] = item.count;
         return acc;
-      }, {}),
+      }, {} as Record<string, number>),
       average_mental_health_score: avgMetrics?.avg_mental_health || 0,
       average_sleep_quality: avgMetrics?.avg_sleep || 0,
       average_stress_level: avgMetrics?.avg_stress || 0,
@@ -314,7 +333,7 @@ export class ResearchAnonymizationService {
   /**
    * Add user to research participant pool
    */
-  static async addParticipant(db: any, userId: number, studyName: string, cohort?: string): Promise<void> {
+  static async addParticipant(db: D1Database, userId: number, studyName: string, cohort?: string): Promise<void> {
     await db.prepare(`
       INSERT INTO research_participants (user_id, study_name, cohort, enrollment_date, participant_status)
       VALUES (?, ?, ?, CURRENT_TIMESTAMP, 'active')
@@ -324,47 +343,52 @@ export class ResearchAnonymizationService {
   /**
    * Get research dashboard stats
    */
-  static async getResearchDashboard(db: any): Promise<any> {
+  static async getResearchDashboard(db: D1Database): Promise<Record<string, unknown>> {
     try {
       // Total consents
-      const totalConsents = await db.prepare(`
+      const totalConsentsResult = await db.prepare(`
         SELECT COUNT(*) as count FROM research_consents WHERE consent_given = 1
-      `).first();
+      `).first<{ count: number }>();
+      const totalConsentsCount = totalConsentsResult?.count ?? 0;
       
       // Active participants (use consented users as fallback)
-      let activeParticipants = { count: 0 };
+      let activeParticipantsCount = 0;
       try {
-        activeParticipants = await db.prepare(`
+        const result = await db.prepare(`
           SELECT COUNT(DISTINCT participant_code) as count FROM research_participants 
           WHERE participant_status = 'active'
-        `).first();
+        `).first<{ count: number }>();
+        activeParticipantsCount = result?.count ?? 0;
       } catch (e) {
         // Fallback: count consented users
-        activeParticipants = await db.prepare(`
+        const fallback = await db.prepare(`
           SELECT COUNT(DISTINCT user_id) as count FROM research_consents 
           WHERE consent_given = 1
-        `).first();
+        `).first<{ count: number }>();
+        activeParticipantsCount = fallback?.count ?? 0;
       }
       
       // Anonymized datasets
-      let datasets = { count: 0 };
+      let datasetsCount = 0;
       try {
-        datasets = await db.prepare(`
+        const result = await db.prepare(`
           SELECT COUNT(DISTINCT participant_code) as count FROM anonymized_research_data
-        `).first();
+        `).first<{ count: number }>();
+        datasetsCount = result?.count ?? 0;
       } catch (e) {
         console.log('[Research] No anonymized data yet');
       }
       
       // Export requests
-      let exports = { total: 0, pending: 0, approved: 0 };
+      let exportsTotal = 0;
+      let exportsPending = 0;
+      let exportsApproved = 0;
       try {
-        exports = await db.prepare(`
+        const result = await db.prepare(`
           SELECT COUNT(*) as total
           FROM research_exports
-        `).first();
-        exports.pending = 0;
-        exports.approved = 0;
+        `).first<{ total: number }>();
+        exportsTotal = result?.total ?? 0;
       } catch (e) {
         console.log('[Research] No exports yet');
       }
@@ -378,18 +402,18 @@ export class ResearchAnonymizationService {
       `).all();
       
       return {
-        total_consents: totalConsents?.count || 0,
-        active_participants: activeParticipants?.count || 0,
-        anonymized_datasets: datasets?.count || 0,
+        total_consents: totalConsentsCount,
+        active_participants: activeParticipantsCount,
+        anonymized_datasets: datasetsCount,
         export_requests: {
-          total: exports?.total || 0,
-          pending: exports?.pending || 0,
-          approved: exports?.approved || 0
+          total: exportsTotal,
+          pending: exportsPending,
+          approved: exportsApproved
         },
         consent_breakdown: consentBreakdown.results,
         last_updated: new Date().toISOString()
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Research] Dashboard error:', error);
       return {
         total_consents: 0,
@@ -398,7 +422,7 @@ export class ResearchAnonymizationService {
         export_requests: { total: 0, pending: 0, approved: 0 },
         consent_breakdown: [],
         last_updated: new Date().toISOString(),
-        error: error.message
+        error: getErrorMessage(error)
       };
     }
   }

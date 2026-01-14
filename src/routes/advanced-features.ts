@@ -1,3 +1,4 @@
+import { getErrorMessage, CalendarMoodEntry } from '../types';
 /**
  * Advanced Features API Routes
  * Push Notifications, Geolocation, Search, Calendar, Export
@@ -7,7 +8,7 @@ import { Hono } from 'hono';
 import type { D1Database } from '@cloudflare/workers-types';
 import { buildSearchQuery, buildFilterClause, highlightSearchTerms } from '../utils/search';
 import { generateCalendarMonth, populateCalendarWithMoods, generateICalExport } from '../utils/calendar';
-import { exportToJSON, exportToCSV, exportToPDFHTML, generateExportFilename } from '../utils/data-export';
+import { exportToJSON, exportToCSV, exportToPDFHTML, generateExportFilename, ExportData, ExportMoodEntry } from '../utils/data-export';
 
 type Bindings = {
   DB: D1Database;
@@ -54,9 +55,9 @@ app.post('/push/subscribe', async (c) => {
       id: result.meta.last_row_id,
       message: 'Successfully subscribed to push notifications'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Push] Subscribe error:', error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -74,8 +75,8 @@ app.post('/push/unsubscribe', async (c) => {
     `).bind(userId, endpoint).run();
     
     return c.json({ success: true, message: 'Successfully unsubscribed' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -101,8 +102,8 @@ app.get('/push/preferences', async (c) => {
     }
     
     return c.json({ success: true, preferences: prefs });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -135,8 +136,8 @@ app.put('/push/preferences', async (c) => {
     ).run();
     
     return c.json({ success: true, message: 'Preferences updated' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -183,8 +184,8 @@ app.post('/location/save', async (c) => {
     }
     
     return c.json({ success: true, message: 'Location saved' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -209,8 +210,8 @@ app.get('/location/preferences', async (c) => {
     }
     
     return c.json({ success: true, preferences: prefs });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -237,8 +238,8 @@ app.put('/location/preferences', async (c) => {
     ).run();
     
     return c.json({ success: true, message: 'Location preferences updated' });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -303,9 +304,9 @@ app.post('/search', async (c) => {
         query
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Search] Error:', error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -325,8 +326,8 @@ app.get('/search/history', async (c) => {
     `).bind(userId).all();
     
     return c.json({ success: true, history: results.results });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -360,14 +361,14 @@ app.get('/calendar/:year/:month', async (c) => {
         AND DATE(logged_at) >= DATE(?)
         AND DATE(logged_at) <= DATE(?)
       ORDER BY logged_at ASC
-    `).bind(userId, firstDay, lastDay).all();
+    `).bind(userId, firstDay, lastDay).all<CalendarMoodEntry>();
     
     // Populate calendar with moods
-    calendar = populateCalendarWithMoods(calendar, moods.results);
+    calendar = populateCalendarWithMoods(calendar, moods.results || []);
     
     return c.json({ success: true, calendar });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -381,7 +382,7 @@ app.get('/calendar/export/ical', async (c) => {
     const dateTo = c.req.query('to');
     
     let sql = 'SELECT * FROM mood_entries WHERE user_id = ?';
-    const params: any[] = [userId];
+    const params: (string | number)[] = [userId];
     
     if (dateFrom) {
       sql += ' AND logged_at >= ?';
@@ -395,16 +396,16 @@ app.get('/calendar/export/ical', async (c) => {
     
     sql += ' ORDER BY logged_at ASC';
     
-    const moods = await DB.prepare(sql).bind(...params).all();
+    const moods = await DB.prepare(sql).bind(...params).all<CalendarMoodEntry>();
     
-    const icalContent = generateICalExport(moods.results);
+    const icalContent = generateICalExport(moods.results || []);
     
     return c.text(icalContent, 200, {
       'Content-Type': 'text/calendar',
       'Content-Disposition': 'attachment; filename="moodmash-calendar.ics"'
     });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -426,7 +427,7 @@ app.post('/export', async (c) => {
     
     // Build query
     let sql = 'SELECT * FROM mood_entries WHERE user_id = ?';
-    const params: any[] = [userId];
+    const params: (string | number)[] = [userId];
     
     if (dateFrom) {
       sql += ' AND logged_at >= ?';
@@ -440,22 +441,23 @@ app.post('/export', async (c) => {
     
     sql += ' ORDER BY logged_at DESC';
     
-    const moods = await DB.prepare(sql).bind(...params).all();
+    const moods = await DB.prepare(sql).bind(...params).all<ExportMoodEntry>();
+    const moodEntries = moods.results || [];
     
     // Prepare export data
-    const exportData = {
+    const exportData: ExportData = {
       user: {
         username: 'user', // TODO: Get from session
         email: 'user@moodmash.win'
       },
       exportDate: new Date().toISOString(),
       dateRange: {
-        from: dateFrom || moods.results[moods.results.length - 1]?.logged_at || new Date().toISOString(),
-        to: dateTo || moods.results[0]?.logged_at || new Date().toISOString()
+        from: dateFrom || moodEntries[moodEntries.length - 1]?.logged_at || new Date().toISOString(),
+        to: dateTo || moodEntries[0]?.logged_at || new Date().toISOString()
       },
-      moodEntries: moods.results,
+      moodEntries,
       activities: includeActivities ? [] : undefined,
-      insights: includeInsights ? {} : undefined
+      insights: includeInsights ? { averageIntensity: 0, mostFrequentEmotion: '', totalEntries: 0, daysTracked: 0 } : undefined
     };
     
     let content: string;
@@ -485,7 +487,7 @@ app.post('/export', async (c) => {
       format,
       dateFrom || null,
       dateTo || null,
-      moods.results.length,
+      moodEntries.length,
       c.req.header('CF-Connecting-IP') || 'unknown'
     ).run();
     
@@ -493,9 +495,9 @@ app.post('/export', async (c) => {
       'Content-Type': mimeType,
       'Content-Disposition': `attachment; filename="${filename}"`
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[Export] Error:', error);
-    return c.json({ error: error.message }, 500);
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 
@@ -513,8 +515,8 @@ app.get('/export/history', async (c) => {
     `).bind(userId).all();
     
     return c.json({ success: true, history: results.results });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
+  } catch (error: unknown) {
+    return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
 

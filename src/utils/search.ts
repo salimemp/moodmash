@@ -105,10 +105,23 @@ export function highlightSearchTerms(
   return highlighted;
 }
 
+/** Input type for search filters (from request body) */
+interface SearchFiltersInput {
+  emotion?: unknown;
+  dateFrom?: unknown;
+  dateTo?: unknown;
+  intensityMin?: unknown;
+  intensityMax?: unknown;
+  tags?: unknown;
+}
+
+/** Type for SQL parameter values */
+type SqlParamValue = string | number | boolean | null;
+
 /**
  * Parse and validate search filters
  */
-export function parseSearchFilters(filters: any): SearchQuery['filters'] {
+export function parseSearchFilters(filters: SearchFiltersInput | null | undefined): SearchQuery['filters'] {
   if (!filters) {
     return undefined;
   }
@@ -126,13 +139,13 @@ export function parseSearchFilters(filters: any): SearchQuery['filters'] {
 /**
  * Build SQL WHERE clause from filters
  */
-export function buildFilterClause(filters?: SearchQuery['filters']): { clause: string; params: any[] } {
+export function buildFilterClause(filters?: SearchQuery['filters']): { clause: string; params: SqlParamValue[] } {
   if (!filters) {
     return { clause: '', params: [] };
   }
   
   const conditions: string[] = [];
-  const params: any[] = [];
+  const params: SqlParamValue[] = [];
   
   if (filters.emotion && filters.emotion.length > 0) {
     const placeholders = filters.emotion.map(() => '?').join(',');

@@ -277,15 +277,28 @@ export async function getSubscriptionPlans(
   env: Bindings
 ): Promise<SubscriptionPlan[]> {
   try {
+    interface PlanRow {
+      id: number;
+      name: string;
+      display_name: string;
+      description: string;
+      price_monthly: number;
+      price_yearly: number;
+      features: string; // JSON string in DB
+      max_moods_per_month: number;
+      max_groups: number;
+      max_friends: number;
+      is_active: number;
+    }
     const result = await env.DB.prepare(`
       SELECT * FROM subscription_plans
       WHERE is_active = 1
       ORDER BY price_monthly ASC
-    `).all();
+    `).all<PlanRow>();
 
-    return (result.results || []).map((plan: any) => ({
+    return (result.results || []).map((plan) => ({
       ...plan,
-      features: JSON.parse(plan.features),
+      features: JSON.parse(plan.features) as string[],
     }));
   } catch (error) {
     console.error('Failed to get subscription plans:', error);
@@ -372,7 +385,7 @@ export async function cancelSubscription(
 export async function getSubscriptionStats(
   env: Bindings,
   userId: number
-): Promise<any> {
+): Promise<Record<string, unknown> | null> {
   try {
     const subscription = await getUserSubscription(env, userId);
     if (!subscription) {

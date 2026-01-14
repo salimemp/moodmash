@@ -26,7 +26,7 @@ export async function lazyLoad<T>(
 /**
  * Debounce function for performance
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
@@ -48,7 +48,7 @@ export function debounce<T extends (...args: any[]) => any>(
 /**
  * Throttle function for performance
  */
-export function throttle<T extends (...args: any[]) => any>(
+export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   limit: number
 ): (...args: Parameters<T>) => void {
@@ -249,12 +249,25 @@ export function batchDOMUpdates(updates: (() => void)[]): void {
   });
 }
 
+/** Navigator with experimental Network Information API */
+interface NavigatorWithConnection extends Navigator {
+  connection?: {
+    effectiveType?: string;
+    saveData?: boolean;
+    downlink?: number;
+    rtt?: number;
+  };
+  deviceMemory?: number;
+}
+
 /**
  * Get connection quality
  */
 export function getConnectionQuality(): 'slow' | 'medium' | 'fast' {
-  if ('connection' in navigator) {
-    const connection = (navigator as any).connection;
+  const nav = navigator as NavigatorWithConnection;
+  
+  if (nav.connection) {
+    const connection = nav.connection;
     
     if (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
       return 'slow';
@@ -272,9 +285,10 @@ export function getConnectionQuality(): 'slow' | 'medium' | 'fast' {
  * Check if device has limited resources
  */
 export function hasLimitedResources(): boolean {
-  if ('deviceMemory' in navigator) {
-    const memory = (navigator as any).deviceMemory;
-    return memory <= 4; // 4GB or less
+  const nav = navigator as NavigatorWithConnection;
+  
+  if (nav.deviceMemory !== undefined) {
+    return nav.deviceMemory <= 4; // 4GB or less
   }
   
   if ('hardwareConcurrency' in navigator) {
@@ -319,6 +333,7 @@ export function prefetchWhenIdle(urls: string[]): void {
 /**
  * Memoize function results
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function memoize<T extends (...args: any[]) => any>(
   fn: T,
   keyGenerator?: (...args: Parameters<T>) => string
@@ -332,7 +347,7 @@ export function memoize<T extends (...args: any[]) => any>(
       return cache.get(key)!;
     }
     
-    const result = fn(...args);
+    const result = fn(...args) as ReturnType<T>;
     cache.set(key, result);
     return result;
   }) as T;

@@ -2,9 +2,10 @@
 import { Google, GitHub } from 'arctic';
 import type { Context } from 'hono';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import type { OAuthEnv } from './types';
 
 // Check if OAuth provider is configured
-export function isOAuthConfigured(provider: 'google' | 'github', env: any): boolean {
+export function isOAuthConfigured(provider: 'google' | 'github', env: OAuthEnv): boolean {
     if (provider === 'google') {
         return !!(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
     } else if (provider === 'github') {
@@ -14,7 +15,7 @@ export function isOAuthConfigured(provider: 'google' | 'github', env: any): bool
 }
 
 // Initialize OAuth providers
-export function initOAuthProviders(env: any) {
+export function initOAuthProviders(env: OAuthEnv): { google: Google | null; github: GitHub | null } {
     // For production, use the production URL
     // For local development, use localhost
     const baseUrl = env.BASE_URL || 'https://moodmash.win';

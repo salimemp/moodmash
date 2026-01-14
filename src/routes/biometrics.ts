@@ -59,7 +59,7 @@ biometricRoutes.post('/register/options', async (c) => {
       'SELECT credential_id FROM biometric_credentials WHERE user_id = ?'
     ).bind(userId).all();
 
-    const excludeCredentials = existingCredentials.results.map((row: any) => ({
+    const excludeCredentials = existingCredentials.results.map((row: Record<string, unknown>) => ({
       type: 'public-key' as const,
       id: row.credential_id
     }));
@@ -182,7 +182,7 @@ biometricRoutes.post('/authenticate/options', async (c) => {
         return c.json({ error: 'No biometric credentials found for this user' }, 404);
       }
 
-      allowCredentials = credentials.results.map((row: any) => ({
+      allowCredentials = credentials.results.map((row: Record<string, unknown>) => ({
         type: 'public-key' as const,
         id: row.credential_id
       }));
@@ -376,7 +376,7 @@ biometricRoutes.get('/list', async (c) => {
     ).bind(currentUser.userId).all();
 
     return c.json({
-      credentials: credentials.results.map((row: any) => ({
+      credentials: credentials.results.map((row: Record<string, unknown>) => ({
         id: row.credential_id,
         createdAt: row.created_at,
         lastUsedAt: row.last_used_at

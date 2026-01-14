@@ -95,6 +95,7 @@ export interface AdvancedAnalyticsResult {
 
 export class GeminiAIService {
   private genAI: GoogleGenerativeAI;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any - External Gemini API model without TypeScript types
   private model: any;
 
   constructor(apiKey: string) {
@@ -137,7 +138,7 @@ Provide a detailed analysis in the following JSON format:
    * 2. Predictive Mood Forecasting
    * Predicts likely moods for the next 7 days
    */
-  async forecastMood(moodEntries: MoodEntry[], currentContext?: any): Promise<ForecastResult> {
+  async forecastMood(moodEntries: MoodEntry[], currentContext?: Record<string, unknown>): Promise<ForecastResult> {
     const prompt = `Based on the following mood history and current context, predict the user's mood for the next 7 days:
 
 Mood History:

@@ -391,7 +391,7 @@ async function sendPushNotification(
     icon?: string
     badge?: string
     tag?: string
-    data?: any
+    data?: Record<string, unknown>
   }
 ): Promise<void> {
   // This is a placeholder - actual implementation would use Web Push API

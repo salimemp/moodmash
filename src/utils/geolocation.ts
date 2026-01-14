@@ -79,13 +79,20 @@ export async function getLocationWithDetails(): Promise<LocationData> {
     
     // Try to get additional details from Cloudflare headers (if available)
     // This is populated by Cloudflare Workers at the edge
-    const cfHeaders: any = await fetch('/api/location/info').then(r => r.json()).catch(() => ({}));
+    interface CfLocationHeaders {
+      city?: string;
+      country?: string;
+      timezone?: string;
+    }
+    const cfHeaders: CfLocationHeaders = await fetch('/api/location/info')
+      .then(r => r.json() as Promise<CfLocationHeaders>)
+      .catch(() => ({}));
     
     return {
       ...location,
-      city: cfHeaders.city,
-      country: cfHeaders.country,
-      timezone: cfHeaders.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
+      city: cfHeaders?.city,
+      country: cfHeaders?.country,
+      timezone: cfHeaders?.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone
     };
   } catch (error) {
     // If geolocation fails, at least return timezone
@@ -121,7 +128,16 @@ export async function reverseGeocode(
       throw new Error('Geocoding failed');
     }
     
-    const data: any = await response.json();
+    interface NominatimResponse {
+      address?: {
+        city?: string;
+        town?: string;
+        village?: string;
+        country?: string;
+      };
+      display_name?: string;
+    }
+    const data = await response.json() as NominatimResponse;
     
     return {
       city: data.address?.city || data.address?.town || data.address?.village,

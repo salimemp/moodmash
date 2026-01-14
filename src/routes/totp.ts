@@ -1,3 +1,4 @@
+import type { Context } from 'hono';
 /**
  * Two-Factor Authentication Routes (TOTP/HOTP)
  * Handles app-based (Google Authenticator) and hardware token 2FA
@@ -187,7 +188,7 @@ totpRoutes.post('/verify', async (c) => {
 /**
  * Verify backup code
  */
-async function verifyBackupCodeHandler(c: any, userId: string, code: string) {
+async function verifyBackupCodeHandler(c: Context, userId: string, code: string) {
   try {
     // Get all unused backup codes
     const codes = await c.env.DB.prepare(
@@ -200,7 +201,7 @@ async function verifyBackupCodeHandler(c: any, userId: string, code: string) {
 
     // Verify code
     const codeHash = await hashBackupCode(code);
-    const matchingCode = codes.results.find((row: any) => row.code_hash === codeHash);
+    const matchingCode = codes.results.find((row: Record<string, unknown>) => row.code_hash === codeHash);
 
     if (!matchingCode) {
       return c.json({ error: 'Invalid backup code' }, 400);

@@ -1,3 +1,4 @@
+import { getErrorMessage } from './types';
 /**
  * CCPA (California Consumer Privacy Act) API Routes
  * Implements user rights under CCPA:
@@ -94,11 +95,11 @@ export async function getCCPAPreferences(c: Context) {
         updated_at: prefs.updated_at
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CCPA preferences error:', error);
     return c.json({ 
       error: 'Failed to get CCPA preferences',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -180,11 +181,11 @@ export async function updateCCPAPreferences(c: Context) {
       message: 'CCPA preferences updated successfully',
       preferences: { do_not_sell, do_not_share, limit_use }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CCPA update error:', error);
     return c.json({ 
       error: 'Failed to update CCPA preferences',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -250,11 +251,11 @@ export async function submitCCPARequest(c: Context) {
       due_date: dueDate.toISOString(),
       response_time: '45 days (as required by CCPA)'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CCPA request error:', error);
     return c.json({ 
       error: 'Failed to submit CCPA request',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -287,11 +288,11 @@ export async function getCCPARequests(c: Context) {
       success: true,
       requests: requests.results
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('CCPA requests error:', error);
     return c.json({ 
       error: 'Failed to get CCPA requests',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -312,9 +313,18 @@ export async function getDataCategories(c: Context) {
       ORDER BY category_label
     `).all();
 
+    interface CategoryRow {
+      category_name: string;
+      description: string;
+      is_sensitive: number;
+      is_sold: number;
+      is_shared: number;
+      third_parties?: string;
+    }
+    const typedCategories = categories.results as CategoryRow[];
     return c.json({
       success: true,
-      categories: categories.results.map((cat: any) => ({
+      categories: typedCategories.map((cat) => ({
         ...cat,
         is_sensitive: Boolean(cat.is_sensitive),
         is_sold: Boolean(cat.is_sold),
@@ -322,11 +332,11 @@ export async function getDataCategories(c: Context) {
         third_parties: cat.third_parties ? JSON.parse(cat.third_parties) : []
       }))
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Data categories error:', error);
     return c.json({ 
       error: 'Failed to get data categories',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -346,7 +356,8 @@ export async function exportUserData(c: Context) {
     const userId = parseInt(session.userId);
 
     // Collect all user data
-    const userData: any = {};
+    // Dynamic user data object from multiple tables
+    const userData: Record<string, unknown> = {};
 
     // User profile
     const user = await db.prepare(`
@@ -398,11 +409,11 @@ export async function exportUserData(c: Context) {
       'Content-Disposition': `attachment; filename="moodmash-data-export-${userId}-${Date.now()}.json"`,
       'Content-Type': 'application/json'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Data export error:', error);
     return c.json({ 
       error: 'Failed to export user data',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -449,11 +460,11 @@ export async function deleteUserAccount(c: Context) {
       message: 'Account and all associated data deleted successfully',
       deleted_at: new Date().toISOString()
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Account deletion error:', error);
     return c.json({ 
       error: 'Failed to delete account',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -498,11 +509,11 @@ export async function logCCPANotice(c: Context) {
       success: true,
       message: 'Notice logged successfully'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Notice log error:', error);
     return c.json({ 
       error: 'Failed to log notice',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }
@@ -526,10 +537,10 @@ export async function checkCCPAApplicability(c: Context) {
         note: 'CCPA applies to California residents. If you are a California resident, you have additional privacy rights.'
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     return c.json({ 
       error: 'Failed to check CCPA applicability',
-      message: error.message 
+      message: getErrorMessage(error) 
     }, 500);
   }
 }

@@ -1,3 +1,5 @@
+import type { D1Database } from '@cloudflare/workers-types';
+import { getErrorMessage } from '../types';
 /**
  * HIPAA Compliance Service
  * Audit logging, BAA templates, PHI tracking
@@ -41,7 +43,7 @@ export class HIPAAComplianceService {
   /**
    * Log HIPAA audit event
    */
-  static async logAudit(db: any, auditLog: AuditLog): Promise<void> {
+  static async logAudit(db: D1Database, auditLog: AuditLog): Promise<void> {
     const phiFieldsJson = auditLog.phi_fields ? JSON.stringify(auditLog.phi_fields) : null;
     
     await db.prepare(`
@@ -66,7 +68,7 @@ export class HIPAAComplianceService {
   /**
    * Check if data contains PHI
    */
-  static containsPHI(data: any): { isPHI: boolean; fields: string[] } {
+  static containsPHI(data: Record<string, unknown>): { isPHI: boolean; fields: string[] } {
     const phiFields: string[] = [];
     
     // HIPAA PHI identifiers (18 identifiers under Safe Harbor method)
@@ -164,7 +166,7 @@ Business Associate: _______________________  Date: __________
   /**
    * Get compliance status
    */
-  static async getComplianceStatus(db: any): Promise<any> {
+  static async getComplianceStatus(db: D1Database): Promise<Record<string, unknown>> {
     try {
       // Get recent audit logs
       const recentAudits = await db.prepare(`
@@ -179,17 +181,23 @@ Business Associate: _______________________  Date: __________
       `).first();
 
       // Get open incidents (with error handling)
-      let openIncidents = { count: 0 };
+      let openIncidents: { count: number } | null = { count: 0 };
       try {
         openIncidents = await db.prepare(`
           SELECT COUNT(*) as count FROM security_incidents 
           WHERE incident_status = 'open'
-        `).first();
+        `).first<{ count: number }>();
       } catch (e) {
         console.log('[HIPAA] security_incidents table not available');
       }
 
       // Get encryption status
+      interface EncryptionRow {
+        data_type: string;
+        encryption_method: string;
+        is_encrypted: number;
+        last_verified: string;
+      }
       const encryptionStatus = await db.prepare(`
         SELECT 
           component as data_type,
@@ -198,16 +206,20 @@ Business Associate: _______________________  Date: __________
           last_verified
         FROM encryption_verification 
         ORDER BY last_verified DESC
-      `).all();
+      `).all<EncryptionRow>();
 
       // Calculate compliance score
       const totalChecks = 10;
       let passedChecks = 0;
 
-      if (recentAudits?.count > 0) passedChecks += 2; // Audit logging active
-      if (activePolicies?.count >= 4) passedChecks += 2; // Key policies in place
-      if (openIncidents?.count === 0) passedChecks += 3; // No open incidents
-      if (encryptionStatus.results.length > 0 && encryptionStatus.results.every((e: any) => e.is_encrypted)) {
+      const recentAuditsCount = (recentAudits as { count: number } | null)?.count ?? 0;
+      const activePoliciesCount = (activePolicies as { count: number } | null)?.count ?? 0;
+      const openIncidentsCount = openIncidents?.count ?? 0;
+
+      if (recentAuditsCount > 0) passedChecks += 2; // Audit logging active
+      if (activePoliciesCount >= 4) passedChecks += 2; // Key policies in place
+      if (openIncidentsCount === 0) passedChecks += 3; // No open incidents
+      if (encryptionStatus.results && encryptionStatus.results.length > 0 && encryptionStatus.results.every((e) => e.is_encrypted)) {
         passedChecks += 3; // All encrypted
       }
 
@@ -217,13 +229,13 @@ Business Associate: _______________________  Date: __________
       return {
         overall_status: isCompliant ? 'compliant' : 'partial',
         compliance_score: complianceScore,
-        audit_logs_30d: recentAudits?.count || 0,
-        active_policies: activePolicies?.count || 0,
-        open_incidents: openIncidents?.count || 0,
+        audit_logs_30d: recentAuditsCount,
+        active_policies: activePoliciesCount,
+        open_incidents: openIncidentsCount,
         encryption_status: encryptionStatus.results,
         last_updated: new Date().toISOString()
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[HIPAA] Error getting compliance status:', error);
       // Return safe defaults
       return {
@@ -234,7 +246,7 @@ Business Associate: _______________________  Date: __________
         open_incidents: 0,
         encryption_status: [],
         last_updated: new Date().toISOString(),
-        error: error.message
+        error: getErrorMessage(error)
       };
     }
   }

@@ -137,7 +137,7 @@ export async function checkCaptchaRateLimit(
 export async function getCaptchaStats(
   env: Bindings,
   timeframe: 'hour' | 'day' | 'week' = 'day'
-): Promise<any> {
+): Promise<Record<string, unknown> | null> {
   try {
     const timeframeMinutes = {
       hour: 60,
