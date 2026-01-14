@@ -124,6 +124,20 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <!-- Splash screens for iOS -->
         <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png">
         
+        <!-- Resource Hints for Performance -->
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+        <link rel="preconnect" href="https://challenges.cloudflare.com" crossorigin>
+        <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+        <link rel="dns-prefetch" href="//challenges.cloudflare.com">
+        
+        <!-- Preload Critical Resources -->
+        <link rel="preload" href="/static/script-loader.js" as="script">
+        <link rel="preload" href="/static/tailwind-complete.css" as="style">
+        <link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" as="style" crossorigin>
+        
+        <!-- Prefetch likely-needed resources -->
+        <link rel="prefetch" href="/static/i18n/en.json" as="fetch" crossorigin>
+        
         <!-- Stylesheets with SRI -->
         <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" 
               rel="stylesheet" 
@@ -132,19 +146,6 @@ export function renderHTML(title: string, content: string, currentPage: string =
         <link href="/static/tailwind-complete.css" rel="stylesheet">
         <link href="/static/styles.css" rel="stylesheet">
         <link href="/static/mobile-responsive.css" rel="stylesheet">
-        
-        <!-- DNS Prefetch for performance -->
-        <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
-        <link rel="dns-prefetch" href="//challenges.cloudflare.com">
-        
-        <!-- Preload critical scripts -->
-        <link rel="preload" href="/static/utils.js" as="script">
-        <link rel="preload" href="/static/i18n-loader.js" as="script">
-        
-        <!-- Resource hints for external resources -->
-        <link rel="preconnect" href="https://cdn.jsdelivr.net">
-        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-        <link rel="preconnect" href="https://challenges.cloudflare.com">
     </head>
     <body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 min-h-screen transition-colors duration-300">
         <!-- External Libraries with SRI (defer for non-blocking) -->
@@ -158,27 +159,11 @@ export function renderHTML(title: string, content: string, currentPage: string =
                 integrity="sha384-DpVxUeeBWjUvUV1czyIHJAjh+jYUZFu2lLakbdua5vbwOrBGi1UgaKCHjTC+x3Ky" 
                 crossorigin="anonymous" defer></script>
         
-        <!-- Load i18n (lazy-loading) and utils BEFORE any UI rendering -->
-        <script src="/static/i18n-loader.js"></script>
-        <script src="/static/utils.js"></script>
-        <script src="/static/auth.js" defer></script>
-        
-        <!-- Emergency UI Fixes -->
-        <script src="/static/emergency-fix-v2.js" defer></script>
+        <!-- Dynamic Script Loader - Handles lazy loading of all other scripts -->
+        <script src="/static/script-loader.js"></script>
         
         <!-- Cloudflare Turnstile (Bot Protection) -->
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-        
-        <!-- Secondary scripts (load after core with defer for non-blocking) -->
-        <script defer src="/static/onboarding.js"></script>
-        <script defer src="/static/chatbot.js"></script>
-        <script defer src="/static/accessibility.js"></script>
-        <script defer src="/static/cookie-consent.js"></script>
-        <script defer src="/static/bottom-nav.js"></script>
-        <script defer src="/static/touch-gestures.js"></script>
-        <script defer src="/static/pwa-advanced.js"></script>
-        <script defer src="/static/onboarding-v2.js"></script>
-        <script defer src="/static/biometric-ui.js"></script>
         
         <!-- Microsoft Clarity - Session Recording & Heatmaps -->
         <!-- Disabled due to CSP restrictions on Cloudflare Pages -->
@@ -258,43 +243,43 @@ export function renderHTML(title: string, content: string, currentPage: string =
                             <div class="hidden group-hover:block absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50" id="lang-dropdown">
                                 <div class="py-2">
                                     <!-- Languages will be dynamically loaded -->
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('en')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('en')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇺🇸 English
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('es')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('es')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇪🇸 Español
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('zh')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('zh')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇨🇳 中文
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('fr')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('fr')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇫🇷 Français
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('de')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('de')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇩🇪 Deutsch
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('it')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('it')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇮🇹 Italiano
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ar')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('ar')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇸🇦 العربية
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('hi')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('hi')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇮🇳 हिन्दी
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('bn')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('bn')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇧🇩 বাংলা
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ta')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('ta')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇮🇳 தமிழ்
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ja')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('ja')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇯🇵 日本語
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ko')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('ko')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇰🇷 한국어
                                     </button>
-                                    <button onclick="if(window.i18n) window.i18n.changeLanguage('ms')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                                    <button onclick="if(window.I18n) window.I18n.setLanguage('ms')" class="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                                         🇲🇾 Bahasa Melayu
                                     </button>
                                 </div>
@@ -374,16 +359,16 @@ export function renderHTML(title: string, content: string, currentPage: string =
         </button>
         
         <script>
-            // Initialize theme manager, language selector, chatbot, accessibility, and check auth status
-            document.addEventListener('DOMContentLoaded', () => {
+            // Initialize after scripts are loaded
+            function initializeApp() {
                 // Initialize language selector with all 13 languages
-                if (window.i18n) {
-                    const langs = i18n.getAvailableLanguages();
+                if (window.I18n) {
+                    const langs = I18n.getAvailableLanguages();
                     const currentLangBtn = document.getElementById('current-language');
                     
                     // Update current language display
                     const updateCurrentLanguage = () => {
-                        const current = langs.find(l => l.code === i18n.currentLanguage);
+                        const current = langs.find(l => l.code === I18n.currentLanguage);
                         if (current && currentLangBtn) {
                             currentLangBtn.textContent = current.flag + ' ' + current.code.toUpperCase();
                         }
@@ -393,14 +378,13 @@ export function renderHTML(title: string, content: string, currentPage: string =
                     updateCurrentLanguage();
                     
                     // Listen for language changes
-                    window.addEventListener('languageChanged', updateCurrentLanguage);
+                    window.addEventListener('i18n:languageChanged', updateCurrentLanguage);
                 }
                 
                 // Initialize AI Chatbot button
                 const aiChatBtn = document.getElementById('ai-chat-toggle');
                 if (aiChatBtn) {
                     aiChatBtn.addEventListener('click', () => {
-                        // Navigate to AI chat page
                         window.location.href = '/ai-chat';
                     });
                 }
@@ -409,25 +393,41 @@ export function renderHTML(title: string, content: string, currentPage: string =
                 const a11yBtn = document.getElementById('accessibility-toggle');
                 if (a11yBtn) {
                     a11yBtn.addEventListener('click', () => {
-                        // The accessibility.js file handles the menu rendering
-                        // Just need to trigger the accessibility panel
                         const a11yPanel = document.getElementById('accessibility-panel');
                         if (a11yPanel) {
                             a11yPanel.classList.toggle('hidden');
-                        } else {
-                            // If panel doesn't exist, the accessibilityManager will create it on first click
-                            console.log('Accessibility features loaded');
                         }
                     });
                 }
                 
-                // Check authentication and update nav if needed
+                // Check authentication after auth script loads
                 if (typeof checkAuthStatus === 'function') {
                     checkAuthStatus().then(() => {
-                        window.dispatchEvent(new CustomEvent('authReady', { detail: { user: currentUser } }));
+                        window.dispatchEvent(new CustomEvent('authReady', { detail: { user: window.currentUser } }));
                     });
                 }
+            }
+            
+            // Wait for scripts to be ready
+            window.addEventListener('scriptsReady', initializeApp);
+            window.addEventListener('i18n:ready', () => {
+                const currentLangBtn = document.getElementById('current-language');
+                if (currentLangBtn && window.I18n) {
+                    const langs = I18n.getAvailableLanguages();
+                    const current = langs.find(l => l.code === I18n.currentLanguage);
+                    if (current) {
+                        currentLangBtn.textContent = current.flag + ' ' + current.code.toUpperCase();
+                    }
+                }
             });
+            
+            // Fallback if scriptsReady doesn't fire
+            setTimeout(() => {
+                if (!window._appInitialized) {
+                    window._appInitialized = true;
+                    initializeApp();
+                }
+            }, 3000);
         </script>
 
         <!-- Main Content -->

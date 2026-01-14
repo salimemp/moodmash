@@ -193,15 +193,39 @@ const I18n = (function() {
     return loadedLanguages.has(lang);
   }
   
+  /**
+   * Get available languages with metadata
+   */
+  function getAvailableLanguages() {
+    return [
+      { code: 'en', name: 'English', flag: '🇺🇸' },
+      { code: 'es', name: 'Español', flag: '🇪🇸' },
+      { code: 'zh', name: '中文', flag: '🇨🇳' },
+      { code: 'fr', name: 'Français', flag: '🇫🇷' },
+      { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+      { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+      { code: 'ar', name: 'العربية', flag: '🇸🇦' },
+      { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },
+      { code: 'bn', name: 'বাংলা', flag: '🇧🇩' },
+      { code: 'ta', name: 'தமிழ்', flag: '🇮🇳' },
+      { code: 'ja', name: '日本語', flag: '🇯🇵' },
+      { code: 'ko', name: '한국어', flag: '🇰🇷' },
+      { code: 'ms', name: 'Bahasa Melayu', flag: '🇲🇾' }
+    ];
+  }
+
   // Public API
   return {
     init,
     t,
     setLanguage,
+    changeLanguage: setLanguage, // Alias for compatibility
     getLanguage,
     getSupportedLanguages,
+    getAvailableLanguages,
     isLanguageLoaded,
-    loadLanguage
+    loadLanguage,
+    get currentLanguage() { return currentLanguage; }
   };
 })();
 
