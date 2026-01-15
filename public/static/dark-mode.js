@@ -209,8 +209,9 @@ class DarkModeManager {
 // Initialize dark mode manager immediately
 const darkModeManager = new DarkModeManager()
 
-// Expose to window for global access
+// Expose to window for global access (both names for compatibility)
 window.darkModeManager = darkModeManager
+window.themeManager = darkModeManager
 
 // Export for module usage
 if (typeof module !== 'undefined' && module.exports) {

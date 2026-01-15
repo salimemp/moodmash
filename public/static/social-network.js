@@ -170,16 +170,16 @@ class SocialNetwork {
 
   async loadConnections() {
     try {
-      const response = await axios.get('/api/social/connections', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('session_token')}` }
-      });
+      const response = await axios.get('/api/social/connections');
 
-      if (response.data.success) {
-        this.connections = response.data.connections;
-        this.renderConnections();
-      }
+      // Handle both response formats: { success: true, connections: [] } and { connections: [] }
+      this.connections = response.data.connections || response.data || [];
+      this.renderConnections();
     } catch (error) {
       console.error('Failed to load connections:', error);
+      // Clear loading state and show empty state
+      this.connections = [];
+      this.renderConnections();
     }
   }
 

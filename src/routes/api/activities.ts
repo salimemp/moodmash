@@ -13,11 +13,17 @@ const activities = new Hono<{ Bindings: Bindings }>();
 activities.get('/', async (c) => {
   const { DB } = c.env;
   
-  const result = await DB.prepare(
-    'SELECT * FROM activities ORDER BY category, name'
-  ).all();
+  try {
+    const result = await DB.prepare(
+      'SELECT * FROM activities ORDER BY category, name'
+    ).all();
 
-  return c.json(result.results);
+    return c.json({ activities: result.results || [] });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('[Activities API] Error fetching activities:', message);
+    return c.json({ activities: [], error: message }, 500);
+  }
 });
 
 // Log activity completion (requires auth)
@@ -54,18 +60,23 @@ activities.get('/history', requireAuth, async (c) => {
   const { DB } = c.env;
   const user = await getCurrentUser(c);
 
-  const result = await DB.prepare(
-    `SELECT al.*, a.name, a.category, a.duration_minutes 
-     FROM activity_logs al
-     JOIN activities a ON al.activity_id = a.id
-     WHERE al.user_id = ?
-     ORDER BY al.completed_at DESC
-     LIMIT 50`
-  )
-    .bind(user!.id)
-    .all();
+  try {
+    const result = await DB.prepare(
+      `SELECT al.*, a.name, a.category, a.duration_minutes 
+       FROM activity_logs al
+       JOIN activities a ON al.activity_id = a.id
+       WHERE al.user_id = ?
+       ORDER BY al.completed_at DESC
+       LIMIT 50`
+    )
+      .bind(user!.id)
+      .all();
 
-  return c.json(result.results);
+    return c.json({ history: result.results || [] });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return c.json({ history: [], error: message }, 500);
+  }
 });
 
 // Get recommended activities based on current mood

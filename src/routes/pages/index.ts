@@ -18,6 +18,24 @@ pages.get('/', (c) => {
   ));
 });
 
+// Dashboard page (explicit route)
+pages.get('/dashboard', (c) => {
+  return c.html(renderHTML(
+    'Dashboard',
+    '<div id="app"></div>',
+    'dashboard'
+  ));
+});
+
+// Achievements page
+pages.get('/achievements', (c) => {
+  return c.html(renderHTML(
+    'Achievements',
+    '<div id="achievements-page"></div>',
+    'achievements'
+  ));
+});
+
 // Login page
 pages.get('/login', (c) => {
   return c.html(renderHTML(

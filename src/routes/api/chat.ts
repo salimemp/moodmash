@@ -54,7 +54,7 @@ chat.post('/conversations', async (c) => {
       'SELECT * FROM chat_conversations WHERE id = ?'
     ).bind(result.meta.last_row_id).first() as ConversationRow;
 
-    return c.json(conversation, 201);
+    return c.json({ conversation }, 201);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';
     return c.json({ error: message }, 500);

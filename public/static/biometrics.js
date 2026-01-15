@@ -261,22 +261,16 @@ class BiometricsDashboard {
 
   async loadSources() {
     try {
-      const response = await axios.get('/api/biometrics/sources', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('session_token')}` }
-      });
+      const response = await axios.get('/api/biometrics/sources');
 
-      if (response.data.success) {
-        this.sources = response.data.sources;
-        this.renderSources();
-      }
+      // Handle both response formats: { success: true, sources: [] } and { sources: [] }
+      this.sources = response.data.sources || [];
+      this.renderSources();
     } catch (error) {
       console.error('Failed to load sources:', error);
-      document.getElementById('devices-container').innerHTML = `
-        <div class="col-span-3 text-center py-8 text-gray-500">
-          <i class="fas fa-exclamation-circle text-3xl mb-3"></i>
-          <p>Failed to load devices</p>
-        </div>
-      `;
+      // Clear loading state and show empty state
+      this.sources = [];
+      this.renderSources();
     }
   }
 
@@ -353,17 +347,18 @@ class BiometricsDashboard {
 
   async loadBiometricData() {
     try {
-      const response = await axios.get('/api/biometrics/data?days=30', {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('session_token')}` }
-      });
+      const response = await axios.get('/api/biometrics/data?days=30');
 
-      if (response.data.success) {
-        this.biometricData = response.data.data;
-        this.updateMetrics();
-        this.renderCharts();
-      }
+      // Handle both response formats
+      this.biometricData = response.data.data || response.data || [];
+      this.updateMetrics();
+      this.renderCharts();
     } catch (error) {
       console.error('Failed to load biometric data:', error);
+      // Set empty data and still render to clear loading state
+      this.biometricData = [];
+      this.updateMetrics();
+      this.renderCharts();
     }
   }
 

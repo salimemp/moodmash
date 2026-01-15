@@ -26,13 +26,13 @@ async function init() {
 async function loadDataSummary() {
   try {
     const response = await axios.get('/api/user/data-summary');
-    if (response.data.success) {
-      dataSummary = response.data.data;
-      console.log('[Privacy Center] Data summary loaded:', dataSummary);
-    }
+    // Handle both response formats: { success: true, data: {...} } and { summary: {...} }
+    dataSummary = response.data.summary || response.data.data || response.data || {};
+    console.log('[Privacy Center] Data summary loaded:', dataSummary);
   } catch (error) {
     console.error('[Privacy Center] Error loading summary:', error);
-    showError('Failed to load data summary');
+    // Set default empty summary instead of showing error on auth failure
+    dataSummary = { mood_count: 0, conversation_count: 0, file_count: 0, post_count: 0 };
   }
 }
 

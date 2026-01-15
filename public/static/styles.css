@@ -1,23 +1,61 @@
 /* MoodMash Custom Styles */
 
-/* Root variables for theming */
+/* Root variables for theming - WCAG AA Compliant */
 :root {
     --bg-primary: #f9fafb;
     --bg-secondary: #ffffff;
-    --text-primary: #1f2937;
-    --text-secondary: #6b7280;
+    --text-primary: #111827; /* Increased contrast: was #1f2937, now darker */
+    --text-secondary: #4b5563; /* Increased contrast: was #6b7280, now darker */
+    --text-muted: #6b7280;
     --border-color: #e5e7eb;
     --shadow: rgba(0, 0, 0, 0.1);
+    --link-color: #4f46e5; /* High contrast link color */
+    --link-hover: #3730a3;
 }
 
-/* Dark mode variables */
+/* Dark mode variables - WCAG AA Compliant */
 .dark {
     --bg-primary: #111827;
     --bg-secondary: #1f2937;
     --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
+    --text-secondary: #d1d5db; /* Increased contrast: was #9ca3af, now lighter */
+    --text-muted: #9ca3af;
     --border-color: #374151;
     --shadow: rgba(0, 0, 0, 0.3);
+    --link-color: #818cf8;
+    --link-hover: #a5b4fc;
+}
+
+/* Accessibility: Improved Text Contrast */
+.text-gray-500 {
+    color: #4b5563 !important; /* Darker for better contrast */
+}
+
+.dark .text-gray-500 {
+    color: #d1d5db !important; /* Lighter for better contrast in dark mode */
+}
+
+.text-gray-400 {
+    color: #6b7280 !important;
+}
+
+.dark .text-gray-400 {
+    color: #9ca3af !important;
+}
+
+/* Ensure form labels have good contrast */
+label {
+    color: var(--text-primary);
+}
+
+/* Placeholder text with sufficient contrast */
+::placeholder {
+    color: #6b7280;
+    opacity: 1;
+}
+
+.dark ::placeholder {
+    color: #9ca3af;
 }
 
 /* Apply theme variables */

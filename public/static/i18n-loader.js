@@ -161,15 +161,35 @@ const I18n = (function() {
       return false;
     }
     
-    await loadLanguage(lang);
-    currentLanguage = lang;
-    localStorage.setItem('moodmash_language', lang);
-    document.documentElement.lang = lang;
-    
-    // Dispatch event for components to update
-    window.dispatchEvent(new CustomEvent('i18n:languageChanged', { detail: { language: lang } }));
-    
-    return true;
+    try {
+      await loadLanguage(lang);
+      currentLanguage = lang;
+      localStorage.setItem('moodmash_language', lang);
+      document.documentElement.lang = lang;
+      
+      // Set text direction for RTL languages
+      if (['ar', 'he'].includes(lang)) {
+        document.documentElement.dir = 'rtl';
+      } else {
+        document.documentElement.dir = 'ltr';
+      }
+      
+      // Update the language display in the UI
+      const langDisplay = document.getElementById('current-language');
+      const langInfo = getAvailableLanguages().find(l => l.code === lang);
+      if (langDisplay && langInfo) {
+        langDisplay.textContent = `${langInfo.flag} ${lang.toUpperCase()}`;
+      }
+      
+      // Dispatch event for components to update
+      window.dispatchEvent(new CustomEvent('i18n:languageChanged', { detail: { language: lang } }));
+      
+      console.log(`[i18n] Language changed to ${lang}`);
+      return true;
+    } catch (error) {
+      console.error(`[i18n] Failed to change language to ${lang}:`, error);
+      return false;
+    }
   }
   
   /**
@@ -240,3 +260,8 @@ if (document.readyState === 'loading') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = I18n;
 }
+
+// CRITICAL FIX: Expose both I18n and i18n (lowercase) for compatibility
+// Some scripts check for i18n (lowercase) but this module exports I18n (capital I)
+window.I18n = I18n;
+window.i18n = I18n;
