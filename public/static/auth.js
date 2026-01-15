@@ -24,7 +24,7 @@ class MoodMashAuth {
     // Wait for i18n to be fully loaded
     return new Promise((resolve) => {
       const check = () => {
-        if (typeof i18n !== 'undefined' && i18n.translations) {
+        if (typeof i18n !== 'undefined' && typeof i18n.t === 'function') {
           this.i18n = i18n;
           console.log('[AUTH] i18n loaded successfully, test translation:', i18n.t('auth_welcome_back'));
           resolve();
@@ -463,9 +463,10 @@ class MoodMashAuth {
   async handleSubmit(event) {
     event.preventDefault();
     
-    // Get Turnstile token
+    // Get Turnstile token (optional for localhost)
     const turnstileToken = window.turnstile?.getResponse();
-    if (!turnstileToken) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    if (!turnstileToken && !isLocalhost) {
       this.showMessage('Please complete the bot verification', 'error');
       return;
     }
@@ -790,9 +791,15 @@ class MoodMashAuth {
 
 // Initialize auth manager
 let authManager;
-document.addEventListener('DOMContentLoaded', () => {
+// Handle both cases: script loaded before or after DOMContentLoaded
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    authManager = new MoodMashAuth();
+  });
+} else {
+  // DOM already loaded, initialize immediately
   authManager = new MoodMashAuth();
-});
+}
 
 /**
  * iOS Keyboard Input Fix

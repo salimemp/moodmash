@@ -116,7 +116,7 @@ export async function deleteDbSession(
     await db.prepare('DELETE FROM sessions WHERE session_token = ?').bind(token).run();
 }
 
-// Middleware to check authentication
+// Middleware to check authentication (uses database-backed sessions)
 export async function requireAuth(c: Context, next: () => Promise<void>) {
     const token = getCookie(c, 'session_token');
     
@@ -124,14 +124,24 @@ export async function requireAuth(c: Context, next: () => Promise<void>) {
         return c.json({ error: 'Unauthorized', message: 'Please login to continue' }, 401);
     }
     
-    const session = getSession(token);
+    // CRITICAL FIX: Use database-backed sessions instead of in-memory sessions
+    // The login process creates sessions in the database, so we must query the database
+    const user = await getCurrentUser(c);
     
-    if (!session) {
+    if (!user) {
         return c.json({ error: 'Unauthorized', message: 'Invalid session' }, 401);
     }
     
-    // Attach session to context
-    c.set('session', session);
+    // Attach user to context (backwards compatible with session structure)
+    c.set('session', {
+        userId: String(user.userId),
+        email: user.email,
+        name: user.name || user.username,
+        isPremium: user.isPremium,
+        provider: 'email' as const,
+        createdAt: user.created_at ? new Date(user.created_at).getTime() : Date.now()
+    });
+    c.set('user', user);
     await next();
 }
 
