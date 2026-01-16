@@ -8,7 +8,7 @@ export default defineConfig({
     build(),
     devServer({
       adapter,
-      entry: 'src/index.tsx' // Main entry point (modular version)
+      entry: 'src/index.ts' // Main entry point (minimal version)
     })
   ],
   build: {
