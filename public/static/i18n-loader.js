@@ -5,10 +5,10 @@
  */
 
 const I18n = (function() {
-  const SUPPORTED_LANGUAGES = ['en', 'es', 'zh', 'fr', 'de', 'it', 'ar', 'hi', 'bn', 'ta', 'ja', 'ko', 'ms'];
+  const SUPPORTED_LANGUAGES = ['en', 'es', 'zh', 'zh-CN', 'fr', 'de', 'it', 'ar', 'hi', 'bn', 'ta', 'ja', 'ko', 'ms'];
   const DEFAULT_LANGUAGE = 'en';
   const CACHE_KEY = 'moodmash_i18n_cache';
-  const CACHE_VERSION = '1.0';
+  const CACHE_VERSION = '1.1'; // Updated for CJK support
   
   let currentLanguage = DEFAULT_LANGUAGE;
   let translations = {};
@@ -220,7 +220,8 @@ const I18n = (function() {
     return [
       { code: 'en', name: 'English', flag: '🇺🇸' },
       { code: 'es', name: 'Español', flag: '🇪🇸' },
-      { code: 'zh', name: '中文', flag: '🇨🇳' },
+      { code: 'zh', name: '中文(繁體)', flag: '🇹🇼' },
+      { code: 'zh-CN', name: '中文(简体)', flag: '🇨🇳' },
       { code: 'fr', name: 'Français', flag: '🇫🇷' },
       { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
       { code: 'it', name: 'Italiano', flag: '🇮🇹' },

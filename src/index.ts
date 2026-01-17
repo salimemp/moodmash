@@ -36,6 +36,10 @@ import localizationRoutes from './routes/api/localization';
 import legalRoutes from './routes/api/legal';
 import analyticsRoutes from './routes/api/analytics';
 
+// Phase 6 Enhancements: Compliance, Currency & Taxation
+import complianceRoutes from './routes/api/compliance';
+import currencyRoutes from './routes/api/currency';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -74,6 +78,11 @@ app.route('/api/voice', voiceRoutes);
 app.route('/api/translations', localizationRoutes);
 app.route('/api/legal', legalRoutes);
 app.route('/api/analytics', analyticsRoutes);
+
+// Mount Phase 6 Enhancements: Compliance & Currency
+app.route('/api/compliance', complianceRoutes);
+app.route('/api/currencies', currencyRoutes);
+app.route('/api/tax', currencyRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {
