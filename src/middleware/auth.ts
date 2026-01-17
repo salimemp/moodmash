@@ -27,7 +27,9 @@ export async function getCurrentUser(
   return {
     id: user.id,
     email: user.email,
-    name: user.name
+    name: user.name,
+    email_verified: user.email_verified || false,
+    avatar_url: user.avatar_url || null
   };
 }
 
