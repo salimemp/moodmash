@@ -28,6 +28,14 @@ import gamificationRoutes from './routes/api/gamification';
 import securityRoutes from './routes/api/security';
 import healthRoutes from './routes/api/health';
 
+// Phase 6 routes
+import subscriptionRoutes from './routes/api/subscription';
+import chatbotRoutes from './routes/api/chatbot';
+import voiceRoutes from './routes/api/voice';
+import localizationRoutes from './routes/api/localization';
+import legalRoutes from './routes/api/legal';
+import analyticsRoutes from './routes/api/analytics';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -58,6 +66,14 @@ app.route('/', gamificationRoutes);
 // Mount Phase 5 routes
 app.route('/api/security', securityRoutes);
 app.route('/api', healthRoutes);
+
+// Mount Phase 6 routes
+app.route('/api/subscription', subscriptionRoutes);
+app.route('/api/chatbot', chatbotRoutes);
+app.route('/api/voice', voiceRoutes);
+app.route('/api/translations', localizationRoutes);
+app.route('/api/legal', legalRoutes);
+app.route('/api/analytics', analyticsRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {
@@ -1617,6 +1633,489 @@ app.get('/visualizations', async (c) => {
     </div>
   </main>
   <script src="/static/visualizations.js"></script>
+</body>
+</html>
+`);
+});
+
+// ==================== PHASE 6 PAGES ====================
+
+// AI Chatbot Page
+app.get('/chatbot', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood - AI Companion - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-chat" class="sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 bg-blue-600 px-4 py-2 z-50">
+    Skip to main content
+  </a>
+  
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3" role="navigation" aria-label="Main navigation">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+        <a href="/insights" class="text-gray-300 hover:text-white">Insights</a>
+        <button id="language-btn" class="p-2 rounded-lg hover:bg-gray-700" aria-label="Change language">🌐</button>
+      </div>
+    </div>
+  </nav>
+  
+  <main id="main-chat" class="flex-1 flex flex-col max-w-3xl mx-auto w-full p-4" role="main">
+    <div class="flex items-center gap-4 mb-6">
+      <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
+        🌟
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold">Mood</h1>
+        <p class="text-gray-400 text-sm" id="chatbot-status">Your empathetic AI companion</p>
+      </div>
+    </div>
+    
+    <!-- Conversations List -->
+    <div id="conversations-list" class="mb-4 flex gap-2 overflow-x-auto pb-2">
+      <button id="new-chat-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg whitespace-nowrap flex-shrink-0" aria-label="Start new conversation">
+        + New Chat
+      </button>
+    </div>
+    
+    <!-- Chat Messages -->
+    <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 mb-4" role="log" aria-live="polite" aria-atomic="false">
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">🌟</div>
+        <div class="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+          <p>Hi there! I'm Mood, your supportive AI companion. 🌟</p>
+          <p class="mt-2">I'm here to listen, help you understand your emotions, and offer support. How are you feeling today?</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Typing Indicator -->
+    <div id="typing-indicator" class="hidden flex gap-3 mb-4">
+      <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">🌟</div>
+      <div class="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-3">
+        <div class="flex gap-1">
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 150ms"></span>
+          <span class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 300ms"></span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Input Area -->
+    <div class="bg-gray-800 rounded-2xl p-3">
+      <form id="chat-form" class="flex items-end gap-2">
+        <div class="flex-1 relative">
+          <textarea id="chat-input" rows="1" placeholder="Type your message..." 
+                    class="w-full bg-gray-700 rounded-xl px-4 py-3 pr-12 outline-none resize-none focus:ring-2 focus:ring-purple-500"
+                    aria-label="Chat message"></textarea>
+          <button type="button" id="voice-btn" class="absolute right-2 bottom-2 p-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  aria-label="Voice input">
+            🎤
+          </button>
+        </div>
+        <button type="submit" id="send-btn" class="p-3 bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50"
+                aria-label="Send message">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+          </svg>
+        </button>
+      </form>
+      <div class="flex items-center justify-between mt-2 text-xs text-gray-400 px-2">
+        <div id="usage-info">
+          <span id="messages-used">0</span>/<span id="messages-limit">50</span> messages this month
+        </div>
+        <button id="tts-toggle" class="flex items-center gap-1 hover:text-white transition-colors" aria-label="Toggle text-to-speech">
+          🔊 <span id="tts-status">TTS Off</span>
+        </button>
+      </div>
+    </div>
+  </main>
+  
+  <!-- Voice Recording Modal -->
+  <div id="voice-modal" class="fixed inset-0 bg-black bg-opacity-75 hidden items-center justify-center z-50" role="dialog" aria-modal="true" aria-labelledby="voice-modal-title">
+    <div class="bg-gray-800 rounded-2xl p-8 text-center max-w-sm mx-4">
+      <h2 id="voice-modal-title" class="text-xl font-bold mb-4">Recording...</h2>
+      <div id="voice-visualizer" class="h-16 flex items-center justify-center gap-1 mb-4">
+        <div class="w-1 bg-purple-500 rounded-full animate-pulse" style="height: 20px"></div>
+        <div class="w-1 bg-purple-500 rounded-full animate-pulse" style="height: 40px; animation-delay: 0.1s"></div>
+        <div class="w-1 bg-purple-500 rounded-full animate-pulse" style="height: 30px; animation-delay: 0.2s"></div>
+        <div class="w-1 bg-purple-500 rounded-full animate-pulse" style="height: 50px; animation-delay: 0.3s"></div>
+        <div class="w-1 bg-purple-500 rounded-full animate-pulse" style="height: 25px; animation-delay: 0.4s"></div>
+      </div>
+      <p id="voice-timer" class="text-2xl font-mono mb-4">00:00</p>
+      <button id="stop-recording" class="w-16 h-16 bg-red-600 hover:bg-red-700 rounded-full mx-auto flex items-center justify-center">
+        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12"/></svg>
+      </button>
+      <button id="cancel-recording" class="mt-4 text-gray-400 hover:text-white">Cancel</button>
+    </div>
+  </div>
+  
+  <!-- Language Selector Modal -->
+  <div id="language-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" role="dialog" aria-modal="true">
+    <div class="bg-gray-800 rounded-xl p-6 max-w-sm mx-4">
+      <h2 class="text-xl font-bold mb-4">Select Language</h2>
+      <div class="space-y-2" id="language-options">
+        <button class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left" data-lang="en">🇺🇸 English</button>
+        <button class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left" data-lang="ar">🇸🇦 العربية</button>
+        <button class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left" data-lang="es">🇪🇸 Español</button>
+        <button class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left" data-lang="fr">🇫🇷 Français</button>
+        <button class="w-full px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg text-left" data-lang="de">🇩🇪 Deutsch</button>
+      </div>
+      <button id="close-language-modal" class="w-full mt-4 py-2 text-gray-400 hover:text-white">Close</button>
+    </div>
+  </div>
+  
+  <script src="/static/chatbot.js"></script>
+</body>
+</html>
+`);
+});
+
+// Subscription Page
+app.get('/subscription', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Subscription - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+        <a href="/settings" class="text-gray-300 hover:text-white">Settings</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-center mb-2">Choose Your Plan</h1>
+    <p class="text-gray-400 text-center mb-8">Unlock more features to enhance your mood tracking journey</p>
+    
+    <!-- Current Usage -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-xl font-semibold mb-4">📊 Your Usage This Month</h2>
+      <div id="usage-stats" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="text-center p-4 bg-gray-700 rounded-lg">
+          <div class="text-2xl font-bold text-purple-400" id="moods-used">--</div>
+          <div class="text-sm text-gray-400">Moods Logged</div>
+        </div>
+        <div class="text-center p-4 bg-gray-700 rounded-lg">
+          <div class="text-2xl font-bold text-blue-400" id="friends-used">--</div>
+          <div class="text-sm text-gray-400">Friends</div>
+        </div>
+        <div class="text-center p-4 bg-gray-700 rounded-lg">
+          <div class="text-2xl font-bold text-green-400" id="groups-used">--</div>
+          <div class="text-sm text-gray-400">Groups</div>
+        </div>
+        <div class="text-center p-4 bg-gray-700 rounded-lg">
+          <div class="text-2xl font-bold text-yellow-400" id="voice-used">--</div>
+          <div class="text-sm text-gray-400">Voice Journals</div>
+        </div>
+        <div class="text-center p-4 bg-gray-700 rounded-lg">
+          <div class="text-2xl font-bold text-pink-400" id="ai-used">--</div>
+          <div class="text-sm text-gray-400">AI Messages</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Pricing Cards -->
+    <div id="pricing-cards" class="grid md:grid-cols-3 gap-6">
+      <!-- Free Tier -->
+      <div class="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 relative">
+        <h3 class="text-xl font-bold mb-2">Free</h3>
+        <p class="text-gray-400 text-sm mb-4">Get started with basic mood tracking</p>
+        <div class="text-3xl font-bold mb-6">$0<span class="text-lg font-normal text-gray-400">/month</span></div>
+        <ul class="space-y-3 mb-6" role="list">
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 30 moods/month</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 5 friends</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 2 groups</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Basic insights</li>
+          <li class="flex items-center gap-2 text-gray-500"><span>✗</span> Voice journals</li>
+          <li class="flex items-center gap-2 text-gray-500"><span>✗</span> AI chatbot</li>
+        </ul>
+        <button class="w-full py-3 bg-gray-700 rounded-lg" disabled>Current Plan</button>
+      </div>
+      
+      <!-- Pro Tier -->
+      <div class="bg-gradient-to-b from-purple-900/50 to-gray-800 rounded-xl p-6 border-2 border-purple-500 relative transform scale-105">
+        <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 px-4 py-1 rounded-full text-sm font-medium">Most Popular</div>
+        <h3 class="text-xl font-bold mb-2">Pro</h3>
+        <p class="text-gray-400 text-sm mb-4">Enhanced features for serious trackers</p>
+        <div class="text-3xl font-bold mb-6">$9.99<span class="text-lg font-normal text-gray-400">/month</span></div>
+        <ul class="space-y-3 mb-6" role="list">
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Unlimited moods</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 50 friends</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 10 groups</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Advanced insights</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 20 voice journals/mo</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> 50 AI messages/mo</li>
+        </ul>
+        <button class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium" onclick="selectPlan('pro')">
+          Upgrade to Pro
+        </button>
+      </div>
+      
+      <!-- Premium Tier -->
+      <div class="bg-gray-800 rounded-xl p-6 border-2 border-gray-700 relative">
+        <h3 class="text-xl font-bold mb-2">Premium</h3>
+        <p class="text-gray-400 text-sm mb-4">Everything unlimited for power users</p>
+        <div class="text-3xl font-bold mb-6">$19.99<span class="text-lg font-normal text-gray-400">/month</span></div>
+        <ul class="space-y-3 mb-6" role="list">
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Everything in Pro</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Unlimited friends</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Unlimited groups</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Unlimited voice journals</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> Unlimited AI chatbot</li>
+          <li class="flex items-center gap-2"><span class="text-green-400">✓</span> API access</li>
+        </ul>
+        <button class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-medium" onclick="selectPlan('premium')">
+          Upgrade to Premium
+        </button>
+      </div>
+    </div>
+    
+    <p class="text-center text-gray-400 text-sm mt-8">
+      💳 Secure payment processing coming soon. For now, enjoy exploring the features!
+    </p>
+  </main>
+  
+  <script src="/static/subscription.js"></script>
+</body>
+</html>
+`);
+});
+
+// Privacy Policy Page
+app.get('/legal/privacy', async (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/legal/terms" class="text-gray-300 hover:text-white">Terms</a>
+        <a href="/legal/cookies" class="text-gray-300 hover:text-white">Cookies</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <article id="privacy-content" class="prose prose-invert max-w-none">
+      <div class="text-center py-8 text-gray-400">Loading privacy policy...</div>
+    </article>
+    
+    <!-- Read Aloud Button -->
+    <div class="fixed bottom-8 right-8">
+      <button id="read-aloud-btn" class="p-4 bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg" aria-label="Read aloud">
+        🔊
+      </button>
+    </div>
+  </main>
+  
+  <script src="/static/legal.js"></script>
+</body>
+</html>
+`);
+});
+
+// Terms of Service Page
+app.get('/legal/terms', async (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms of Service - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/legal/privacy" class="text-gray-300 hover:text-white">Privacy</a>
+        <a href="/legal/cookies" class="text-gray-300 hover:text-white">Cookies</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <article id="terms-content" class="prose prose-invert max-w-none">
+      <div class="text-center py-8 text-gray-400">Loading terms of service...</div>
+    </article>
+    
+    <div class="fixed bottom-8 right-8">
+      <button id="read-aloud-btn" class="p-4 bg-purple-600 hover:bg-purple-700 rounded-full shadow-lg" aria-label="Read aloud">
+        🔊
+      </button>
+    </div>
+  </main>
+  
+  <script src="/static/legal.js"></script>
+</body>
+</html>
+`);
+});
+
+// Cookie Policy Page
+app.get('/legal/cookies', async (c) => {
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Policy - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/legal/privacy" class="text-gray-300 hover:text-white">Privacy</a>
+        <a href="/legal/terms" class="text-gray-300 hover:text-white">Terms</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    <article id="cookies-content" class="prose prose-invert max-w-none">
+      <div class="text-center py-8 text-gray-400">Loading cookie policy...</div>
+    </article>
+  </main>
+  
+  <script src="/static/legal.js"></script>
+</body>
+</html>
+`);
+});
+
+// Analytics Dashboard (Admin)
+app.get('/admin/analytics', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Analytics Dashboard - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash Admin</a>
+      <div class="flex items-center gap-4">
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  
+  <main class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">📊 Analytics Dashboard</h1>
+    
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="text-3xl font-bold text-blue-400" id="total-users">--</div>
+        <div class="text-sm text-gray-400">Total Users</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="text-3xl font-bold text-green-400" id="new-users-today">--</div>
+        <div class="text-sm text-gray-400">New Today</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="text-3xl font-bold text-purple-400" id="dau">--</div>
+        <div class="text-sm text-gray-400">DAU</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="text-3xl font-bold text-yellow-400" id="mau">--</div>
+        <div class="text-sm text-gray-400">MAU</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4">
+        <div class="text-3xl font-bold text-pink-400" id="total-moods">--</div>
+        <div class="text-sm text-gray-400">Total Moods</div>
+      </div>
+    </div>
+    
+    <!-- Charts -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">User Growth (30 Days)</h2>
+        <canvas id="user-growth-chart"></canvas>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Mood Trends (30 Days)</h2>
+        <canvas id="mood-trends-chart"></canvas>
+      </div>
+    </div>
+    
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Emotion Distribution</h2>
+        <canvas id="emotion-chart"></canvas>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-6">
+        <h2 class="text-lg font-semibold mb-4">Subscription Distribution</h2>
+        <canvas id="subscription-chart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Feature Usage -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-8">
+      <h2 class="text-lg font-semibold mb-4">Feature Usage</h2>
+      <div id="feature-usage" class="space-y-3">
+        <div class="text-center py-4 text-gray-400">Loading...</div>
+      </div>
+    </div>
+    
+    <!-- Top Pages -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-lg font-semibold mb-4">Top Pages</h2>
+      <div id="top-pages" class="space-y-2">
+        <div class="text-center py-4 text-gray-400">Loading...</div>
+      </div>
+    </div>
+  </main>
+  
+  <script src="/static/analytics-dashboard.js"></script>
 </body>
 </html>
 `);

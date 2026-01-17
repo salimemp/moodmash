@@ -1,327 +1,250 @@
-# MoodMash Deployment Guide
+# Deployment Guide
 
-## 🚀 Quick Deployment Checklist
+This guide covers deploying MoodMash to Cloudflare Workers.
 
-### Prerequisites
-- [ ] Cloudflare account created
-- [ ] Cloudflare API token configured (call `setup_cloudflare_api_key`)
-- [ ] GitHub account (optional, for version control)
+## Prerequisites
 
-### Step 1: Configure Cloudflare API Access
+- [Node.js](https://nodejs.org/) v18+
+- [npm](https://www.npmjs.com/) v9+
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/) v3+
+- Cloudflare account
 
-```bash
-# This tool will configure CLOUDFLARE_API_TOKEN environment variable
-# If it fails, go to Deploy tab to set up your API key
-setup_cloudflare_api_key
-```
+## Environment Setup
 
-### Step 2: Create Production Database
+### 1. Install Dependencies
 
 ```bash
-# Create production D1 database
-npx wrangler d1 create moodmash-production
-
-# Copy the database_id from output and update wrangler.jsonc
-# Replace "your-database-id-here" with actual database ID
-```
-
-**Update `wrangler.jsonc`:**
-```jsonc
-{
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "moodmash-production",
-      "database_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  // Paste your actual ID here
-    }
-  ]
-}
-```
-
-### Step 3: Apply Database Migrations
-
-```bash
-# Apply migrations to production database
-npm run db:migrate:prod
-
-# Optional: Seed with sample data (for testing)
-npx wrangler d1 execute moodmash-production --file=./seed.sql
-```
-
-### Step 4: Create Cloudflare Pages Project
-
-```bash
-# Create the project (use main branch as production)
-npx wrangler pages project create moodmash \
-  --production-branch main \
-  --compatibility-date 2025-11-11
-```
-
-### Step 5: Build and Deploy
-
-```bash
-# Build the application
-npm run build
-
-# Deploy to Cloudflare Pages
-npm run deploy:prod
-
-# You'll receive URLs like:
-# - Production: https://random-id.moodmash.pages.dev
-# - Branch: https://main.moodmash.pages.dev
-```
-
-### Step 6: Verify Deployment
-
-```bash
-# Test production API
-curl https://your-project.pages.dev/api/health
-curl https://your-project.pages.dev/api/stats
-
-# Visit in browser
-https://your-project.pages.dev
-```
-
-## 🔄 Updating Deployment
-
-### For Code Changes
-
-```bash
-# Make your changes, test locally
-npm run build
-pm2 start ecosystem.config.cjs
-
-# When ready, commit and deploy
-git add .
-git commit -m "Your commit message"
-npm run deploy:prod
-```
-
-### For Database Schema Changes
-
-```bash
-# Create new migration file
-# migrations/0002_your_migration_name.sql
-
-# Test locally first
-npm run db:migrate:local
-npm run dev:sandbox
-
-# Apply to production
-npm run db:migrate:prod
-
-# Deploy code
-npm run deploy:prod
-```
-
-## 🌐 Custom Domain (Optional)
-
-### Add Custom Domain to Cloudflare Pages
-
-```bash
-# Add your domain
-npx wrangler pages domain add example.com --project-name moodmash
-
-# Configure DNS
-# Add CNAME record: www.example.com -> moodmash.pages.dev
-```
-
-## 🔑 Environment Variables & Secrets
-
-### For Future API Integrations
-
-```bash
-# Add secrets (e.g., for OpenAI, Auth0, etc.)
-npx wrangler pages secret put OPENAI_API_KEY --project-name moodmash
-npx wrangler pages secret put AUTH0_SECRET --project-name moodmash
-
-# List secrets
-npx wrangler pages secret list --project-name moodmash
-```
-
-### Local Development Environment
-
-Create `.dev.vars` file (not committed to git):
-```
-OPENAI_API_KEY=sk-your-key-here
-AUTH0_SECRET=your-secret-here
-```
-
-## 📊 Monitoring Production
-
-### Check Deployment Status
-
-```bash
-# List deployments
-npx wrangler pages deployments list --project-name moodmash
-
-# View logs (after deployment)
-npx wrangler pages deployment tail --project-name moodmash
-```
-
-### Database Operations
-
-```bash
-# Query production database
-npx wrangler d1 execute moodmash-production \
-  --command="SELECT COUNT(*) as total FROM mood_entries"
-
-# Backup production database (export to JSON)
-npx wrangler d1 export moodmash-production --local --output=backup.json
-```
-
-## 🐛 Troubleshooting
-
-### Issue: API Token Not Working
-
-**Solution:**
-```bash
-# Verify token is set
-npx wrangler whoami
-
-# If not working, go to Deploy tab and reconfigure
-setup_cloudflare_api_key
-```
-
-### Issue: Database Not Found
-
-**Solution:**
-```bash
-# List all D1 databases
-npx wrangler d1 list
-
-# Verify database_id in wrangler.jsonc matches
-```
-
-### Issue: Build Fails
-
-**Solution:**
-```bash
-# Clean build artifacts
-rm -rf dist .wrangler node_modules
-
-# Reinstall and rebuild
 npm install
-npm run build
 ```
 
-### Issue: Migration Already Applied
+### 2. Configure Wrangler
 
-**Solution:**
-```bash
-# List applied migrations
-npx wrangler d1 migrations list moodmash-production
+Create or update `wrangler.toml`:
 
-# To force reapply (WARNING: may cause issues)
-# Not recommended for production
+```toml
+name = "moodmash"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "moodmash-db"
+database_id = "your-database-id"
+
+[vars]
+ENVIRONMENT = "production"
 ```
 
-## 📈 Performance Optimization
+### 3. Environment Variables
 
-### Enable Caching (Future)
-
-Add KV namespace for caching:
-```bash
-npx wrangler kv:namespace create CACHE
-npx wrangler kv:namespace create CACHE --preview
-```
-
-Update `wrangler.jsonc`:
-```jsonc
-{
-  "kv_namespaces": [
-    {
-      "binding": "CACHE",
-      "id": "your-kv-id",
-      "preview_id": "your-preview-kv-id"
-    }
-  ]
-}
-```
-
-### Database Optimization
-
-- Add indexes for frequently queried fields
-- Use prepared statements (already implemented)
-- Cache statistics calculations
-- Implement pagination for large datasets
-
-## 🔐 Security Best Practices
-
-### Database Security
-- Never expose database_id publicly
-- Use bound parameters (✅ already implemented)
-- Validate all user inputs (✅ already implemented)
-- Implement rate limiting (future enhancement)
-
-### API Security
-- Add CORS configuration (✅ already implemented)
-- Implement authentication (future)
-- Use HTTPS only (enforced by Cloudflare)
-- Sanitize error messages in production
-
-## 📦 Backup Strategy
-
-### Automated Backups (Recommended)
+Required secrets (set via `wrangler secret put`):
 
 ```bash
-# Create backup script
-cat > backup.sh << 'EOF'
-#!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-npx wrangler d1 export moodmash-production --output=backups/backup_$DATE.json
-EOF
+# Gemini AI API Key
+wrangler secret put GEMINI_API_KEY
 
-# Make executable
-chmod +x backup.sh
+# Email Service (Resend)
+wrangler secret put RESEND_API_KEY
 
-# Run weekly via cron (if using external server)
-# 0 0 * * 0 /path/to/backup.sh
+# OAuth Credentials
+wrangler secret put GOOGLE_CLIENT_ID
+wrangler secret put GOOGLE_CLIENT_SECRET
+wrangler secret put GITHUB_CLIENT_ID
+wrangler secret put GITHUB_CLIENT_SECRET
+
+# Session Secret
+wrangler secret put SESSION_SECRET
+
+# Cloudflare Turnstile (Bot Protection)
+wrangler secret put TURNSTILE_SECRET_KEY
 ```
 
-### Manual Backup
+## Database Setup
+
+### 1. Create D1 Database
 
 ```bash
-# Export to JSON
-npx wrangler d1 export moodmash-production --output=backup.json
-
-# Or use SQL dump
-npx wrangler d1 execute moodmash-production \
-  --command=".dump" > backup.sql
+wrangler d1 create moodmash-db
 ```
 
-## 🎯 Next Steps After Deployment
+### 2. Run Migrations
 
-1. **Set up monitoring**
-   - Cloudflare Analytics dashboard
-   - Error tracking (Sentry integration)
-   - Performance monitoring
+```bash
+# List migrations
+ls migrations/
 
-2. **Configure custom domain**
-   - Purchase domain
-   - Configure DNS
-   - Set up SSL (automatic with Cloudflare)
+# Apply all migrations
+for f in migrations/*.sql; do
+  wrangler d1 execute moodmash-db --file="$f"
+done
+```
 
-3. **Add authentication**
-   - Integrate Auth0 or Clerk
-   - Update database for multi-user support
-   - Implement user permissions
+### 3. Seed Default Data (Optional)
 
-4. **Integrate AI/ML**
-   - Add OpenAI API key
-   - Implement mood pattern analysis
-   - Generate personalized insights
+```bash
+wrangler d1 execute moodmash-db --command="
+INSERT INTO subscription_tiers (id, name, features, limits) VALUES
+('free', 'Free', '[]', '{\"moods_per_month\": 30}');
+"
+```
 
-5. **Mobile optimization**
-   - Test on various devices
-   - Add PWA manifest
-   - Implement offline support
+## Deployment
 
----
+### Development (Local)
 
-**Need Help?**
-- Cloudflare Docs: https://developers.cloudflare.com/pages/
-- Wrangler CLI: https://developers.cloudflare.com/workers/wrangler/
-- D1 Database: https://developers.cloudflare.com/d1/
+```bash
+npm run dev
+# or
+wrangler dev
+```
 
-*Last Updated: 2025-11-11*
+### Staging
+
+```bash
+wrangler deploy --env staging
+```
+
+### Production
+
+```bash
+npm run deploy
+# or
+wrangler deploy
+```
+
+## Cloudflare Pages (Alternative)
+
+If using Cloudflare Pages:
+
+1. Connect GitHub repository
+2. Set build command: `npm run build`
+3. Set output directory: `dist`
+4. Add environment variables in Pages settings
+
+## Post-Deployment
+
+### 1. Verify Health Check
+
+```bash
+curl https://your-domain.workers.dev/health
+# Expected: {"status":"ok","timestamp":"..."}
+```
+
+### 2. Run Smoke Tests
+
+```bash
+# Test authentication
+curl -X POST https://your-domain.workers.dev/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"test123"}'
+
+# Test mood logging
+curl https://your-domain.workers.dev/api/moods \
+  -H "Cookie: session=..."
+```
+
+### 3. Monitor Logs
+
+```bash
+wrangler tail
+```
+
+## Domain Configuration
+
+### Custom Domain
+
+1. Go to Cloudflare Dashboard > Workers > your-worker
+2. Click "Custom Domains"
+3. Add your domain (e.g., `app.moodmash.com`)
+4. DNS records are configured automatically
+
+### SSL/TLS
+
+Cloudflare provides free SSL certificates automatically.
+
+## Scaling
+
+MoodMash is designed for Cloudflare's edge network:
+
+- **Global Distribution**: Automatically deployed to 300+ edge locations
+- **Auto-Scaling**: Handles traffic spikes automatically
+- **D1 Database**: Distributed SQLite with automatic replication
+- **KV Storage**: Optional for session caching
+
+## Rollback
+
+### Quick Rollback
+
+```bash
+# List previous versions
+wrangler deployments list
+
+# Rollback to previous version
+wrangler rollback
+```
+
+### Manual Rollback
+
+```bash
+git checkout <previous-commit>
+wrangler deploy
+```
+
+## Monitoring
+
+### Cloudflare Analytics
+
+- Request metrics
+- Error rates
+- Response times
+- Geographic distribution
+
+### Custom Logging
+
+Enable logging in `wrangler.toml`:
+
+```toml
+[observability]
+enabled = true
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Failed**
+   - Verify D1 binding in wrangler.toml
+   - Check database ID matches
+
+2. **Authentication Errors**
+   - Verify SESSION_SECRET is set
+   - Check cookie domain settings
+
+3. **Gemini API Failures**
+   - Verify GEMINI_API_KEY is correct
+   - Check API quota limits
+
+4. **OAuth Redirects**
+   - Update callback URLs in provider settings
+   - Ensure HTTPS is used
+
+### Debug Mode
+
+```bash
+wrangler dev --log-level debug
+```
+
+## Security Checklist
+
+- [ ] All secrets configured via `wrangler secret`
+- [ ] HTTPS enforced (automatic on Cloudflare)
+- [ ] CORS configured for production domain
+- [ ] Rate limiting enabled
+- [ ] Bot protection (Turnstile) configured
+- [ ] 2FA enabled for admin accounts
+
+## Support
+
+- Documentation: https://docs.moodmash.app
+- Issues: https://github.com/your-org/moodmash/issues
+- Email: support@moodmash.app

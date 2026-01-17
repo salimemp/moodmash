@@ -1,281 +1,420 @@
-// MoodMash Multilingual Chatbot
-
-class ChatbotManager {
-    constructor() {
-        this.isOpen = false;
-        this.messages = [];
-        this.qaDatabase = null; // Will be initialized lazily
-    }
+// AI Chatbot - Mood
+(function() {
+  'use strict';
+  
+  // State
+  let currentConversationId = null;
+  let currentLanguage = localStorage.getItem('moodmash_language') || 'en';
+  let ttsEnabled = false;
+  let isRecording = false;
+  let mediaRecorder = null;
+  let audioChunks = [];
+  let recordingTimer = null;
+  let recordingSeconds = 0;
+  
+  // Elements
+  const chatMessages = document.getElementById('chat-messages');
+  const chatForm = document.getElementById('chat-form');
+  const chatInput = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('send-btn');
+  const voiceBtn = document.getElementById('voice-btn');
+  const ttsToggle = document.getElementById('tts-toggle');
+  const ttsStatus = document.getElementById('tts-status');
+  const typingIndicator = document.getElementById('typing-indicator');
+  const conversationsList = document.getElementById('conversations-list');
+  const newChatBtn = document.getElementById('new-chat-btn');
+  const voiceModal = document.getElementById('voice-modal');
+  const stopRecording = document.getElementById('stop-recording');
+  const cancelRecording = document.getElementById('cancel-recording');
+  const voiceTimer = document.getElementById('voice-timer');
+  const languageBtn = document.getElementById('language-btn');
+  const languageModal = document.getElementById('language-modal');
+  const languageOptions = document.getElementById('language-options');
+  const closeLanguageModal = document.getElementById('close-language-modal');
+  const messagesUsed = document.getElementById('messages-used');
+  const messagesLimit = document.getElementById('messages-limit');
+  
+  // Initialize
+  async function init() {
+    await loadConversations();
+    await loadUsage();
+    setupEventListeners();
+    setupAccessibility();
+  }
+  
+  function setupEventListeners() {
+    // Chat form submission
+    chatForm.addEventListener('submit', handleSendMessage);
     
-    getQADatabase() {
-        // Lazy initialization to ensure i18n is available
-        if (this.qaDatabase) return this.qaDatabase;
-        
-        if (typeof i18n === 'undefined') {
-            console.warn('i18n not loaded yet for chatbot');
-            return { greetings: ['Hello!'], faqs: [], defaultResponses: ['Please try again later.'] };
-        }
-        
-        this.qaDatabase = {
-            greetings: [
-                i18n.t('chatbot_greeting1'),
-                i18n.t('chatbot_greeting2'),
-                i18n.t('chatbot_greeting3')
-            ],
-            faqs: [
-                {
-                    keywords: ['mood', 'log', 'track', 'record'],
-                    answer: i18n.t('chatbot_faq_log')
-                },
-                {
-                    keywords: ['premium', 'price', 'subscription', 'cost', 'upgrade'],
-                    answer: i18n.t('chatbot_faq_premium')
-                },
-                {
-                    keywords: ['language', 'translate', 'languages'],
-                    answer: i18n.t('chatbot_faq_languages')
-                },
-                {
-                    keywords: ['data', 'privacy', 'secure', 'safe'],
-                    answer: i18n.t('chatbot_faq_privacy')
-                },
-                {
-                    keywords: ['activity', 'activities', 'wellness', 'exercise'],
-                    answer: i18n.t('chatbot_faq_activities')
-                },
-                {
-                    keywords: ['export', 'download', 'backup', 'save'],
-                    answer: i18n.t('chatbot_faq_export')
-                },
-                {
-                    keywords: ['help', 'support', 'contact'],
-                    answer: i18n.t('chatbot_faq_help')
-                }
-            ],
-            defaultResponses: [
-                i18n.t('chatbot_default1'),
-                i18n.t('chatbot_default2'),
-                i18n.t('chatbot_default3')
-            ]
-        };
-        
-        return this.qaDatabase;
-    }
-    
-    render() {
-        if (document.getElementById('chatbot-container')) return;
-        
-        const container = document.createElement('div');
-        container.id = 'chatbot-container';
-        container.innerHTML = `
-            <!-- Chatbot Toggle Button -->
-            <button id="chatbot-toggle" 
-                    class="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-purple-600 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transform hover:scale-110 transition-all z-40 flex items-center justify-center"
-                    onclick="chatbotManager.toggle()"
-                    aria-label="${i18n.t('chatbot_toggle')}"
-                    role="button">
-                <i class="fas fa-comments text-xl"></i>
-                <span id="chatbot-badge" class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center hidden">
-                    1
-                </span>
-            </button>
-            
-            <!-- Chatbot Window -->
-            <div id="chatbot-window" 
-                 class="fixed bottom-24 right-6 w-96 max-w-[calc(100vw-3rem)] h-[500px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl flex flex-col z-40 hidden"
-                 role="dialog"
-                 aria-labelledby="chatbot-title">
-                
-                <!-- Header -->
-                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-t-2xl flex items-center justify-between">
-                    <div class="flex items-center">
-                        <div class="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mr-3">
-                            <i class="fas fa-robot text-xl"></i>
-                        </div>
-                        <div>
-                            <h3 id="chatbot-title" class="font-semibold">${i18n.t('chatbot_title')}</h3>
-                            <p class="text-xs text-white/80">${i18n.t('chatbot_subtitle')}</p>
-                        </div>
-                    </div>
-                    <button onclick="chatbotManager.toggle()" 
-                            class="text-white/80 hover:text-white"
-                            aria-label="${i18n.t('btn_close')}">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <!-- Messages Area -->
-                <div id="chatbot-messages" 
-                     class="flex-1 overflow-y-auto p-4 space-y-3"
-                     role="log"
-                     aria-live="polite"
-                     aria-atomic="false">
-                    <!-- Messages will be added here -->
-                </div>
-                
-                <!-- Quick Actions -->
-                <div id="chatbot-quick-actions" class="px-4 pb-2 flex flex-wrap gap-2">
-                    <button onclick="chatbotManager.sendQuickMessage('${i18n.t('chatbot_quick_help')}')" 
-                            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
-                        ${i18n.t('chatbot_quick_help')}
-                    </button>
-                    <button onclick="chatbotManager.sendQuickMessage('${i18n.t('chatbot_quick_premium')}')" 
-                            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
-                        ${i18n.t('chatbot_quick_premium')}
-                    </button>
-                    <button onclick="chatbotManager.sendQuickMessage('${i18n.t('chatbot_quick_languages')}')" 
-                            class="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-600">
-                        ${i18n.t('chatbot_quick_languages')}
-                    </button>
-                </div>
-                
-                <!-- Input Area -->
-                <div class="p-4 border-t border-gray-200 dark:border-gray-700">
-                    <div class="flex space-x-2">
-                        <input type="text" 
-                               id="chatbot-input" 
-                               class="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
-                               placeholder="${i18n.t('chatbot_input_placeholder')}"
-                               onkeypress="if(event.key==='Enter') chatbotManager.sendMessage()"
-                               aria-label="${i18n.t('chatbot_input_placeholder')}">
-                        <button onclick="chatbotManager.sendMessage()" 
-                                class="px-4 py-2 bg-primary text-white rounded-full hover:bg-indigo-700 transition-colors"
-                                aria-label="${i18n.t('chatbot_send')}">
-                            <i class="fas fa-paper-plane"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(container);
-        
-        // Show welcome message after a delay
-        setTimeout(() => {
-            const qa = this.getQADatabase();
-            this.addBotMessage(qa.greetings[0]);
-        }, 1000);
-    }
-    
-    toggle() {
-        this.isOpen = !this.isOpen;
-        const window = document.getElementById('chatbot-window');
-        const badge = document.getElementById('chatbot-badge');
-        
-        if (this.isOpen) {
-            window.classList.remove('hidden');
-            badge.classList.add('hidden');
-            document.getElementById('chatbot-input')?.focus();
-        } else {
-            window.classList.add('hidden');
-        }
-    }
-    
-    sendMessage() {
-        const input = document.getElementById('chatbot-input');
-        const message = input.value.trim();
-        
-        if (!message) return;
-        
-        this.addUserMessage(message);
-        input.value = '';
-        
-        // Simulate typing delay
-        setTimeout(() => {
-            const response = this.getResponse(message);
-            this.addBotMessage(response);
-        }, 500);
-    }
-    
-    sendQuickMessage(message) {
-        this.addUserMessage(message);
-        
-        setTimeout(() => {
-            const response = this.getResponse(message);
-            this.addBotMessage(response);
-        }, 500);
-    }
-    
-    addUserMessage(text) {
-        const messagesContainer = document.getElementById('chatbot-messages');
-        const messageEl = document.createElement('div');
-        messageEl.className = 'flex justify-end animate-fadeIn';
-        messageEl.innerHTML = `
-            <div class="max-w-[80%] px-4 py-2 bg-primary text-white rounded-2xl rounded-tr-sm">
-                ${this.escapeHtml(text)}
-            </div>
-        `;
-        messagesContainer.appendChild(messageEl);
-        this.scrollToBottom();
-        
-        this.messages.push({ type: 'user', text });
-    }
-    
-    addBotMessage(text) {
-        const messagesContainer = document.getElementById('chatbot-messages');
-        const messageEl = document.createElement('div');
-        messageEl.className = 'flex justify-start animate-fadeIn';
-        messageEl.innerHTML = `
-            <div class="max-w-[80%] px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-2xl rounded-tl-sm">
-                ${text}
-            </div>
-        `;
-        messagesContainer.appendChild(messageEl);
-        this.scrollToBottom();
-        
-        this.messages.push({ type: 'bot', text });
-    }
-    
-    getResponse(message) {
-        const lowerMessage = message.toLowerCase();
-        const qa = this.getQADatabase();
-        
-        // Check FAQs
-        for (const faq of qa.faqs) {
-            if (faq.keywords.some(keyword => lowerMessage.includes(keyword))) {
-                return faq.answer;
-            }
-        }
-        
-        // Greeting check
-        const greetingWords = ['hello', 'hi', 'hey', 'greetings', 'hola', '你好', 'bonjour', 'hallo', 'ciao', 'مرحبا', 'नमस्ते', 'হ্যালো', 'வணக்கம்', 'こんにちは', '안녕하세요', 'hai'];
-        if (greetingWords.some(word => lowerMessage.includes(word))) {
-            return qa.greetings[Math.floor(Math.random() * qa.greetings.length)];
-        }
-        
-        // Default response
-        return qa.defaultResponses[Math.floor(Math.random() * qa.defaultResponses.length)];
-    }
-    
-    scrollToBottom() {
-        const messagesContainer = document.getElementById('chatbot-messages');
-        if (messagesContainer) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-    }
-    
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Global instance
-const chatbotManager = new ChatbotManager();
-
-// Wait for i18n before rendering
-function waitForI18n(callback) {
-    if (typeof i18n !== 'undefined' && i18n.translations) {
-        callback();
-    } else {
-        setTimeout(() => waitForI18n(callback), 50);
-    }
-}
-
-// Initialize chatbot after DOM loads and i18n is ready
-if (typeof window !== 'undefined') {
-    window.addEventListener('load', () => {
-        waitForI18n(() => chatbotManager.render());
+    // Auto-resize textarea
+    chatInput.addEventListener('input', () => {
+      chatInput.style.height = 'auto';
+      chatInput.style.height = Math.min(chatInput.scrollHeight, 120) + 'px';
     });
-}
+    
+    // Keyboard shortcuts
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        chatForm.dispatchEvent(new Event('submit'));
+      }
+    });
+    
+    // Voice button
+    voiceBtn.addEventListener('click', startVoiceRecording);
+    stopRecording.addEventListener('click', stopVoiceRecording);
+    cancelRecording.addEventListener('click', cancelVoiceRecording);
+    
+    // TTS toggle
+    ttsToggle.addEventListener('click', toggleTTS);
+    
+    // New chat button
+    newChatBtn.addEventListener('click', startNewChat);
+    
+    // Language modal
+    languageBtn.addEventListener('click', () => {
+      languageModal.classList.remove('hidden');
+      languageModal.classList.add('flex');
+    });
+    
+    closeLanguageModal.addEventListener('click', () => {
+      languageModal.classList.add('hidden');
+      languageModal.classList.remove('flex');
+    });
+    
+    languageOptions.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentLanguage = btn.dataset.lang;
+        localStorage.setItem('moodmash_language', currentLanguage);
+        document.documentElement.dir = currentLanguage === 'ar' ? 'rtl' : 'ltr';
+        languageModal.classList.add('hidden');
+        languageModal.classList.remove('flex');
+      });
+    });
+    
+    // Close modal on outside click
+    languageModal.addEventListener('click', (e) => {
+      if (e.target === languageModal) {
+        languageModal.classList.add('hidden');
+        languageModal.classList.remove('flex');
+      }
+    });
+  }
+  
+  function setupAccessibility() {
+    // Focus management
+    chatInput.setAttribute('aria-describedby', 'usage-info');
+    
+    // Escape key closes modals
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        voiceModal.classList.add('hidden');
+        languageModal.classList.add('hidden');
+        languageModal.classList.remove('flex');
+      }
+    });
+  }
+  
+  async function loadConversations() {
+    try {
+      const res = await fetch('/api/chatbot/conversations');
+      const data = await res.json();
+      
+      if (data.success && data.conversations?.length) {
+        data.conversations.forEach(conv => {
+          const btn = document.createElement('button');
+          btn.className = 'px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg whitespace-nowrap flex-shrink-0 truncate max-w-[200px]';
+          btn.textContent = conv.title || 'Conversation';
+          btn.onclick = () => loadConversation(conv.id);
+          conversationsList.appendChild(btn);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load conversations:', error);
+    }
+  }
+  
+  async function loadConversation(conversationId) {
+    currentConversationId = conversationId;
+    
+    try {
+      const res = await fetch(`/api/chatbot/messages/${conversationId}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        chatMessages.innerHTML = '';
+        data.messages.forEach(msg => appendMessage(msg.role, msg.content));
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+    }
+  }
+  
+  async function loadUsage() {
+    try {
+      const res = await fetch('/api/subscription/usage');
+      const data = await res.json();
+      
+      if (data.success) {
+        messagesUsed.textContent = data.usage.ai_messages.used;
+        const limit = data.usage.ai_messages.limit;
+        messagesLimit.textContent = limit === -1 ? '∞' : limit;
+      }
+    } catch (error) {
+      console.error('Failed to load usage:', error);
+    }
+  }
+  
+  async function handleSendMessage(e) {
+    e.preventDefault();
+    
+    const content = chatInput.value.trim();
+    if (!content) return;
+    
+    // Clear input
+    chatInput.value = '';
+    chatInput.style.height = 'auto';
+    
+    // Add user message
+    appendMessage('user', content);
+    
+    // Show typing indicator
+    typingIndicator.classList.remove('hidden');
+    typingIndicator.classList.add('flex');
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    // Disable input while processing
+    chatInput.disabled = true;
+    sendBtn.disabled = true;
+    
+    try {
+      const res = await fetch('/api/chatbot/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          conversationId: currentConversationId,
+          content,
+          language: currentLanguage
+        })
+      });
+      
+      const data = await res.json();
+      
+      // Hide typing indicator
+      typingIndicator.classList.add('hidden');
+      typingIndicator.classList.remove('flex');
+      
+      if (data.success) {
+        currentConversationId = data.conversationId;
+        appendMessage('assistant', data.message.content);
+        
+        // Update usage
+        const used = parseInt(messagesUsed.textContent) + 1;
+        messagesUsed.textContent = used;
+        
+        // TTS if enabled
+        if (ttsEnabled) {
+          speakText(data.message.content);
+        }
+      } else if (data.upgrade) {
+        appendMessage('assistant', data.message);
+      } else {
+        appendMessage('assistant', 'Sorry, I encountered an error. Please try again.');
+      }
+    } catch (error) {
+      typingIndicator.classList.add('hidden');
+      typingIndicator.classList.remove('flex');
+      appendMessage('assistant', 'Sorry, I couldn\'t connect. Please try again.');
+    }
+    
+    // Re-enable input
+    chatInput.disabled = false;
+    sendBtn.disabled = false;
+    chatInput.focus();
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+  
+  function appendMessage(role, content) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'flex gap-3' + (role === 'user' ? ' justify-end' : '');
+    msgDiv.setAttribute('role', 'article');
+    
+    if (role === 'user') {
+      msgDiv.innerHTML = `
+        <div class="bg-purple-600 rounded-2xl rounded-tr-none px-4 py-3 max-w-[80%]">
+          <p>${escapeHtml(content)}</p>
+        </div>
+        <div class="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">👤</div>
+      `;
+    } else {
+      msgDiv.innerHTML = `
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">🌟</div>
+        <div class="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+          <p>${formatMessage(content)}</p>
+          <button class="text-xs text-gray-400 hover:text-white mt-2" onclick="window.speakText('${escapeHtml(content).replace(/'/g, "\\'")}')" aria-label="Read aloud">
+            🔊 Read aloud
+          </button>
+        </div>
+      `;
+    }
+    
+    chatMessages.appendChild(msgDiv);
+  }
+  
+  function formatMessage(content) {
+    // Basic markdown-like formatting
+    return escapeHtml(content)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/\n/g, '<br>');
+  }
+  
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+  
+  function startNewChat() {
+    currentConversationId = null;
+    chatMessages.innerHTML = `
+      <div class="flex gap-3">
+        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">🌟</div>
+        <div class="bg-gray-800 rounded-2xl rounded-tl-none px-4 py-3 max-w-[80%]">
+          <p>Hi there! I'm Mood, your supportive AI companion. 🌟</p>
+          <p class="mt-2">I'm here to listen, help you understand your emotions, and offer support. How are you feeling today?</p>
+        </div>
+      </div>
+    `;
+    chatInput.focus();
+  }
+  
+  // Voice Recording
+  async function startVoiceRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      
+      mediaRecorder.ondataavailable = (e) => {
+        audioChunks.push(e.data);
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(track => track.stop());
+        await processVoiceInput(audioBlob);
+      };
+      
+      mediaRecorder.start();
+      isRecording = true;
+      recordingSeconds = 0;
+      
+      // Show modal
+      voiceModal.classList.remove('hidden');
+      voiceModal.classList.add('flex');
+      
+      // Start timer
+      recordingTimer = setInterval(() => {
+        recordingSeconds++;
+        const mins = Math.floor(recordingSeconds / 60).toString().padStart(2, '0');
+        const secs = (recordingSeconds % 60).toString().padStart(2, '0');
+        voiceTimer.textContent = `${mins}:${secs}`;
+      }, 1000);
+      
+    } catch (error) {
+      alert('Microphone access denied. Please enable microphone permissions.');
+    }
+  }
+  
+  function stopVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      clearInterval(recordingTimer);
+      voiceModal.classList.add('hidden');
+      voiceModal.classList.remove('flex');
+    }
+  }
+  
+  function cancelVoiceRecording() {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      isRecording = false;
+      clearInterval(recordingTimer);
+      audioChunks = [];
+      voiceModal.classList.add('hidden');
+      voiceModal.classList.remove('flex');
+    }
+  }
+  
+  async function processVoiceInput(audioBlob) {
+    if (audioChunks.length === 0) return;
+    
+    // Show processing state
+    chatInput.placeholder = 'Processing voice...';
+    chatInput.disabled = true;
+    
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob);
+      formData.append('language', currentLanguage);
+      
+      const res = await fetch('/api/voice/speech-to-text', {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await res.json();
+      
+      if (data.success && data.text) {
+        chatInput.value = data.text;
+        chatInput.disabled = false;
+        chatInput.placeholder = 'Type your message...';
+        chatInput.focus();
+      } else {
+        throw new Error('Transcription failed');
+      }
+    } catch (error) {
+      chatInput.placeholder = 'Type your message...';
+      chatInput.disabled = false;
+      alert('Voice processing failed. Please try again or type your message.');
+    }
+  }
+  
+  // Text-to-Speech
+  function toggleTTS() {
+    ttsEnabled = !ttsEnabled;
+    ttsStatus.textContent = ttsEnabled ? 'TTS On' : 'TTS Off';
+    ttsToggle.classList.toggle('text-purple-400', ttsEnabled);
+  }
+  
+  window.speakText = function(text) {
+    if ('speechSynthesis' in window) {
+      speechSynthesis.cancel();
+      
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = currentLanguage === 'ar' ? 'ar-SA' : 
+                       currentLanguage === 'es' ? 'es-ES' :
+                       currentLanguage === 'fr' ? 'fr-FR' :
+                       currentLanguage === 'de' ? 'de-DE' : 'en-US';
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+      
+      speechSynthesis.speak(utterance);
+    }
+  };
+  
+  function speakText(text) {
+    window.speakText(text);
+  }
+  
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
