@@ -21,6 +21,9 @@ import friendRoutes from './routes/api/friends';
 import groupRoutes from './routes/api/groups';
 import socialRoutes from './routes/api/social';
 
+// Phase 4 routes
+import gamificationRoutes from './routes/api/gamification';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -44,6 +47,9 @@ app.route('/', passwordRoutes);
 app.route('/', friendRoutes);
 app.route('/', groupRoutes);
 app.route('/', socialRoutes);
+
+// Mount Phase 4 routes
+app.route('/', gamificationRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {
@@ -910,6 +916,124 @@ app.onError((err, c) => {
 </body>
 </html>
 `, 500);
+});
+
+// ============================================================================
+// PHASE 4: GAMIFICATION PAGES
+// ============================================================================
+
+// Achievements page
+app.get('/achievements', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Achievements - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/challenges" class="text-gray-300 hover:text-white">Challenges</a>
+        <a href="/leaderboard" class="text-gray-300 hover:text-white">Leaderboard</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">🏆 Achievements</h1>
+    <div id="achievements-container">
+      <div class="text-center py-12 text-gray-400">Loading achievements...</div>
+    </div>
+  </main>
+  <script src="/static/achievements.js"></script>
+</body>
+</html>
+`);
+});
+
+// Challenges page
+app.get('/challenges', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenges - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/achievements" class="text-gray-300 hover:text-white">Achievements</a>
+        <a href="/leaderboard" class="text-gray-300 hover:text-white">Leaderboard</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">🎯 Challenges</h1>
+    <div id="challenges-container">
+      <div class="text-center py-12 text-gray-400">Loading challenges...</div>
+    </div>
+  </main>
+  <script src="/static/challenges.js"></script>
+</body>
+</html>
+`);
+});
+
+// Leaderboard page
+app.get('/leaderboard', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/achievements" class="text-gray-300 hover:text-white">Achievements</a>
+        <a href="/challenges" class="text-gray-300 hover:text-white">Challenges</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">📊 Leaderboard</h1>
+    <div id="leaderboard-container">
+      <div class="text-center py-12 text-gray-400">Loading leaderboard...</div>
+    </div>
+  </main>
+  <script src="/static/leaderboard.js"></script>
+</body>
+</html>
+`);
 });
 
 export default app;

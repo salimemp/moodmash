@@ -268,3 +268,156 @@ input[type="range"]::-webkit-slider-thumb {
   0%, 100% { opacity: 1; }
   50% { opacity: .5; }
 }
+
+
+
+/* ===== GAMIFICATION ANIMATIONS ===== */
+
+/* Achievement unlock animation */
+@keyframes achievement-unlock {
+  0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+  50% { transform: scale(1.3) rotate(10deg); }
+  75% { transform: scale(0.9) rotate(-5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.achievement-unlock-animation {
+  animation: achievement-unlock 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Slide animations */
+@keyframes slide-down {
+  0% { transform: translateY(-100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.5s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.5s ease-out forwards;
+}
+
+/* Fade out */
+@keyframes fade-out {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-20px); }
+}
+
+.animate-fade-out {
+  animation: fade-out 0.5s ease-out forwards;
+}
+
+/* Pulse animation for streaks */
+@keyframes pulse-fire {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); filter: brightness(1.2); }
+}
+
+.streak-fire {
+  animation: pulse-fire 1s infinite;
+}
+
+/* Progress bar animation */
+@keyframes progress-fill {
+  0% { width: 0%; }
+}
+
+.progress-animated {
+  animation: progress-fill 1s ease-out forwards;
+}
+
+/* Shine effect for achievements */
+@keyframes shine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.achievement-shine {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation: shine 2s infinite;
+}
+
+/* Level up animation */
+@keyframes level-up {
+  0% { transform: scale(1); }
+  25% { transform: scale(1.2); filter: brightness(1.5); }
+  50% { transform: scale(0.95); }
+  75% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.level-up-animation {
+  animation: level-up 1s ease-out;
+}
+
+/* Badge hover effect */
+.badge-hover:hover {
+  transform: scale(1.15) rotate(5deg);
+  transition: transform 0.2s ease;
+}
+
+/* Leaderboard rank entry animation */
+@keyframes rank-enter {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.rank-entry {
+  animation: rank-enter 0.4s ease-out forwards;
+}
+
+/* Confetti particles (for special achievements) */
+@keyframes confetti {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.confetti-particle {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  animation: confetti 3s ease-out forwards;
+  pointer-events: none;
+}
+
+/* Streak number glow */
+.streak-glow {
+  text-shadow: 0 0 10px rgba(251, 146, 60, 0.5), 0 0 20px rgba(251, 146, 60, 0.3);
+}
+
+/* Points counter animation */
+@keyframes count-up {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.points-counter {
+  animation: count-up 0.5s ease-out;
+}
+
+/* Challenge card hover */
+.challenge-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  transition: all 0.2s ease;
+}
+
+/* Rarity gradients */
+.rarity-common { background: linear-gradient(135deg, #6b7280, #4b5563); }
+.rarity-rare { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.rarity-epic { background: linear-gradient(135deg, #8b5cf6, #6d28d9); }
+.rarity-legendary { background: linear-gradient(135deg, #f59e0b, #d97706); }
+
+/* Badge glow effects */
+.badge-glow-common { box-shadow: 0 0 10px rgba(107, 114, 128, 0.5); }
+.badge-glow-rare { box-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+.badge-glow-epic { box-shadow: 0 0 20px rgba(139, 92, 246, 0.7); }
+.badge-glow-legendary { box-shadow: 0 0 25px rgba(245, 158, 11, 0.8); }

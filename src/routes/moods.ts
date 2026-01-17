@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import type { Env, Variables, MoodInput, CurrentUser } from '../types';
 import { requireAuth, getCurrentUser } from '../middleware/auth';
 import { createMood, getUserMoods, deleteMood, getMoodStats, getUserMoodsByDateRange } from '../lib/db';
+import { checkAndAwardAchievements, updateStreak, updateChallengeProgress, addPoints, POINTS_CONFIG } from './api/gamification';
 
 const moods = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -40,11 +41,32 @@ moods.post('/api/moods', async (c) => {
       return c.json({ error: 'Failed to create mood entry' }, 500);
     }
     
-    // Return with original intensity scale
-    return c.json({
-      success: true,
-      mood: { ...mood, intensity: dbIntensity * 2 }
-    });
+    // Gamification: Award points, update streak, check achievements, update challenges
+    try {
+      await addPoints(c.env.DB, user.id, POINTS_CONFIG.mood_log, 'mood_log', 'mood', mood.id);
+      const streakInfo = await updateStreak(c.env.DB, user.id);
+      const newAchievements = await checkAndAwardAchievements(c.env.DB, user.id);
+      const completedChallenges = await updateChallengeProgress(c.env.DB, user.id, 'mood_count', 1);
+      
+      // Return with original intensity scale and gamification data
+      return c.json({
+        success: true,
+        mood: { ...mood, intensity: dbIntensity * 2 },
+        gamification: {
+          points_earned: POINTS_CONFIG.mood_log,
+          streak: streakInfo,
+          new_achievements: newAchievements.map(a => ({ name: a.name, icon: a.icon, points: a.points })),
+          completed_challenges: completedChallenges.map(ch => ({ name: ch.name, icon: ch.icon, points: ch.reward_points })),
+        }
+      });
+    } catch (gamError) {
+      console.error('Gamification error:', gamError);
+      // Still return success for mood creation even if gamification fails
+      return c.json({
+        success: true,
+        mood: { ...mood, intensity: dbIntensity * 2 }
+      });
+    }
   } catch (error) {
     console.error('Create mood error:', error);
     return c.json({ error: 'Failed to create mood' }, 500);

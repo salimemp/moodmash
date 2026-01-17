@@ -7,7 +7,7 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
 - **Phase 1:** ✅ Complete (Authentication, Mood Logging, Dashboard, Calendar)
 - **Phase 2:** ✅ Complete (Voice Journaling, Insights, Export, OAuth, Emails)
 - **Phase 3:** ✅ Complete (Social & Community Features)
-- **Phase 4:** 🚧 Planned (Advanced Features)
+- **Phase 4:** ✅ Complete (Gamification & Engagement)
 
 ## Features
 
@@ -98,6 +98,45 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
   - View other users' profiles
   - Recent shared moods
 
+### Phase 4: Gamification & Engagement ✅
+- **Achievements System**
+  - 20+ achievements across 6 categories
+  - Automatic unlocking on mood logs
+  - Progress tracking with milestones
+  - Rarity levels (common, rare, epic, legendary)
+  - Achievement notifications with animations
+
+- **Streaks System**
+  - Daily mood logging streaks
+  - Longest streak tracking
+  - Grace day (1-day recovery)
+  - Streak bonus points at milestones
+  - Streak leaderboard
+
+- **Challenges System**
+  - Daily, weekly, monthly challenges
+  - Auto-join and progress tracking
+  - Challenge completion rewards
+  - Challenge history
+
+- **Points & Levels**
+  - Points for all activities
+  - Level progression (Bronze → Diamond)
+  - Weekly/monthly point tracking
+  - Transaction history
+
+- **Badges System**
+  - Level badges, achievement badges, special badges
+  - Showcase up to 5 badges on profile
+  - Automatic badge earning
+
+- **Leaderboards**
+  - Global leaderboard (all-time, weekly, monthly)
+  - Friends leaderboard
+  - Group leaderboards
+  - Streak leaderboard
+  - Privacy controls (opt-in/out)
+
 ## Tech Stack
 
 - **Runtime:** Cloudflare Workers
@@ -185,6 +224,42 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
 - `GET /api/shared-moods/:id` - Get shared mood details
 - `DELETE /api/shared-moods/:id` - Delete shared mood
 
+### Gamification (Phase 4)
+
+#### Achievements
+- `GET /api/achievements` - List all achievement definitions
+- `GET /api/achievements/user` - Get user's achievement progress
+- `GET /api/achievements/:id/progress` - Get specific achievement progress
+- `GET /api/achievements/new` - Get newly unlocked achievements
+
+#### Streaks
+- `GET /api/streaks` - Get user's streak info
+- `GET /api/streaks/leaderboard` - Get streak leaderboard
+
+#### Challenges
+- `GET /api/challenges` - List all challenges
+- `GET /api/challenges/active` - Get active challenges
+- `POST /api/challenges/:id/join` - Join a challenge
+- `GET /api/challenges/:id/progress` - Get challenge progress
+- `GET /api/challenges/history` - Get completed challenges
+
+#### Points & Levels
+- `GET /api/points` - Get user points and level
+- `POST /api/points/visibility` - Toggle leaderboard visibility
+
+#### Badges
+- `GET /api/badges` - Get all badges with user status
+- `GET /api/badges/user` - Get user's earned badges
+- `POST /api/badges/showcase` - Update badge showcase
+
+#### Leaderboards
+- `GET /api/leaderboard/global` - Global points leaderboard
+- `GET /api/leaderboard/friends` - Friends leaderboard
+- `GET /api/leaderboard/group/:id` - Group leaderboard
+
+#### Stats (Dashboard Widget)
+- `GET /api/gamification/stats` - Get gamification summary
+
 ## Environment Variables
 
 ```env
@@ -259,7 +334,11 @@ moodmash/
 │   │       ├── insights.ts
 │   │       ├── export.ts
 │   │       ├── oauth.ts
-│   │       └── password.ts
+│   │       ├── password.ts
+│   │       ├── friends.ts       # Phase 3
+│   │       ├── groups.ts        # Phase 3
+│   │       ├── social.ts        # Phase 3
+│   │       └── gamification.ts  # Phase 4
 │   └── services/
 │       ├── gemini.ts     # Gemini AI service
 │       └── resend.ts     # Email service
@@ -268,10 +347,16 @@ moodmash/
 │       ├── styles.css
 │       ├── app.js
 │       ├── voice-journal.js
-│       └── insights.js
+│       ├── insights.js
+│       ├── achievements.js      # Phase 4
+│       ├── challenges.js        # Phase 4
+│       ├── leaderboard.js       # Phase 4
+│       └── gamification-widget.js
 ├── migrations/
 │   ├── 0001_initial_schema.sql
-│   └── 0002_phase2_features.sql
+│   ├── 0002_phase2_features.sql
+│   ├── 0020_phase3_social.sql
+│   └── 0021_phase4_gamification.sql
 └── TODO.md               # Feature roadmap
 ```
 
