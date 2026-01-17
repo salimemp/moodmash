@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-01-17  
 **Current Branch:** rebuild-clean  
-**Status:** Phase 1-4 Complete
+**Status:** Phase 1-5 Complete
 
 ---
 
@@ -230,23 +230,93 @@
 
 ---
 
-## Phase 5: Future Features ⏳ PLANNED
+## Phase 5: Enhanced Authentication & Health Features ✅ COMPLETE
 
-### 5.1 Biometric Integration
-| Feature | Description | Dependencies | Effort | Priority |
-|---------|-------------|--------------|--------|----------|
-| Health APIs | Apple Health, Google Fit | OAuth | 8h | P3 |
-| Sleep Data | Import sleep metrics | Health API | 4h | P3 |
-| Heart Rate | Heart rate correlation | Health API | 4h | P3 |
-| Activity Data | Steps, exercise data | Health API | 4h | P3 |
-| Mood Correlation | Correlate health & mood | Analytics | 4h | P3 |
+### 5.1 Two-Factor Authentication (TOTP) ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| TOTP Setup | Generate secret, QR code | Done |
+| QR Code Display | Scan with authenticator apps | Done |
+| Code Verification | Verify 6-digit TOTP codes | Done |
+| Enable/Disable 2FA | POST /api/security/2fa/totp/enable, /disable | Done |
+| API Endpoints | /api/security/2fa/totp/setup, /verify | Done |
 
-### 5.2 AR/XR Features (Experimental)
-| Feature | Description | Dependencies | Effort | Priority |
-|---------|-------------|--------------|--------|----------|
-| 3D Mood Avatars | Visual mood representation | Three.js | 8h | P4 |
-| AR Mood Cards | Printable AR markers | AR.js | 8h | P4 |
-| AR Dashboard | Immersive experience | WebXR | 12h | P4 |
+### 5.2 Backup Codes ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Generate Backup Codes | 10 one-time codes | Done |
+| Store Hashed Codes | Secure bcrypt storage | Done |
+| Download/Print Codes | Export backup codes | Done |
+| Verify Backup Codes | POST /api/security/2fa/backup-codes/verify | Done |
+| Regenerate Codes | POST /api/security/2fa/backup-codes/regenerate | Done |
+
+### 5.3 Email 2FA ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Send Email Code | 6-digit code via Resend | Done |
+| Time-Limited Codes | 10-minute expiry | Done |
+| Email Verification | POST /api/security/2fa/email/verify | Done |
+| Enable Email 2FA | POST /api/security/2fa/email/enable | Done |
+
+### 5.4 Security Dashboard ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Security Score | Calculate overall security score | Done |
+| 2FA Status Overview | Show enabled methods | Done |
+| Active Sessions | View all sessions | Done |
+| Login History | Last 30 days history | Done |
+| Security Events | Event log with severity | Done |
+| Page Route | /security | Done |
+
+### 5.5 Session Management ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Track Sessions | Device info, IP, location | Done |
+| Session List | GET /api/security/sessions | Done |
+| Terminate Session | DELETE /api/security/sessions/:id | Done |
+| Terminate All | POST /api/security/sessions/terminate-all | Done |
+
+### 5.6 Wearables Dashboard (Mock Data) ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Connect Devices UI | Fitbit, Apple Watch, Garmin, Samsung, Xiaomi | Done |
+| Mock Activity Data | Steps, heart rate, calories | Done |
+| Weekly Trends Chart | Visual activity trends | Done |
+| Mood-Activity Correlation | Statistical correlation | Done |
+| Page Route | /wearables | Done |
+| API Endpoints | GET /api/wearables, POST /api/wearables/connect | Done |
+
+### 5.7 Sleep Tracking (Mock Data) ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Sleep Quality Score | 0-100 quality calculation | Done |
+| Sleep Stages | Deep, Light, REM, Awake | Done |
+| Duration Tracking | Hours and minutes | Done |
+| Weekly Sleep Chart | Visual pattern chart | Done |
+| Sleep-Mood Correlation | Statistical analysis | Done |
+| Page Route | /sleep | Done |
+| API Endpoints | GET /api/sleep/data, /api/sleep/trends | Done |
+
+### 5.8 Health Insights (Mock Data) ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Wellness Score | 0-100 overall score | Done |
+| Component Scores | Activity, Sleep, Mood, Stress | Done |
+| Personalized Insights | AI-like recommendations | Done |
+| Page Route | /health | Done |
+| API Endpoints | GET /api/health/wellness-score, /api/health/insights | Done |
+
+### 5.9 2D Mood Visualizations ✅
+| Feature | Description | Status |
+|---------|-------------|--------|
+| Mood Heatmap | Calendar-style heatmap | Done |
+| Emotion Radar Chart | SVG radar/spider chart | Done |
+| Mood Timeline | Line chart journey | Done |
+| Emotion Wheel | Colored pie/wheel chart | Done |
+| Page Route | /visualizations | Done |
+| API Endpoints | GET /api/health/mood-heatmap, /api/health/mood-radar | Done |
+
+---
 
 ## Phase 6: Premium & Enterprise ⏳ PLANNED
 

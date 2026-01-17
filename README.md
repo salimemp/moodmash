@@ -8,6 +8,7 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
 - **Phase 2:** ✅ Complete (Voice Journaling, Insights, Export, OAuth, Emails)
 - **Phase 3:** ✅ Complete (Social & Community Features)
 - **Phase 4:** ✅ Complete (Gamification & Engagement)
+- **Phase 5:** ✅ Complete (Enhanced Security & Health Features)
 
 ## Features
 
@@ -137,6 +138,57 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
   - Streak leaderboard
   - Privacy controls (opt-in/out)
 
+### Phase 5: Enhanced Security & Health Features ✅
+- **Two-Factor Authentication (TOTP)**
+  - Setup with QR code for authenticator apps
+  - Google Authenticator, Authy compatible
+  - 6-digit code verification
+  - Enable/disable 2FA
+
+- **Backup Codes**
+  - 10 one-time recovery codes
+  - Secure hashed storage
+  - Download/print codes
+  - Regenerate codes
+
+- **Email 2FA**
+  - 6-digit codes via email
+  - 10-minute expiry
+  - Alternative to TOTP
+
+- **Security Dashboard**
+  - Security score calculation
+  - 2FA status overview
+  - Active sessions list
+  - Login history (30 days)
+  - Security events log
+  - Remote session termination
+
+- **Wearables Integration (Mock Data)**
+  - Connect Fitbit, Apple Watch, Garmin, Samsung, Xiaomi (UI demo)
+  - Activity data: steps, heart rate, calories, active minutes
+  - Weekly activity trends chart
+  - Mood-activity correlation analysis
+
+- **Sleep Tracking (Mock Data)**
+  - Sleep quality score (0-100)
+  - Sleep stages: deep, light, REM, awake
+  - Duration tracking
+  - Weekly sleep pattern chart
+  - Sleep-mood correlation
+
+- **Health Insights (Mock Data)**
+  - Overall wellness score (0-100)
+  - Component scores: activity, sleep, mood, stress
+  - Personalized recommendations
+  - Health trends dashboard
+
+- **2D Mood Visualizations**
+  - Mood heatmap (calendar view with colors)
+  - Emotion radar/spider chart
+  - Mood journey timeline
+  - Emotion wheel visualization
+
 ## Tech Stack
 
 - **Runtime:** Cloudflare Workers
@@ -260,6 +312,55 @@ A modern mood tracking application built with Cloudflare Workers, Hono, and Type
 #### Stats (Dashboard Widget)
 - `GET /api/gamification/stats` - Get gamification summary
 
+### Security (Phase 5)
+
+#### 2FA - TOTP
+- `POST /api/security/2fa/totp/setup` - Generate TOTP secret and QR code
+- `POST /api/security/2fa/totp/verify` - Verify 6-digit code
+- `POST /api/security/2fa/totp/enable` - Enable TOTP 2FA
+- `POST /api/security/2fa/totp/disable` - Disable TOTP 2FA
+- `GET /api/security/2fa/status` - Get 2FA status
+
+#### Backup Codes
+- `GET /api/security/2fa/backup-codes` - Get remaining codes count
+- `POST /api/security/2fa/backup-codes/regenerate` - Regenerate codes
+- `POST /api/security/2fa/backup-codes/verify` - Verify backup code
+
+#### Email 2FA
+- `POST /api/security/2fa/email/send` - Send verification code
+- `POST /api/security/2fa/email/verify` - Verify email code
+- `POST /api/security/2fa/email/enable` - Enable email 2FA
+
+#### Sessions
+- `GET /api/security/sessions` - List active sessions
+- `DELETE /api/security/sessions/:id` - Terminate session
+- `POST /api/security/sessions/terminate-all` - Terminate all other sessions
+
+#### Security Dashboard
+- `GET /api/security/dashboard` - Security overview
+- `GET /api/security/login-history` - Login history (30 days)
+- `GET /api/security/events` - Security events log
+
+### Health & Wearables (Phase 5)
+
+#### Wearables
+- `GET /api/wearables` - List available wearables
+- `POST /api/wearables/connect` - Connect wearable (mock)
+- `DELETE /api/wearables/disconnect` - Disconnect wearable
+- `GET /api/wearables/data` - Get activity data
+- `GET /api/wearables/correlations` - Mood-activity correlations
+
+#### Sleep
+- `GET /api/sleep/data` - Get sleep data
+- `GET /api/sleep/trends` - Get sleep trends
+
+#### Health Insights
+- `GET /api/health/metrics` - Get health metrics
+- `GET /api/health/insights` - Get personalized insights
+- `GET /api/health/wellness-score` - Get overall wellness score
+- `GET /api/health/mood-heatmap` - Get mood calendar heatmap
+- `GET /api/health/mood-radar` - Get emotion distribution radar
+
 ## Environment Variables
 
 ```env
@@ -338,7 +439,9 @@ moodmash/
 │   │       ├── friends.ts       # Phase 3
 │   │       ├── groups.ts        # Phase 3
 │   │       ├── social.ts        # Phase 3
-│   │       └── gamification.ts  # Phase 4
+│   │       ├── gamification.ts  # Phase 4
+│   │       ├── security.ts      # Phase 5
+│   │       └── health.ts        # Phase 5
 │   └── services/
 │       ├── gemini.ts     # Gemini AI service
 │       └── resend.ts     # Email service
@@ -351,12 +454,19 @@ moodmash/
 │       ├── achievements.js      # Phase 4
 │       ├── challenges.js        # Phase 4
 │       ├── leaderboard.js       # Phase 4
-│       └── gamification-widget.js
+│       ├── gamification-widget.js
+│       ├── security.js          # Phase 5
+│       ├── 2fa-setup.js         # Phase 5
+│       ├── wearables.js         # Phase 5
+│       ├── sleep.js             # Phase 5
+│       ├── health-insights.js   # Phase 5
+│       └── visualizations.js    # Phase 5
 ├── migrations/
 │   ├── 0001_initial_schema.sql
 │   ├── 0002_phase2_features.sql
 │   ├── 0020_phase3_social.sql
-│   └── 0021_phase4_gamification.sql
+│   ├── 0021_phase4_gamification.sql
+│   └── 0022_phase5_security_health.sql
 └── TODO.md               # Feature roadmap
 ```
 

@@ -24,6 +24,10 @@ import socialRoutes from './routes/api/social';
 // Phase 4 routes
 import gamificationRoutes from './routes/api/gamification';
 
+// Phase 5 routes
+import securityRoutes from './routes/api/security';
+import healthRoutes from './routes/api/health';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -50,6 +54,10 @@ app.route('/', socialRoutes);
 
 // Mount Phase 4 routes
 app.route('/', gamificationRoutes);
+
+// Mount Phase 5 routes
+app.route('/api/security', securityRoutes);
+app.route('/api', healthRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {
@@ -1031,6 +1039,584 @@ app.get('/leaderboard', async (c) => {
     </div>
   </main>
   <script src="/static/leaderboard.js"></script>
+</body>
+</html>
+`);
+});
+
+// ==================== PHASE 5 PAGES ====================
+
+// Security Dashboard
+app.get('/security', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Security - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/health" class="text-gray-300 hover:text-white">Health</a>
+        <a href="/wearables" class="text-gray-300 hover:text-white">Wearables</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">🔒 Security Dashboard</h1>
+    
+    <!-- Security Score -->
+    <div id="security-score" class="bg-gray-800 rounded-xl p-6 mb-6">
+      <div class="text-center">
+        <div class="text-6xl font-bold text-purple-400" id="score-value">--</div>
+        <div class="text-gray-400 mt-2">Security Score</div>
+      </div>
+    </div>
+    
+    <!-- 2FA Section -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🔐 Two-Factor Authentication</h2>
+      <div id="2fa-status" class="space-y-4">
+        <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+          <div>
+            <div class="font-medium">Authenticator App (TOTP)</div>
+            <div class="text-sm text-gray-400">Use Google Authenticator or Authy</div>
+          </div>
+          <button id="totp-btn" onclick="setup2FA('totp')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg">
+            Setup
+          </button>
+        </div>
+        <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+          <div>
+            <div class="font-medium">Email Verification</div>
+            <div class="text-sm text-gray-400">Receive codes via email</div>
+          </div>
+          <button id="email-2fa-btn" onclick="setup2FA('email')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">
+            Enable
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Backup Codes -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🗝️ Backup Codes</h2>
+      <p class="text-gray-400 mb-4">Backup codes can be used if you lose access to your 2FA device.</p>
+      <div id="backup-codes-status" class="mb-4">
+        <span class="text-gray-400">Remaining codes: </span>
+        <span id="backup-count" class="font-bold text-green-400">--</span>
+      </div>
+      <button onclick="regenerateBackupCodes()" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg">
+        Regenerate Codes
+      </button>
+    </div>
+    
+    <!-- Active Sessions -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">📱 Active Sessions</h2>
+        <button onclick="terminateAllSessions()" class="text-sm text-red-400 hover:text-red-300">
+          End all other sessions
+        </button>
+      </div>
+      <div id="sessions-list" class="space-y-3">
+        <div class="text-center py-4 text-gray-400">Loading sessions...</div>
+      </div>
+    </div>
+    
+    <!-- Login History -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">📜 Login History</h2>
+      <div id="login-history" class="space-y-2 max-h-64 overflow-y-auto">
+        <div class="text-center py-4 text-gray-400">Loading history...</div>
+      </div>
+    </div>
+    
+    <!-- Security Events -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">⚡ Security Events</h2>
+      <div id="security-events" class="space-y-2 max-h-64 overflow-y-auto">
+        <div class="text-center py-4 text-gray-400">Loading events...</div>
+      </div>
+    </div>
+  </main>
+  <script src="/static/security.js"></script>
+</body>
+</html>
+`);
+});
+
+// 2FA Setup Page
+app.get('/2fa-setup', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup 2FA - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="bg-gray-800 rounded-xl p-8 shadow-xl">
+      <h1 class="text-2xl font-bold text-center mb-6">🔐 Setup Authenticator</h1>
+      
+      <!-- Step 1: QR Code -->
+      <div id="step1" class="space-y-4">
+        <p class="text-gray-400 text-center">Scan this QR code with your authenticator app:</p>
+        <div id="qr-container" class="flex justify-center my-6">
+          <div class="bg-white p-4 rounded-lg">
+            <div id="qr-loading" class="w-48 h-48 flex items-center justify-center text-gray-400">
+              Loading...
+            </div>
+            <img id="qr-code" class="w-48 h-48 hidden" alt="QR Code">
+          </div>
+        </div>
+        <div class="text-center">
+          <p class="text-sm text-gray-400 mb-2">Or enter this code manually:</p>
+          <code id="manual-code" class="bg-gray-700 px-4 py-2 rounded text-purple-400 text-lg tracking-widest">
+            ------
+          </code>
+        </div>
+        <button onclick="showStep2()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium mt-4">
+          I've scanned the code
+        </button>
+      </div>
+      
+      <!-- Step 2: Verify -->
+      <div id="step2" class="hidden space-y-4">
+        <p class="text-gray-400 text-center">Enter the 6-digit code from your app:</p>
+        <input type="text" id="totp-code" maxlength="6" pattern="[0-9]{6}"
+               class="w-full px-4 py-3 bg-gray-700 rounded-lg text-center text-2xl tracking-widest focus:ring-2 focus:ring-purple-500 outline-none"
+               placeholder="000000">
+        <div id="verify-error" class="text-red-400 text-sm text-center hidden"></div>
+        <button onclick="verifyTOTP()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium">
+          Verify & Enable 2FA
+        </button>
+        <button onclick="showStep1()" class="w-full py-2 text-gray-400 hover:text-white">
+          Back
+        </button>
+      </div>
+      
+      <!-- Step 3: Backup Codes -->
+      <div id="step3" class="hidden space-y-4">
+        <div class="text-center text-green-400 mb-4">
+          <span class="text-4xl">✓</span>
+          <p class="font-medium mt-2">2FA Enabled Successfully!</p>
+        </div>
+        <p class="text-gray-400 text-center">Save these backup codes in a safe place:</p>
+        <div id="backup-codes" class="bg-gray-700 p-4 rounded-lg font-mono text-sm grid grid-cols-2 gap-2">
+        </div>
+        <button onclick="downloadCodes()" class="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">
+          📥 Download Codes
+        </button>
+        <a href="/security" class="block w-full py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium text-center">
+          Done
+        </a>
+      </div>
+    </div>
+    <p class="text-center text-gray-400 mt-4">
+      <a href="/security" class="text-purple-400 hover:underline">← Back to Security</a>
+    </p>
+  </div>
+  <script src="/static/2fa-setup.js"></script>
+</body>
+</html>
+`);
+});
+
+// Wearables Dashboard
+app.get('/wearables', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wearables - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/health" class="text-gray-300 hover:text-white">Health</a>
+        <a href="/sleep" class="text-gray-300 hover:text-white">Sleep</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">⌚ Wearables</h1>
+    
+    <!-- Connect Devices -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">Connect Your Devices</h2>
+      <p class="text-gray-400 mb-4 text-sm">Connect wearables to track your activity and correlate with mood (demo mode).</p>
+      <div id="devices-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="text-center py-8 text-gray-400">Loading devices...</div>
+      </div>
+    </div>
+    
+    <!-- Activity Summary -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">📊 Activity Summary</h2>
+      <div id="activity-summary" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-gray-700 rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-blue-400" id="avg-steps">--</div>
+          <div class="text-sm text-gray-400">Avg Steps</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-red-400" id="avg-heart-rate">--</div>
+          <div class="text-sm text-gray-400">Avg HR</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-orange-400" id="avg-calories">--</div>
+          <div class="text-sm text-gray-400">Avg Calories</div>
+        </div>
+        <div class="bg-gray-700 rounded-lg p-4 text-center">
+          <div class="text-3xl font-bold text-green-400" id="avg-active">--</div>
+          <div class="text-sm text-gray-400">Avg Active Min</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Activity Trends Chart -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">📈 Weekly Trends</h2>
+      <div id="activity-chart" class="h-64 flex items-end justify-around gap-2 pb-4">
+        <div class="text-center py-8 text-gray-400 w-full">Loading chart...</div>
+      </div>
+      <div id="chart-labels" class="flex justify-around text-xs text-gray-400"></div>
+    </div>
+    
+    <!-- Mood-Activity Correlation -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">🔗 Mood-Activity Correlation</h2>
+      <div id="correlation-container">
+        <div class="text-center py-8 text-gray-400">Loading correlations...</div>
+      </div>
+    </div>
+  </main>
+  <script src="/static/wearables.js"></script>
+</body>
+</html>
+`);
+});
+
+// Sleep Tracking Page
+app.get('/sleep', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sleep Tracking - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/health" class="text-gray-300 hover:text-white">Health</a>
+        <a href="/wearables" class="text-gray-300 hover:text-white">Wearables</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">😴 Sleep Tracking</h1>
+    
+    <!-- Sleep Score -->
+    <div class="bg-gradient-to-r from-indigo-900 to-purple-900 rounded-xl p-6 mb-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg text-gray-300">Sleep Quality Score</h2>
+          <div class="text-5xl font-bold text-white" id="sleep-score">--</div>
+        </div>
+        <div class="text-right">
+          <div class="text-gray-300">Avg Duration</div>
+          <div class="text-2xl font-semibold" id="avg-duration">--</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Sleep Stages -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🌙 Sleep Stages (Last Night)</h2>
+      <div id="sleep-stages" class="space-y-3">
+        <div class="flex items-center gap-4">
+          <span class="w-20 text-sm text-gray-400">Deep</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-6 overflow-hidden">
+            <div id="deep-bar" class="bg-indigo-600 h-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="deep-time" class="w-16 text-right">--</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="w-20 text-sm text-gray-400">Light</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-6 overflow-hidden">
+            <div id="light-bar" class="bg-blue-400 h-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="light-time" class="w-16 text-right">--</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="w-20 text-sm text-gray-400">REM</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-6 overflow-hidden">
+            <div id="rem-bar" class="bg-purple-500 h-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="rem-time" class="w-16 text-right">--</span>
+        </div>
+        <div class="flex items-center gap-4">
+          <span class="w-20 text-sm text-gray-400">Awake</span>
+          <div class="flex-1 bg-gray-700 rounded-full h-6 overflow-hidden">
+            <div id="awake-bar" class="bg-red-400 h-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+          <span id="awake-time" class="w-16 text-right">--</span>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Weekly Sleep Chart -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">📊 Weekly Sleep Pattern</h2>
+      <div id="sleep-chart" class="h-48 flex items-end justify-around gap-2 pb-4">
+        <div class="text-center py-8 text-gray-400 w-full">Loading chart...</div>
+      </div>
+      <div id="sleep-chart-labels" class="flex justify-around text-xs text-gray-400 mt-2"></div>
+    </div>
+    
+    <!-- Sleep-Mood Correlation -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">😊 Sleep-Mood Connection</h2>
+      <div id="sleep-mood-correlation" class="text-center py-8">
+        <div class="text-gray-400">Loading correlation data...</div>
+      </div>
+    </div>
+  </main>
+  <script src="/static/sleep.js"></script>
+</body>
+</html>
+`);
+});
+
+// Health Insights Page
+app.get('/health', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Health Insights - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/visualizations" class="text-gray-300 hover:text-white">Visualizations</a>
+        <a href="/wearables" class="text-gray-300 hover:text-white">Wearables</a>
+        <a href="/sleep" class="text-gray-300 hover:text-white">Sleep</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">💚 Health Insights</h1>
+    
+    <!-- Wellness Score -->
+    <div class="bg-gradient-to-r from-green-900 to-emerald-900 rounded-xl p-8 mb-6">
+      <div class="text-center">
+        <h2 class="text-lg text-gray-300 mb-2">Overall Wellness Score</h2>
+        <div class="relative inline-block">
+          <svg class="w-40 h-40" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+            <circle id="wellness-circle" cx="50" cy="50" r="45" fill="none" stroke="#10B981" stroke-width="8"
+                    stroke-linecap="round" stroke-dasharray="283" stroke-dashoffset="283"
+                    transform="rotate(-90 50 50)" class="transition-all duration-1000"/>
+          </svg>
+          <div class="absolute inset-0 flex items-center justify-center">
+            <span id="wellness-score" class="text-4xl font-bold">--</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Component Scores -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="bg-gray-800 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">🏃</div>
+        <div class="text-2xl font-bold text-blue-400" id="activity-score">--</div>
+        <div class="text-sm text-gray-400">Activity</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">😴</div>
+        <div class="text-2xl font-bold text-purple-400" id="sleep-score-card">--</div>
+        <div class="text-sm text-gray-400">Sleep</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">😊</div>
+        <div class="text-2xl font-bold text-yellow-400" id="mood-score">--</div>
+        <div class="text-sm text-gray-400">Mood</div>
+      </div>
+      <div class="bg-gray-800 rounded-xl p-4 text-center">
+        <div class="text-3xl mb-2">🧘</div>
+        <div class="text-2xl font-bold text-green-400" id="stress-score">--</div>
+        <div class="text-sm text-gray-400">Relaxation</div>
+      </div>
+    </div>
+    
+    <!-- Insights & Recommendations -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">💡 Personalized Insights</h2>
+      <div id="insights-list" class="space-y-4">
+        <div class="text-center py-8 text-gray-400">Loading insights...</div>
+      </div>
+    </div>
+    
+    <!-- Quick Links -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <a href="/visualizations" class="bg-gray-800 rounded-xl p-6 hover:bg-gray-750 transition-colors text-center">
+        <div class="text-3xl mb-2">📊</div>
+        <div class="font-medium">Mood Visualizations</div>
+      </a>
+      <a href="/wearables" class="bg-gray-800 rounded-xl p-6 hover:bg-gray-750 transition-colors text-center">
+        <div class="text-3xl mb-2">⌚</div>
+        <div class="font-medium">Connect Devices</div>
+      </a>
+      <a href="/sleep" class="bg-gray-800 rounded-xl p-6 hover:bg-gray-750 transition-colors text-center">
+        <div class="text-3xl mb-2">😴</div>
+        <div class="font-medium">Sleep Analysis</div>
+      </a>
+    </div>
+  </main>
+  <script src="/static/health-insights.js"></script>
+</body>
+</html>
+`);
+});
+
+// Mood Visualizations Page
+app.get('/visualizations', async (c) => {
+  const { getCurrentUser } = await import('./middleware/auth');
+  const user = await getCurrentUser(c);
+  if (!user) return c.redirect('/login');
+
+  return c.html(`
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mood Visualizations - MoodMash</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+  <nav class="bg-gray-800 border-b border-gray-700 px-4 py-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <a href="/dashboard" class="text-xl font-bold">MoodMash</a>
+      <div class="flex items-center gap-4">
+        <a href="/health" class="text-gray-300 hover:text-white">Health</a>
+        <a href="/calendar" class="text-gray-300 hover:text-white">Calendar</a>
+        <a href="/dashboard" class="text-gray-300 hover:text-white">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold mb-6">📊 Mood Visualizations</h1>
+    
+    <!-- Mood Heatmap Calendar -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🗓️ Mood Heatmap</h2>
+      <div id="mood-heatmap" class="overflow-x-auto">
+        <div class="text-center py-8 text-gray-400">Loading heatmap...</div>
+      </div>
+      <div class="flex items-center justify-center gap-4 mt-4 text-sm">
+        <span class="text-gray-400">Low</span>
+        <div class="flex gap-1">
+          <div class="w-4 h-4 rounded bg-gray-700"></div>
+          <div class="w-4 h-4 rounded bg-purple-900"></div>
+          <div class="w-4 h-4 rounded bg-purple-700"></div>
+          <div class="w-4 h-4 rounded bg-purple-500"></div>
+          <div class="w-4 h-4 rounded bg-purple-400"></div>
+        </div>
+        <span class="text-gray-400">High</span>
+      </div>
+    </div>
+    
+    <!-- Emotion Radar Chart -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">🎯 Emotion Distribution</h2>
+      <div id="emotion-radar" class="flex justify-center">
+        <div class="relative w-72 h-72">
+          <svg viewBox="-110 -110 220 220" class="w-full h-full">
+            <!-- Grid circles -->
+            <circle cx="0" cy="0" r="25" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <circle cx="0" cy="0" r="50" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <circle cx="0" cy="0" r="75" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            <circle cx="0" cy="0" r="100" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+            <!-- Radar polygon will be added by JS -->
+            <polygon id="radar-polygon" fill="rgba(139, 92, 246, 0.3)" stroke="#8B5CF6" stroke-width="2"/>
+          </svg>
+          <!-- Labels positioned around -->
+          <div id="radar-labels" class="absolute inset-0"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Mood Timeline -->
+    <div class="bg-gray-800 rounded-xl p-6 mb-6">
+      <h2 class="text-xl font-semibold mb-4">📈 Mood Journey (Last 30 Days)</h2>
+      <div id="mood-timeline" class="relative h-48">
+        <div class="text-center py-8 text-gray-400">Loading timeline...</div>
+      </div>
+    </div>
+    
+    <!-- Emotion Wheel -->
+    <div class="bg-gray-800 rounded-xl p-6">
+      <h2 class="text-xl font-semibold mb-4">🎡 Emotion Wheel</h2>
+      <div id="emotion-wheel" class="flex justify-center">
+        <div class="relative w-64 h-64">
+          <svg viewBox="-110 -110 220 220" class="w-full h-full">
+            <g id="wheel-segments"></g>
+          </svg>
+        </div>
+      </div>
+      <div id="wheel-legend" class="flex flex-wrap justify-center gap-3 mt-4 text-sm"></div>
+    </div>
+  </main>
+  <script src="/static/visualizations.js"></script>
 </body>
 </html>
 `);
