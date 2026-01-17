@@ -1,36 +1,46 @@
 {
-  "nav_dashboard": "لوحة القيادة",
-  "nav_log_mood": "تسجيل المزاج",
+  "nav_dashboard": "لوحة التحكم",
+  "nav_log_mood": "سجل مزاجك",
   "nav_activities": "الأنشطة",
-  "nav_about": "عن التطبيق",
-  "dashboard_title": "MoodMash",
-  "dashboard_subtitle": "تتبع ذكي للمزاج",
+  "nav_about": "حول",
+  "nav_compliance": "الامتثال",
+  "nav_settings": "الإعدادات",
+  "nav_billing": "الفواتير",
+  "nav_wellness": "العافية",
+  "nav_meditation": "التأمل",
+  "nav_yoga": "اليوغا",
+  "nav_music": "العلاج بالموسيقى",
+  "nav_social": "اجتماعي",
+  "nav_profile": "الملف الشخصي",
+  "nav_achievements": "الإنجازات",
+  "dashboard_title": "مودماش",
+  "dashboard_subtitle": "تتبع المزاج الذكي",
   "loading_data": "جاري تحميل بيانات مزاجك...",
   "stats_total_entries": "إجمالي الإدخالات",
-  "stats_most_common": "الأكثر شيوعًا",
-  "stats_avg_intensity": "متوسط ​​الكثافة",
+  "stats_most_common": "الأكثر شيوعاً",
+  "stats_avg_intensity": "متوسط الشدة",
   "stats_trend": "الاتجاه",
-  "stats_last_30_days": "آخر 30 يومًا",
-  "stats_primary_emotion": "العاطفة الأساسية",
+  "stats_last_30_days": "آخر 30 يوماً",
+  "stats_primary_emotion": "العاطفة الرئيسية",
   "stats_out_of_5": "من 5.0",
-  "stats_30_day_trend": "اتجاه 30 يومًا",
+  "stats_30_day_trend": "اتجاه 30 يوماً",
   "trend_improving": "تحسن",
   "trend_declining": "تراجع",
   "trend_stable": "مستقر",
   "chart_mood_distribution": "توزيع المزاج",
-  "chart_intensity_trend": "اتجاه الكثافة الأخير",
+  "chart_intensity_trend": "اتجاه الشدة الأخير",
   "insights_title": "رؤى وتوصيات",
-  "recent_moods_title": "الحالات المزاجية الأخيرة",
-  "recent_moods_empty": "لا توجد إدخالات مزاج حتى الآن.",
-  "recent_moods_log_first": "سجل أول مزاج لك!",
-  "intensity_label": "الكثافة:",
+  "recent_moods_title": "المزاج الأخير",
+  "recent_moods_empty": "لا توجد إدخالات مزاج بعد.",
+  "recent_moods_log_first": "سجل مزاجك الأول!",
+  "intensity_label": "الشدة:",
   "log_mood_title": "سجل مزاجك",
   "log_mood_subtitle": "تتبع شعورك الآن",
   "form_emotion_label": "كيف تشعر؟",
-  "form_intensity_label": "الكثافة",
+  "form_intensity_label": "الشدة",
   "form_intensity_current": "الحالي:",
   "form_intensity_low": "منخفض",
-  "form_intensity_high": "عالي",
+  "form_intensity_high": "مرتفع",
   "form_notes_label": "ملاحظات (اختياري)",
   "form_notes_placeholder": "ما الذي يدور في ذهنك؟ أي محفزات أو أحداث؟",
   "form_weather_label": "الطقس (اختياري)",
@@ -41,13 +51,28 @@
   "form_required": "*",
   "btn_cancel": "إلغاء",
   "btn_save": "حفظ المزاج",
-  "btn_log_new": "تسجيل جديد",
+  "btn_log_new": "إدخال جديد",
   "btn_start": "ابدأ",
   "btn_close": "إغلاق",
   "btn_retry": "إعادة المحاولة",
-  "btn_view_dashboard": "عرض لوحة القيادة",
-  "btn_log_another": "تسجيل آخر",
-  "btn_mark_done": "وضع علامة كمنتهي",
+  "btn_view_dashboard": "عرض لوحة التحكم",
+  "btn_log_another": "سجل آخر",
+  "btn_mark_done": "وضع علامة منجز",
+  "btn_play": "تشغيل",
+  "btn_pause": "إيقاف مؤقت",
+  "btn_stop": "إيقاف",
+  "btn_next": "التالي",
+  "btn_previous": "السابق",
+  "btn_shuffle": "عشوائي",
+  "btn_repeat": "تكرار",
+  "btn_favorite": "المفضلة",
+  "btn_share": "مشاركة",
+  "btn_download": "تحميل",
+  "btn_submit": "إرسال",
+  "btn_continue": "متابعة",
+  "btn_skip": "تخطي",
+  "btn_back": "رجوع",
+  "btn_finish": "إنهاء",
   "emotion_happy": "سعيد",
   "emotion_sad": "حزين",
   "emotion_anxious": "قلق",
@@ -58,11 +83,16 @@
   "emotion_peaceful": "مسالم",
   "emotion_stressed": "متوتر",
   "emotion_neutral": "محايد",
+  "emotion_excited": "متحمس",
+  "emotion_grateful": "ممتن",
+  "emotion_hopeful": "متفائل",
+  "emotion_content": "راضٍ",
+  "emotion_frustrated": "محبط",
   "weather_sunny": "مشمس",
   "weather_cloudy": "غائم",
   "weather_rainy": "ممطر",
-  "weather_snowy": "مثلج",
-  "weather_clear": "صافي",
+  "weather_snowy": "ثلجي",
+  "weather_clear": "صافٍ",
   "social_alone": "وحيد",
   "social_friends": "أصدقاء",
   "social_family": "عائلة",
@@ -74,292 +104,615 @@
   "activity_hobby": "هواية",
   "activity_meditation": "تأمل",
   "activity_reading": "قراءة",
-  "activity_outdoor": "في الهواء الطلق",
+  "activity_outdoor": "خارجي",
+  "activity_yoga": "يوغا",
+  "activity_music": "موسيقى",
   "activities_title": "أنشطة العافية",
-  "activities_subtitle": "أنشطة مخصصة لتحسين مزاجك وعافيتك",
+  "activities_subtitle": "أنشطة مخصصة لتحسين مزاجك ورفاهيتك",
   "activities_filter": "تصفية حسب العاطفة",
-  "activities_all": "جميع الأنشطة",
-  "activities_empty": "لم يتم العثور على أنشطة لهذا الفلتر.",
-  "activities_view_all": "عرض جميع الأنشطة",
-  "activities_helps_with": "يساعد مع:",
+  "activities_all": "كل الأنشطة",
+  "activities_empty": "لا توجد أنشطة لهذا الفلتر.",
+  "activities_view_all": "عرض كل الأنشطة",
+  "activities_helps_with": "يساعد في:",
   "activities_description": "الوصف",
-  "activities_target_emotions": "يساعد مع هذه العواطف",
+  "activities_target_emotions": "يساعد في هذه المشاعر",
   "category_meditation": "تأمل",
   "category_exercise": "تمرين",
-  "category_journaling": "يوميات",
+  "category_journaling": "كتابة اليوميات",
   "category_social": "اجتماعي",
   "category_creative": "إبداعي",
+  "category_mindfulness": "اليقظة الذهنية",
+  "category_sleep": "نوم",
+  "category_nutrition": "تغذية",
+  "category_yoga": "يوغا",
+  "category_music": "موسيقى",
+  "category_breathing": "تنفس",
+  "category_body_scan": "مسح الجسم",
+  "category_stress_relief": "تخفيف التوتر",
+  "category_focus": "تركيز",
+  "category_anxiety": "تخفيف القلق",
+  "category_morning": "صباحي",
+  "category_evening": "مسائي",
+  "category_loving_kindness": "المحبة والرحمة",
   "difficulty_easy": "سهل",
   "difficulty_medium": "متوسط",
   "difficulty_hard": "صعب",
+  "difficulty_beginner": "مبتدئ",
+  "difficulty_intermediate": "متوسط",
+  "difficulty_advanced": "متقدم",
   "success_mood_saved": "تم حفظ المزاج!",
   "success_mood_saved_desc": "تم تسجيل إدخال مزاجك بنجاح.",
-  "success_activity_logged": "تم تسجيل النشاط! عمل رائع!",
-  "error_loading_failed": "فشل تحميل بيانات لوحة القيادة",
-  "error_mood_save_failed": "فشل حفظ المزاج. يرجى المحاولة مرة أخرى.",
+  "success_activity_logged": "تم تسجيل النشاط! عمل رائع في الاعتناء بنفسك.",
+  "error_loading_failed": "فشل في تحميل بيانات لوحة التحكم",
+  "error_mood_save_failed": "فشل في حفظ المزاج. يرجى المحاولة مرة أخرى.",
   "error_select_emotion": "يرجى اختيار عاطفة",
-  "error_activities_load_failed": "فشل تحميل أنشطة العافية",
-  "theme_light": "الوضع الفاتح",
-  "theme_dark": "الوضع الداكن",
-  "pwa_install_title": "تثبيت MoodMash",
-  "pwa_install_desc": "قم بتثبيت تطبيقنا للوصول السريع والدعم دون اتصال",
-  "pwa_install_btn": "تثبيت",
-  "pwa_install_later": "ربما لاحقًا",
-  "time_minutes": "دقيقة",
-  "time_hours": "ساعة",
-  "time_sleep": "نوم",
-  "accessibility_font_large": "Large font",
-  "accessibility_font_normal": "Normal font",
-  "accessibility_font_size": "Font Size",
-  "accessibility_font_small": "Small font",
-  "accessibility_high_contrast": "High Contrast",
-  "accessibility_high_contrast_desc": "Enhanced contrast for better visibility",
-  "accessibility_kb_activate": "Activate element",
-  "accessibility_kb_close": "Close dialogs",
-  "accessibility_kb_navigate": "Navigate elements",
-  "accessibility_kb_read": "Toggle read aloud",
-  "accessibility_keyboard_shortcuts": "Keyboard Shortcuts",
-  "accessibility_read_aloud": "Read Aloud",
-  "accessibility_read_aloud_desc": "Automatically read text on focus",
-  "accessibility_title": "Accessibility",
-  "accessibility_toggle": "Toggle accessibility panel",
-  "auth_error": "Authentication failed",
-  "auth_login": "تسجيل الدخول",
-  "auth_login_success": "تم تسجيل الدخول بنجاح! جاري التوجيه...",
-  "auth_logout": "تسجيل الخروج",
-  "auth_logout_success": "Logged out successfully",
-  "auth_premium_required": "This feature requires Premium",
-  "auth_profile": "الملف الشخصي",
-  "auth_required": "Please login to continue",
-  "auth_settings": "الإعدادات",
-  "auth_signup": "التسجيل",
-  "auth_upgrade_premium": "Upgrade to Premium",
-  "auth_user_menu": "User menu",
-  "chatbot_faq_activities": "Browse wellness activities by clicking \"Activities\" in the navigation. Filter by emotion and start activities to improve your mood.",
-  "chatbot_faq_export": "Data export is available in Premium tier. Export your mood history to CSV or PDF format.",
-  "chatbot_faq_help": "Need help? Check our documentation or contact support at support@moodmash.com",
-  "chatbot_faq_languages": "We support 13 languages! Click the 🌐 icon in the navigation to change your language.",
-  "chatbot_faq_log": "To log a mood: Click \"Log Mood\" in the navigation, select your emotion, adjust the intensity, add optional context, and click \"Save Mood\".",
-  "chatbot_faq_premium": "Premium costs $4.99/month and includes unlimited history, AI insights, pattern recognition, data export, cloud sync, and priority support.",
-  "chatbot_faq_privacy": "Your data is encrypted and stored securely. We never share your personal information with third parties.",
-  "chatbot_input_placeholder": "Type your message...",
-  "chatbot_quick_help": "How to use?",
-  "chatbot_quick_languages": "Change language?",
-  "chatbot_quick_premium": "Premium benefits?",
-  "chatbot_send": "Send message",
-  "chatbot_subtitle": "How can I help you?",
-  "chatbot_title": "Mood",
-  "chatbot_toggle": "Toggle chatbot",
-  "onboarding_free_desc": "Everything you need to start tracking your emotional wellbeing",
-  "onboarding_free_feature1": "✓ Log unlimited mood entries",
-  "onboarding_free_feature2": "✓ 30-day analytics and insights",
-  "onboarding_free_feature3": "✓ 10+ wellness activities",
-  "onboarding_free_feature4": "✓ Mood charts and visualizations",
-  "onboarding_free_feature5": "✓ 13 language support",
-  "onboarding_free_price": "FREE Forever",
-  "onboarding_free_title": "Free Tier",
-  "onboarding_get_started": "Get Started",
-  "onboarding_next": "Next",
-  "onboarding_premium_coming_soon": "Premium features coming soon! Stay tuned.",
-  "onboarding_premium_desc": "Unlock advanced features for deeper insights and personalization",
-  "onboarding_premium_feature1": "⭐ Unlimited analytics history",
-  "onboarding_premium_feature2": "🤖 AI-powered insights and predictions",
-  "onboarding_premium_feature3": "📈 Advanced pattern recognition",
-  "onboarding_premium_feature4": "📊 Export data to CSV/PDF",
-  "onboarding_premium_feature5": "🎨 Custom themes and widgets",
-  "onboarding_premium_feature6": "☁️ Cloud sync across devices",
-  "onboarding_premium_feature7": "🎯 Priority support",
-  "onboarding_premium_price": "$4.99/month",
-  "onboarding_premium_title": "Premium Tier",
-  "onboarding_prev": "Previous",
-  "onboarding_skip": "Skip tour",
-  "onboarding_slide": "Slide",
-  "onboarding_start_desc": "Start your journey to better emotional wellbeing today",
-  "onboarding_start_feature1": "🚀 Quick setup - no credit card required",
-  "onboarding_start_feature2": "🔒 Your data is private and secure",
-  "onboarding_start_feature3": "💝 Start with free tier, upgrade anytime",
-  "onboarding_start_title": "Ready to Begin?",
-  "onboarding_upgrade_btn": "Upgrade to Premium",
-  "onboarding_welcome_desc": "Your intelligent companion for emotional wellbeing",
-  "onboarding_welcome_feature1": "📊 Track your moods with smart analytics",
-  "onboarding_welcome_feature2": "🎯 Discover personalized wellness activities",
-  "onboarding_welcome_feature3": "🌍 Available in 13 languages",
-  "onboarding_welcome_title": "Welcome to MoodMash",
-  "auth_create_account": "إنشاء حساب",
-  "auth_welcome_back": "مرحبًا بعودتك",
-  "auth_start_tracking": "ابدأ بتتبع حالاتك المزاجية اليوم",
-  "auth_sign_in_continue": "تسجيل الدخول للمتابعة إلى حسابك",
-  "auth_register": "التسجيل",
-  "auth_username": "اسم المستخدم",
-  "auth_email": "البريد الإلكتروني",
-  "auth_password": "كلمة المرور",
-  "auth_confirm_password": "تأكيد كلمة المرور",
-  "auth_username_placeholder": "اختر اسم مستخدم",
-  "auth_email_placeholder": "أدخل بريدك الإلكتروني",
-  "auth_password_placeholder": "إنشاء كلمة مرور",
-  "auth_confirm_password_placeholder": "تأكيد كلمة المرور",
-  "auth_username_login_placeholder": "أدخل اسم المستخدم",
-  "auth_password_login_placeholder": "أدخل كلمة المرور",
-  "auth_trust_device": "الوثوق بهذا الجهاز",
-  "auth_trust_device_desc": "البقاء مسجلاً لمدة 30 يومًا على هذا الجهاز",
-  "auth_forgot_password": "نسيت كلمة المرور؟",
-  "auth_sign_in": "تسجيل الدخول",
-  "auth_or_continue_with": "أو المتابعة باستخدام",
-  "auth_sign_in_key": "تسجيل الدخول بالمفتاح",
-  "auth_use_biometrics": "استخدام القياسات الحيوية",
-  "auth_continue_with": "المتابعة باستخدام",
-  "auth_protected_encryption": "محمي بتشفير من طرف إلى طرف",
-  "auth_passwords_not_match": "كلمات المرور غير متطابقة",
-  "auth_account_created": "تم إنشاء الحساب بنجاح! جاري التوجيه...",
-  "auth_error_occurred": "حدث خطأ. يرجى المحاولة مرة أخرى.",
-  "auth_redirecting_provider": "جاري التوجيه إلى {provider}...",
-  "auth_webauthn_not_supported": "WebAuthn غير مدعوم في هذا المتصفح",
-  "auth_preparing_webauthn": "جاري تحضير المصادقة...",
-  "auth_webauthn_success": "المصادقة ناجحة!",
-  "auth_webauthn_failed": "فشلت المصادقة",
-  "auth_webauthn_error": "حدث خطأ في المصادقة",
-  "auth_biometrics_not_supported": "المصادقة البيومترية غير مدعومة",
-  "auth_forgot_password_prompt": "أدخل عنوان بريدك الإلكتروني:",
-  "auth_password_reset_sent": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك",
-  "auth_password_reset_failed": "فشل إرسال رابط إعادة تعيين كلمة المرور",
-  "auth_magic_link": "الرابط السحري",
-  "auth_magic_link_prompt": "أدخل بريدك الإلكتروني للحصول على رابط سحري:",
-  "auth_magic_link_sending": "جاري إرسال الرابط السحري...",
-  "auth_magic_link_sent": "تم إرسال الرابط السحري! تحقق من بريدك.",
-  "auth_magic_link_failed": "فشل إرسال الرابط السحري",
-  "magic_link_verifying": "التحقق من الرابط السحري",
-  "magic_link_please_wait": "يرجى الانتظار بينما نتحقق من رابطك السحري...",
-  "magic_link_success": "تسجيل الدخول ناجح!",
-  "magic_link_redirecting": "جاري التوجيه إلى لوحة التحكم...",
-  "magic_link_error": "فشل التحقق",
-  "magic_link_invalid": "رابط سحري غير صالح أو منتهي الصلاحية",
-  "magic_link_no_token": "لم يتم تقديم رمز",
-  "magic_link_network_error": "خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
-  "magic_link_back_to_login": "العودة لتسجيل الدخول",
-  "express_title": "عبر عن مزاجك",
-  "express_subtitle": "كيف تريد أن تعبر عن نفسك اليوم؟",
-  "express_mode_emoji": "رمز تعبيري",
-  "express_mode_color": "لون",
-  "express_mode_intensity": "شدة",
-  "express_mode_text": "نص",
-  "express_mode_voice": "صوت",
-  "express_emoji_label": "اختر رمزاً تعبيرياً يمثل مزاجك",
-  "express_color_label": "اختر لوناً يتناسب مع شعورك",
-  "express_intensity_label": "اضبط الشدة بواسطة المنزلق",
-  "express_text_label": "اكتب عن مشاعرك",
-  "express_text_placeholder": "كيف تشعر اليوم؟ صف مشاعرك...",
-  "express_voice_label": "سجل مذكرة صوتية عن مزاجك",
-  "express_voice_start": "بدء التسجيل",
-  "express_voice_stop": "إيقاف التسجيل",
-  "express_voice_recording": "جارٍ التسجيل...",
-  "express_privacy_label": "الخصوصية",
-  "express_privacy_private": "خاص",
-  "express_privacy_friends": "الأصدقاء فقط",
-  "express_privacy_public": "عام",
-  "express_tags_label": "وسوم (اختياري)",
-  "express_tags_placeholder": "إضافة وسوم...",
-  "express_share_label": "مشاركة",
-  "express_share_copy": "نسخ الرابط",
-  "express_share_copied": "تم نسخ الرابط!",
-  "express_save_success": "تم التعبير عن مزاجك!",
-  "express_save_error": "فشل حفظ المزاج",
-  "insights_page_title": "رؤى المزاج",
-  "insights_page_subtitle": "اكتشف الأنماط في رحلتك العاطفية",
-  "insights_dominant_mood": "المزاج السائد",
-  "insights_mood_stability": "استقرار المزاج",
-  "insights_avg_intensity": "متوسط الشدة",
-  "insights_total_entries": "إجمالي الإدخالات",
-  "insights_timeline_title": "الجدول الزمني للمزاج",
-  "insights_timeline_subtitle": "رحلتك العاطفية عبر الزمن",
-  "insights_period_daily": "يومي",
-  "insights_period_weekly": "أسبوعي",
-  "insights_period_monthly": "شهري",
-  "insights_no_data": "لا توجد بيانات كافية بعد. سجل المزيد من الحالات المزاجية!",
-  "insights_stability_high": "استقرار عالٍ",
-  "insights_stability_medium": "استقرار متوسط",
-  "insights_stability_low": "استقرار منخفض",
-  "insights_recommendation": "توصية",
-  "insights_export": "تصدير البيانات",
-  "insights_share": "مشاركة الرؤى",
-  "wellness_tips_title": "نصائح صحية مخصصة",
-  "wellness_tips_subtitle": "احصل على توصيات مدعومة بالذكاء الاصطناعي بناءً على مزاجك",
-  "wellness_tips_mood_label": "اختر مزاجك الحالي",
-  "wellness_tips_category_label": "اختر فئات الصحة",
-  "wellness_tips_generate": "توليد نصائح",
-  "wellness_tips_generating": "جارٍ توليد نصائح مخصصة...",
-  "wellness_tips_helpful": "مفيد",
-  "wellness_tips_not_helpful": "غير مفيد",
-  "wellness_tips_save": "حفظ",
-  "wellness_tips_saved": "تم حفظ النصيحة!",
-  "wellness_tips_thanks": "شكراً على ملاحظاتك!",
-  "wellness_tips_select_required": "يرجى اختيار مزاج وفئة واحدة على الأقل",
-  "wellness_tips_error": "فشل توليد النصائح. يرجى المحاولة مرة أخرى.",
-  "social_feed_title": "التغذية الاجتماعية",
-  "social_feed_subtitle": "شارك رحلتك العاطفية مع المجتمع",
-  "social_feed_post_placeholder": "كيف تشعر؟ شارك مزاجك...",
-  "social_feed_select_emotion": "اختر عاطفتك",
-  "social_feed_post": "نشر",
-  "social_feed_all": "جميع المنشورات",
-  "social_feed_friends": "أصدقاء",
-  "social_feed_empty_title": "لا توجد منشورات بعد",
-  "social_feed_empty_text": "كن أول من يشارك مزاجه مع المجتمع!",
-  "social_feed_post_success": "تم مشاركة المنشور بنجاح!",
-  "social_feed_post_error": "فشل النشر. يرجى المحاولة مرة أخرى.",
-  "social_feed_comments_coming_soon": "ميزة التعليقات قريباً!",
-  "social_feed_share_coming_soon": "ميزة المشاركة قريباً!",
-  "chatbot_greeting1": "مرحباً! 👋 أنا Mood، مساعدك الشخصي. كيف يمكنني مساعدتك اليوم؟",
-  "chatbot_greeting2": "مرحباً! أنا Mood. أنا هنا لمساعدتك في أي أسئلة حول MoodMash.",
-  "chatbot_greeting3": "مرحباً بك! أنا Mood. اسألني أي شيء عن تتبع المزاج أو الميزات أو المزايا المميزة.",
-  "chatbot_default1": "لست متأكداً من ذلك. حاول السؤال عن تسجيل المزاج أو الميزات المميزة أو اللغات.",
-  "chatbot_default2": "همم، ليس لدي معلومات عن ذلك. لا تتردد في السؤال عن كيفية عمل MoodMash!",
-  "chatbot_default3": "أود المساعدة! حاول السؤال عن الميزات أو المزايا المميزة أو كيفية البدء.",
-  "about_title": "حول MoodMash",
+  "error_activities_load_failed": "فشل في تحميل أنشطة العافية",
+  "error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "error_network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
+  "about_title": "حول مودماش",
   "about_mission_title": "مهمتنا",
   "about_features_title": "الميزات الحالية (MVP v1.0)",
   "about_future_title": "الرؤية المستقبلية",
   "about_privacy_title": "الخصوصية والأمان",
   "modal_start_activity": "بدء النشاط",
   "modal_start_activity_desc": "جاهز للبدء",
-  "modal_start_activity_instructions": "ابحث عن مكان مريح، وتخلص من المشتتات، وامنح نفسك هذا الوقت للرفاهية.",
-  "onboarding_dont_show_again": "عدم الإظهار مرة أخرى",
-  "quick_select_title": "تسجيل سريع للمزاج",
-  "quick_select_subtitle": "اضغط لتسجيل مزاجك على الفور",
+  "modal_start_activity_instructions": "ابحث عن مكان مريح، تخلص من المشتتات، وامنح نفسك هذا الوقت للعافية.",
+  "theme_light": "الوضع الفاتح",
+  "theme_dark": "الوضع الداكن",
+  "pwa_install_title": "تثبيت مودماش",
+  "pwa_install_desc": "ثبت تطبيقنا للوصول السريع والدعم بدون اتصال",
+  "pwa_install_btn": "تثبيت",
+  "pwa_install_later": "ربما لاحقاً",
+  
+  "wellness_dashboard_title": "مركز العافية",
+  "wellness_dashboard_subtitle": "رحلتك الشاملة للرفاهية",
+  "wellness_streak": "السلسلة الحالية",
+  "wellness_streak_days": "أيام",
+  "wellness_total_sessions": "إجمالي الجلسات",
+  "wellness_total_minutes": "إجمالي الدقائق",
+  "wellness_favorite_activity": "النشاط المفضل",
+  "wellness_weekly_goal": "الهدف الأسبوعي",
+  "wellness_progress": "التقدم",
+  "wellness_recommended": "موصى به لك",
+  "wellness_recent": "تم تشغيله مؤخراً",
+  "wellness_favorites": "مفضلاتك",
+  "wellness_explore": "استكشف",
+  "wellness_achievements": "الإنجازات",
+  "wellness_stats": "الإحصائيات",
+  
+  "meditation_title": "التأمل",
+  "meditation_subtitle": "اعثر على السلام والوضوح من خلال التأمل الموجه",
+  "meditation_browse": "تصفح الجلسات",
+  "meditation_favorites": "المفضلة",
+  "meditation_history": "السجل",
+  "meditation_timer": "مؤقت التأمل",
+  "meditation_timer_set": "ضبط المؤقت",
+  "meditation_timer_start": "بدء الجلسة",
+  "meditation_timer_pause": "إيقاف مؤقت",
+  "meditation_timer_resume": "استئناف",
+  "meditation_timer_complete": "اكتملت الجلسة",
+  "meditation_session_complete": "عمل رائع! لقد أكملت تأملك.",
+  "meditation_duration": "المدة",
+  "meditation_instructor": "المدرب",
+  "meditation_background": "صوت الخلفية",
+  "meditation_category_stress": "تخفيف التوتر",
+  "meditation_category_sleep": "النوم",
+  "meditation_category_anxiety": "القلق",
+  "meditation_category_focus": "التركيز",
+  "meditation_category_mindfulness": "اليقظة الذهنية",
+  "meditation_category_breathing": "التنفس",
+  "meditation_category_body_scan": "مسح الجسم",
+  "meditation_category_loving_kindness": "المحبة والرحمة",
+  "meditation_category_morning": "صباحي",
+  "meditation_category_evening": "مسائي",
+  "meditation_stress_quick": "تخفيف التوتر السريع",
+  "meditation_stress_quick_desc": "جلسة سريعة لمدة 3 دقائق لتحرير التوتر وإيجاد الهدوء.",
+  "meditation_stress_deep": "تحرير التوتر العميق",
+  "meditation_stress_deep_desc": "جلسة شاملة لمدة 15 دقيقة لتحرير التوتر العميق.",
+  "meditation_stress_mind": "عقل خالٍ من التوتر",
+  "meditation_stress_mind_desc": "مسح الفوضى الذهنية وإيجاد السلام من خلال التصور الموجه.",
+  "meditation_sleep_drift": "انجرف نحو النوم",
+  "meditation_sleep_drift_desc": "جلسة لطيفة لمساعدتك على النوم المريح.",
+  "meditation_sleep_deep": "رحلة النوم العميق",
+  "meditation_sleep_deep_desc": "رحلة مهدئة لمدة 20 دقيقة للنوم العميق المجدد.",
+  "meditation_anxiety_calm": "تهدئة القلق",
+  "meditation_anxiety_calm_desc": "تقنيات لتهدئة الأفكار القلقة وإيجاد السلام.",
+  "meditation_focus_clarity": "التركيز والوضوح",
+  "meditation_focus_clarity_desc": "شحذ عقلك وتحسين التركيز.",
+  "meditation_mindfulness_present": "وعي اللحظة الحاضرة",
+  "meditation_mindfulness_present_desc": "تواصل مع اللحظة الحاضرة بشكل كامل.",
+  "meditation_breathing_478": "تنفس 4-7-8",
+  "meditation_breathing_478_desc": "تقنية التنفس المهدئ للاسترخاء.",
+  "meditation_body_scan_full": "مسح الجسم الكامل",
+  "meditation_body_scan_full_desc": "رحلة كاملة للوعي بالجسم.",
+  "meditation_loving_kindness_self": "تأمل حب الذات",
+  "meditation_loving_kindness_self_desc": "زرع الرحمة والحب لنفسك.",
+  "meditation_morning_energy": "طاقة الصباح",
+  "meditation_morning_energy_desc": "ابدأ يومك بطاقة إيجابية.",
+  "meditation_evening_unwind": "استرخاء المساء",
+  "meditation_evening_unwind_desc": "تحرر من اليوم واستعد للراحة.",
+  
+  "yoga_title": "اليوغا",
+  "yoga_subtitle": "قوّ جسمك وعقلك من خلال ممارسة اليوغا",
+  "yoga_poses": "الوضعيات",
+  "yoga_routines": "الروتين",
+  "yoga_favorites": "المفضلة",
+  "yoga_history": "سجل الممارسة",
+  "yoga_pose_hold": "وقت الثبات",
+  "yoga_pose_benefits": "الفوائد",
+  "yoga_pose_instructions": "التعليمات",
+  "yoga_pose_modifications": "التعديلات",
+  "yoga_pose_contraindications": "التحذيرات",
+  "yoga_routine_duration": "المدة",
+  "yoga_routine_level": "المستوى",
+  "yoga_routine_poses": "الوضعيات المتضمنة",
+  "yoga_routine_start": "بدء الروتين",
+  "yoga_routine_complete": "اكتمل الروتين!",
+  "yoga_category_flexibility": "المرونة",
+  "yoga_category_strength": "القوة",
+  "yoga_category_balance": "التوازن",
+  "yoga_category_relaxation": "الاسترخاء",
+  "yoga_category_energizing": "منشط",
+  "yoga_category_core": "العضلات الأساسية",
+  "yoga_category_back": "صحة الظهر",
+  "yoga_category_hip_opener": "فتح الوركين",
+  "yoga_category_standing": "الوقوف",
+  "yoga_category_seated": "الجلوس",
+  "yoga_category_inversion": "الانقلابات",
+  "yoga_pose_mountain": "وضعية الجبل",
+  "yoga_pose_mountain_desc": "وضعية أساسية لجميع وضعيات الوقوف.",
+  "yoga_pose_downdog": "الكلب المنحني",
+  "yoga_pose_downdog_desc": "تمدد كامل للجسم وبناء القوة.",
+  "yoga_pose_warrior1": "المحارب الأول",
+  "yoga_pose_warrior1_desc": "وضعية وقوف قوية للقوة والتركيز.",
+  "yoga_pose_warrior2": "المحارب الثاني",
+  "yoga_pose_warrior2_desc": "وضعية ورك مفتوح للقوة والاستقرار.",
+  "yoga_pose_tree": "وضعية الشجرة",
+  "yoga_pose_tree_desc": "وضعية توازن للتركيز والتأصيل.",
+  "yoga_pose_child": "وضعية الطفل",
+  "yoga_pose_child_desc": "وضعية ترميمية للراحة والتحرر.",
+  "yoga_pose_cobra": "وضعية الكوبرا",
+  "yoga_pose_cobra_desc": "انحناء خلفي لطيف لتقوية العمود الفقري.",
+  "yoga_pose_triangle": "وضعية المثلث",
+  "yoga_pose_triangle_desc": "تمدد جانبي للجسم بالكامل.",
+  "yoga_pose_bridge": "وضعية الجسر",
+  "yoga_pose_bridge_desc": "انحناء خلفي يفتح الصدر.",
+  "yoga_pose_corpse": "وضعية الجثة (شافاسانا)",
+  "yoga_pose_corpse_desc": "وضعية الاسترخاء النهائية.",
+  "yoga_routine_morning_flow": "تدفق الصباح",
+  "yoga_routine_morning_flow_desc": "روتين منشط لمدة 15 دقيقة لبدء يومك.",
+  "yoga_routine_stress_relief": "يوغا تخفيف التوتر",
+  "yoga_routine_stress_relief_desc": "وضعيات مهدئة لتحرير التوتر.",
+  "yoga_routine_flexibility": "بناء المرونة",
+  "yoga_routine_flexibility_desc": "حسّن نطاق حركتك.",
+  "yoga_routine_strength": "القوة والطاقة",
+  "yoga_routine_strength_desc": "بناء قوة العضلات الأساسية وتناغم العضلات.",
+  "yoga_routine_bedtime": "يوغا وقت النوم",
+  "yoga_routine_bedtime_desc": "روتين لطيف للتحضير للنوم.",
+  
+  "music_title": "العلاج بالموسيقى",
+  "music_subtitle": "شفاء واسترخاء من خلال قوة الموسيقى",
+  "music_playlists": "قوائم التشغيل",
+  "music_tracks": "المقاطع",
+  "music_favorites": "المفضلة",
+  "music_history": "سجل الاستماع",
+  "music_now_playing": "يتم تشغيله الآن",
+  "music_queue": "التالي",
+  "music_add_to_playlist": "إضافة إلى قائمة التشغيل",
+  "music_create_playlist": "إنشاء قائمة تشغيل",
+  "music_playlist_name": "اسم قائمة التشغيل",
+  "music_playlist_description": "الوصف",
+  "music_category_relaxation": "استرخاء",
+  "music_category_focus": "التركيز والدراسة",
+  "music_category_sleep": "نوم",
+  "music_category_meditation": "تأمل",
+  "music_category_nature": "أصوات الطبيعة",
+  "music_category_ambient": "محيط",
+  "music_category_classical": "كلاسيكي",
+  "music_category_binaural": "نغمات ثنائية",
+  "music_category_lofi": "لو-فاي",
+  "music_category_instrumental": "موسيقى آلية",
+  "music_playlist_deep_sleep": "النوم العميق",
+  "music_playlist_deep_sleep_desc": "أصوات لطيفة لترشدك إلى نوم مريح.",
+  "music_playlist_focus_study": "التركيز والدراسة",
+  "music_playlist_focus_study_desc": "موسيقى معززة للتركيز من أجل الإنتاجية.",
+  "music_playlist_stress_relief": "تخفيف التوتر",
+  "music_playlist_stress_relief_desc": "ألحان مهدئة لتخفيف التوتر.",
+  "music_playlist_morning_calm": "هدوء الصباح",
+  "music_playlist_morning_calm_desc": "أصوات هادئة لبدء يومك.",
+  "music_playlist_nature_sounds": "أصوات الطبيعة",
+  "music_playlist_nature_sounds_desc": "انغمس في أصوات الطبيعة.",
+  "music_playlist_meditation": "موسيقى التأمل",
+  "music_playlist_meditation_desc": "موسيقى خلفية لممارسة التأمل.",
+  "music_volume": "مستوى الصوت",
+  "music_duration": "المدة",
+  "music_artist": "الفنان",
+  "music_album": "الألبوم",
+  
+  "achievement_title": "الإنجازات",
+  "achievement_unlocked": "تم فتح الإنجاز!",
+  "achievement_progress": "التقدم",
+  "achievement_locked": "مقفل",
+  "achievement_completed": "مكتمل",
+  "achievement_first_mood": "المزاج الأول",
+  "achievement_first_mood_desc": "سجل أول إدخال مزاج لك.",
+  "achievement_week_streak": "محارب الأسبوع",
+  "achievement_week_streak_desc": "سجل المزاج لمدة 7 أيام متتالية.",
+  "achievement_month_streak": "سيد الشهر",
+  "achievement_month_streak_desc": "سجل المزاج لمدة 30 يوماً متتالياً.",
+  "achievement_meditation_beginner": "مبتدئ التأمل",
+  "achievement_meditation_beginner_desc": "أكمل أول جلسة تأمل لك.",
+  "achievement_meditation_master": "خبير التأمل",
+  "achievement_meditation_master_desc": "أكمل 100 جلسة تأمل.",
+  "achievement_yoga_beginner": "مبتدئ اليوغا",
+  "achievement_yoga_beginner_desc": "أكمل أول روتين يوغا لك.",
+  "achievement_yoga_master": "خبير اليوغا",
+  "achievement_yoga_master_desc": "أكمل 100 جلسة يوغا.",
+  "achievement_music_lover": "محب الموسيقى",
+  "achievement_music_lover_desc": "استمع إلى 50 مقطعاً موسيقياً.",
+  "achievement_wellness_warrior": "محارب العافية",
+  "achievement_wellness_warrior_desc": "أكمل أنشطة في جميع فئات العافية.",
+  "achievement_social_butterfly": "فراشة اجتماعية",
+  "achievement_social_butterfly_desc": "تواصل مع 10 أصدقاء.",
+  "achievement_insight_seeker": "باحث عن الرؤى",
+  "achievement_insight_seeker_desc": "اعرض رؤاك 50 مرة.",
+  "achievement_early_bird": "الطائر المبكر",
+  "achievement_early_bird_desc": "سجل مزاجاً قبل الساعة 7 صباحاً.",
+  "achievement_night_owl": "بومة الليل",
+  "achievement_night_owl_desc": "سجل مزاجاً بعد الساعة 11 مساءً.",
+  "achievement_mood_variety": "مستكشف المزاج",
+  "achievement_mood_variety_desc": "سجل 10 مشاعر مختلفة.",
+  
+  "gamification_points": "نقاط",
+  "gamification_level": "المستوى",
+  "gamification_rank": "الرتبة",
+  "gamification_badges": "الشارات",
+  "gamification_leaderboard": "لوحة المتصدرين",
+  "gamification_daily_challenge": "التحدي اليومي",
+  "gamification_weekly_challenge": "التحدي الأسبوعي",
+  "gamification_streak_bonus": "مكافأة السلسلة",
+  "gamification_reward_claimed": "تم المطالبة بالمكافأة!",
+  
+  "social_friends": "الأصدقاء",
+  "social_add_friend": "إضافة صديق",
+  "social_friend_requests": "طلبات الصداقة",
+  "social_groups": "المجموعات",
+  "social_create_group": "إنشاء مجموعة",
+  "social_join_group": "الانضمام إلى مجموعة",
+  "social_activity_feed": "موجز النشاط",
+  "social_share_mood": "مشاركة المزاج",
+  "social_reactions": "التفاعلات",
+  "social_comments": "التعليقات",
+  "social_send_encouragement": "إرسال تشجيع",
+  
+  "settings_title": "الإعدادات",
+  "settings_profile": "إعدادات الملف الشخصي",
+  "settings_notifications": "الإشعارات",
+  "settings_privacy": "الخصوصية",
+  "settings_language": "اللغة",
+  "settings_currency": "العملة",
+  "settings_timezone": "المنطقة الزمنية",
+  "settings_theme": "المظهر",
+  "settings_data": "إدارة البيانات",
+  "settings_export": "تصدير البيانات",
+  "settings_delete_account": "حذف الحساب",
+  "settings_2fa": "المصادقة الثنائية",
+  "settings_2fa_enable": "تفعيل المصادقة الثنائية",
+  "settings_2fa_disable": "تعطيل المصادقة الثنائية",
+  "settings_saved": "تم حفظ الإعدادات بنجاح",
+  
+  "compliance_title": "مركز الامتثال",
+  "compliance_hipaa": "امتثال HIPAA",
+  "compliance_ccpa": "حقوق CCPA",
+  "compliance_gdpr": "حقوق GDPR",
+  "compliance_data_request": "طلب بياناتي",
+  "compliance_data_delete": "حذف بياناتي",
+  "compliance_audit_log": "سجل المراجعة",
+  "compliance_consent": "إدارة الموافقة",
+  "compliance_privacy_policy": "سياسة الخصوصية",
+  "compliance_terms": "شروط الخدمة",
+  
+  "billing_title": "الفواتير والاشتراك",
+  "billing_current_plan": "الخطة الحالية",
+  "billing_free_plan": "الخطة المجانية",
+  "billing_premium_plan": "الخطة المميزة",
+  "billing_upgrade": "الترقية إلى المميز",
+  "billing_manage": "إدارة الاشتراك",
+  "billing_history": "سجل الفواتير",
+  "billing_payment_method": "طريقة الدفع",
+  "billing_invoice": "الفاتورة",
+  "billing_cancel": "إلغاء الاشتراك",
+  
+  "email_welcome_subject": "مرحباً بك في مودماش!",
+  "email_welcome_body": "شكراً لانضمامك إلى مودماش. ابدأ رحلة العافية اليوم!",
+  "email_reset_subject": "طلب إعادة تعيين كلمة المرور",
+  "email_reset_body": "انقر على الرابط أدناه لإعادة تعيين كلمة المرور.",
+  "email_verification_subject": "تحقق من بريدك الإلكتروني",
+  "email_verification_body": "يرجى التحقق من عنوان بريدك الإلكتروني.",
+  "email_weekly_summary_subject": "ملخصك الأسبوعي للمزاج",
+  
+  "validation_required": "هذا الحقل مطلوب",
+  "validation_email": "يرجى إدخال بريد إلكتروني صالح",
+  "validation_password_min": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+  "validation_password_match": "كلمات المرور غير متطابقة",
+  "validation_username_min": "يجب أن يكون اسم المستخدم 3 أحرف على الأقل",
+  
+  "time_minutes": "دقيقة",
+  "time_hours": "ساعة",
+  "time_seconds": "ثانية",
+  "time_days": "أيام",
+  "time_sleep": "نوم",
+  "time_ago": "مضت",
+  "time_just_now": "الآن",
+  "time_today": "اليوم",
+  "time_yesterday": "أمس",
+  "time_this_week": "هذا الأسبوع",
+  
+  "onboarding_welcome_title": "مرحباً بك في مودماش",
+  "onboarding_welcome_desc": "رفيقك الذكي للرفاهية العاطفية",
+  "onboarding_welcome_feature1": "📊 تتبع مزاجك مع تحليلات ذكية",
+  "onboarding_welcome_feature2": "🎯 اكتشف أنشطة العافية المخصصة",
+  "onboarding_welcome_feature3": "🌍 متاح بـ 8 لغات",
+  "onboarding_free_title": "الفئة المجانية",
+  "onboarding_free_desc": "كل ما تحتاجه لبدء تتبع رفاهيتك العاطفية",
+  "onboarding_free_feature1": "✓ سجل إدخالات مزاج غير محدودة",
+  "onboarding_free_feature2": "✓ تحليلات ورؤى لـ 30 يوماً",
+  "onboarding_free_feature3": "✓ أكثر من 10 أنشطة عافية",
+  "onboarding_free_feature4": "✓ مخططات وتصورات المزاج",
+  "onboarding_free_feature5": "✓ دعم 8 لغات",
+  "onboarding_free_price": "مجاني للأبد",
+  "onboarding_premium_title": "الفئة المميزة",
+  "onboarding_premium_desc": "افتح ميزات متقدمة لرؤى أعمق وتخصيص",
+  "onboarding_premium_feature1": "⭐ سجل تحليلات غير محدود",
+  "onboarding_premium_feature2": "🤖 رؤى وتنبؤات مدعومة بالذكاء الاصطناعي",
+  "onboarding_premium_feature3": "📈 التعرف على الأنماط المتقدم",
+  "onboarding_premium_feature4": "📊 تصدير البيانات إلى CSV/PDF",
+  "onboarding_premium_feature5": "🎨 مظاهر وودجات مخصصة",
+  "onboarding_premium_feature6": "☁️ مزامنة سحابية عبر الأجهزة",
+  "onboarding_premium_feature7": "🎯 دعم ذو أولوية",
+  "onboarding_premium_feature8": "🧘 مكتبة التأمل واليوغا الكاملة",
+  "onboarding_premium_feature9": "🎵 العلاج بالموسيقى غير المحدود",
+  "onboarding_premium_price": "$4.99/شهرياً",
+  "onboarding_start_title": "هل أنت مستعد للبدء؟",
+  "onboarding_start_desc": "ابدأ رحلتك نحو رفاهية عاطفية أفضل اليوم",
+  "onboarding_start_feature1": "🚀 إعداد سريع - لا حاجة لبطاقة ائتمان",
+  "onboarding_start_feature2": "🔒 بياناتك خاصة وآمنة",
+  "onboarding_start_feature3": "💝 ابدأ بالفئة المجانية، وقم بالترقية في أي وقت",
+  "onboarding_next": "التالي",
+  "onboarding_prev": "السابق",
+  "onboarding_skip": "تخطي الجولة",
+  "onboarding_get_started": "ابدأ",
+  "onboarding_dont_show_again": "لا تظهر مرة أخرى",
+  "onboarding_slide": "شريحة",
+  "onboarding_upgrade_btn": "الترقية إلى المميز",
+  "onboarding_premium_coming_soon": "الميزات المميزة قادمة قريباً! ترقبوا.",
+  
+  "chatbot_title": "المساعد",
+  "chatbot_subtitle": "كيف يمكنني مساعدتك؟",
+  "chatbot_toggle": "تبديل المساعد",
+  "chatbot_input_placeholder": "اكتب رسالتك...",
+  "chatbot_send": "إرسال الرسالة",
+  "chatbot_greeting1": "مرحباً! 👋 أنا مساعدك الشخصي. كيف يمكنني مساعدتك اليوم؟",
+  "chatbot_greeting2": "أهلاً! أنا هنا لمساعدتك في أي أسئلة حول مودماش.",
+  "chatbot_greeting3": "مرحباً! اسألني أي شيء عن تتبع المزاج أو الميزات أو المزايا المميزة.",
+  "chatbot_quick_help": "كيف أستخدم؟",
+  "chatbot_quick_premium": "مزايا المميز؟",
+  "chatbot_quick_languages": "تغيير اللغة؟",
+  "chatbot_quick_wellness": "ميزات العافية؟",
+  "chatbot_faq_log": "لتسجيل مزاج: انقر على \"سجل مزاجك\" في التنقل، اختر عاطفتك، اضبط الشدة، أضف سياقاً اختيارياً، وانقر \"حفظ المزاج\".",
+  "chatbot_faq_premium": "المميز يكلف $4.99/شهرياً ويتضمن سجل غير محدود، رؤى ذكية، التعرف على الأنماط، تصدير البيانات، مزامنة سحابية، ودعم ذو أولوية.",
+  "chatbot_faq_languages": "ندعم 8 لغات! انقر على أيقونة 🌐 في التنقل لتغيير لغتك.",
+  "chatbot_faq_privacy": "بياناتك مشفرة ومخزنة بأمان. نحن لا نشارك معلوماتك الشخصية مع أطراف ثالثة.",
+  "chatbot_faq_activities": "تصفح أنشطة العافية بالنقر على \"الأنشطة\" في التنقل. قم بالتصفية حسب العاطفة وابدأ الأنشطة لتحسين مزاجك.",
+  "chatbot_faq_wellness": "تتضمن ميزات العافية لدينا التأمل الموجه وروتين اليوغا والعلاج بالموسيقى لدعم رحلة صحتك النفسية.",
+  "chatbot_faq_export": "تصدير البيانات متاح في الفئة المميزة. صدّر سجل مزاجك إلى تنسيق CSV أو PDF.",
+  "chatbot_faq_help": "هل تحتاج مساعدة؟ تحقق من وثائقنا أو اتصل بالدعم على support@moodmash.com",
+  "chatbot_default1": "لست متأكداً من ذلك. حاول السؤال عن تسجيل المزاج أو الميزات المميزة أو اللغات.",
+  "chatbot_default2": "همم، ليس لدي معلومات عن ذلك. لا تتردد في السؤال عن كيفية عمل مودماش!",
+  "chatbot_default3": "أود المساعدة! حاول السؤال عن الميزات أو المزايا المميزة أو البدء.",
+  
+  "accessibility_title": "إمكانية الوصول",
+  "accessibility_toggle": "تبديل لوحة إمكانية الوصول",
+  "accessibility_read_aloud": "القراءة بصوت عالٍ",
+  "accessibility_read_aloud_desc": "قراءة النص تلقائياً عند التركيز",
+  "accessibility_font_size": "حجم الخط",
+  "accessibility_font_small": "خط صغير",
+  "accessibility_font_normal": "خط عادي",
+  "accessibility_font_large": "خط كبير",
+  "accessibility_high_contrast": "تباين عالٍ",
+  "accessibility_high_contrast_desc": "تباين معزز لرؤية أفضل",
+  "accessibility_keyboard_shortcuts": "اختصارات لوحة المفاتيح",
+  "accessibility_kb_navigate": "التنقل بين العناصر",
+  "accessibility_kb_activate": "تفعيل العنصر",
+  "accessibility_kb_close": "إغلاق الحوارات",
+  "accessibility_kb_read": "تبديل القراءة بصوت عالٍ",
+  
+  "auth_login": "تسجيل الدخول",
+  "auth_logout": "تسجيل الخروج",
+  "auth_signup": "إنشاء حساب",
+  "auth_profile": "الملف الشخصي",
+  "auth_settings": "الإعدادات",
+  "auth_user_menu": "قائمة المستخدم",
+  "auth_login_success": "تم تسجيل الدخول بنجاح! جاري التحويل...",
+  "auth_logout_success": "تم تسجيل الخروج بنجاح",
+  "auth_error": "فشل المصادقة",
+  "auth_required": "يرجى تسجيل الدخول للمتابعة",
+  "auth_premium_required": "هذه الميزة تتطلب المميز",
+  "auth_upgrade_premium": "الترقية إلى المميز",
+  "auth_create_account": "إنشاء حساب",
+  "auth_welcome_back": "مرحباً بعودتك",
+  "auth_start_tracking": "ابدأ تتبع مزاجك اليوم",
+  "auth_sign_in_continue": "سجل الدخول للمتابعة إلى حسابك",
+  "auth_register": "تسجيل",
+  "auth_username": "اسم المستخدم",
+  "auth_email": "البريد الإلكتروني",
+  "auth_password": "كلمة المرور",
+  "auth_confirm_password": "تأكيد كلمة المرور",
+  "auth_username_placeholder": "اختر اسم مستخدم",
+  "auth_email_placeholder": "أدخل بريدك الإلكتروني",
+  "auth_password_placeholder": "أنشئ كلمة مرور",
+  "auth_confirm_password_placeholder": "أكد كلمة مرورك",
+  "auth_username_login_placeholder": "أدخل اسم المستخدم",
+  "auth_password_login_placeholder": "أدخل كلمة المرور",
+  "auth_trust_device": "الوثوق بهذا الجهاز",
+  "auth_trust_device_desc": "ابقَ مسجل الدخول لمدة 30 يوماً على هذا الجهاز",
+  "auth_forgot_password": "نسيت كلمة المرور؟",
+  "auth_sign_in": "تسجيل الدخول",
+  "auth_or_continue_with": "أو المتابعة مع",
+  "auth_sign_in_key": "تسجيل الدخول بالمفتاح",
+  "auth_use_biometrics": "استخدام البيومترية",
+  "auth_continue_with": "المتابعة مع",
+  "auth_protected_encryption": "محمي بالتشفير من طرف إلى طرف",
+  "auth_passwords_not_match": "كلمات المرور غير متطابقة",
+  "auth_account_created": "تم إنشاء الحساب بنجاح! جاري التحويل...",
+  "auth_error_occurred": "حدث خطأ. يرجى المحاولة مرة أخرى.",
+  "auth_redirecting_provider": "جاري التحويل إلى المزود...",
+  "auth_webauthn_not_supported": "WebAuthn غير مدعوم في هذا المتصفح",
+  "auth_preparing_webauthn": "جاري تحضير المصادقة...",
+  "auth_webauthn_success": "تمت المصادقة بنجاح!",
+  "auth_webauthn_failed": "فشلت المصادقة",
+  "auth_webauthn_error": "حدث خطأ في المصادقة",
+  "auth_biometrics_not_supported": "المصادقة البيومترية غير مدعومة",
+  "auth_forgot_password_prompt": "أدخل عنوان بريدك الإلكتروني:",
+  "auth_password_reset_sent": "تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني",
+  "auth_password_reset_failed": "فشل في إرسال رابط إعادة تعيين كلمة المرور",
+  "auth_magic_link": "رابط سحري",
+  "auth_magic_link_prompt": "أدخل بريدك الإلكتروني للرابط السحري:",
+  "auth_magic_link_sending": "جاري إرسال الرابط السحري...",
+  "auth_magic_link_sent": "تم إرسال الرابط السحري! تحقق من بريدك الإلكتروني.",
+  "auth_magic_link_failed": "فشل في إرسال الرابط السحري",
+  "magic_link_verifying": "جاري التحقق من الرابط السحري",
+  "magic_link_please_wait": "يرجى الانتظار بينما نتحقق من رابطك السحري...",
+  "magic_link_success": "تم تسجيل الدخول بنجاح!",
+  "magic_link_redirecting": "جاري التحويل إلى لوحة التحكم...",
+  "magic_link_error": "فشل التحقق",
+  "magic_link_invalid": "رابط سحري غير صالح أو منتهي الصلاحية",
+  "magic_link_no_token": "لم يتم توفير رمز",
+  "magic_link_network_error": "خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
+  "magic_link_back_to_login": "العودة لتسجيل الدخول",
+  
+  "express_title": "عبّر عن مزاجك",
+  "express_subtitle": "كيف تريد التعبير عن نفسك اليوم؟",
+  "express_mode_emoji": "إيموجي",
+  "express_mode_color": "لون",
+  "express_mode_intensity": "شدة",
+  "express_mode_text": "نص",
+  "express_mode_voice": "صوت",
+  "express_emoji_label": "اختر إيموجي يمثل مزاجك",
+  "express_color_label": "اختر لوناً يطابق شعورك",
+  "express_intensity_label": "اضبط الشدة بالمنزلق",
+  "express_text_label": "اكتب عن مشاعرك",
+  "express_text_placeholder": "كيف تشعر اليوم؟ صف مشاعرك...",
+  "express_voice_label": "سجل ملاحظة صوتية عن مزاجك",
+  "express_voice_start": "بدء التسجيل",
+  "express_voice_stop": "إيقاف التسجيل",
+  "express_voice_recording": "جاري التسجيل...",
+  "express_privacy_label": "الخصوصية",
+  "express_privacy_private": "خاص",
+  "express_privacy_friends": "الأصدقاء فقط",
+  "express_privacy_public": "عام",
+  "express_tags_label": "العلامات (اختياري)",
+  "express_tags_placeholder": "أضف علامات...",
+  "express_share_label": "مشاركة",
+  "express_share_copy": "نسخ الرابط",
+  "express_share_copied": "تم نسخ الرابط!",
+  "express_save_success": "تم التعبير عن مزاجك!",
+  "express_save_error": "فشل في حفظ المزاج",
+  
+  "insights_page_title": "رؤى المزاج",
+  "insights_page_subtitle": "اكتشف أنماطاً في رحلتك العاطفية",
+  "insights_dominant_mood": "المزاج السائد",
+  "insights_mood_stability": "استقرار المزاج",
+  "insights_avg_intensity": "متوسط الشدة",
+  "insights_total_entries": "إجمالي الإدخالات",
+  "insights_timeline_title": "خط زمني للمزاج",
+  "insights_timeline_subtitle": "رحلتك العاطفية عبر الزمن",
+  "insights_period_daily": "يومي",
+  "insights_period_weekly": "أسبوعي",
+  "insights_period_monthly": "شهري",
+  "insights_no_data": "لا توجد بيانات كافية بعد. سجل المزيد من المزاج!",
+  "insights_stability_high": "استقرار عالٍ",
+  "insights_stability_medium": "استقرار متوسط",
+  "insights_stability_low": "استقرار منخفض",
+  "insights_recommendation": "توصية",
+  "insights_export": "تصدير البيانات",
+  "insights_share": "مشاركة الرؤى",
+  
+  "quick_select_title": "تسجيل مزاج سريع",
+  "quick_select_subtitle": "انقر لتسجيل مزاجك فوراً",
   "quick_select_recently_used": "المستخدمة مؤخراً",
-  "quick_select_all_emotions": "جميع المشاعر",
+  "quick_select_all_emotions": "كل المشاعر",
   "quick_select_saved": "تم تسجيل المزاج!",
-  "quick_select_error": "فشل تسجيل المزاج",
-  "category_mindfulness": "اليقظة الذهنية",
-  "category_sleep": "النوم",
-  "category_nutrition": "التغذية",
+  "quick_select_error": "فشل في تسجيل المزاج",
+  
+  "wellness_tips_title": "نصائح عافية مخصصة",
+  "wellness_tips_subtitle": "احصل على توصيات مدعومة بالذكاء الاصطناعي بناءً على مزاجك",
+  "wellness_tips_mood_label": "اختر مزاجك الحالي",
+  "wellness_tips_category_label": "اختر فئات العافية",
+  "wellness_tips_generate": "إنشاء نصائح",
+  "wellness_tips_generating": "جاري إنشاء نصائح مخصصة...",
+  "wellness_tips_helpful": "مفيد",
+  "wellness_tips_not_helpful": "غير مفيد",
+  "wellness_tips_save": "حفظ",
+  "wellness_tips_saved": "تم حفظ النصيحة!",
+  "wellness_tips_thanks": "شكراً على ملاحظاتك!",
+  "wellness_tips_select_required": "يرجى اختيار مزاج وفئة واحدة على الأقل",
+  "wellness_tips_error": "فشل في إنشاء النصائح. يرجى المحاولة مرة أخرى.",
+  
   "challenges_title": "التحديات والإنجازات",
-  "challenges_subtitle": "أكمل التحديات واف تح الإنجازات",
+  "challenges_subtitle": "أكمل التحديات وافتح الإنجازات",
   "challenges_tab": "التحديات",
   "achievements_tab": "الإنجازات",
   "challenges_level": "المستوى",
   "challenges_points": "النقاط",
   "challenges_streak": "سلسلة الأيام",
-  "challenges_active": "نشطة",
-  "challenges_completed": "مكتملة",
-  "challenge_mood_warrior": "محارب المزاج",
-  "challenge_wellness_champion": "بطل الصحة",
-  "challenge_social_butterfly": "فراشة اجتماعية",
-  "achievement_first_log": "أول تسجيل",
-  "achievement_week_streak": "سلسلة 7 أيام",
-  "achievement_month_streak": "سلسلة 30 يوماً",
-  "achievement_wellness_explorer": "مستكشف الصحة",
-  "achievement_social_star": "نجم اجتماعي",
-  "premium_title": "احصل على Premium",
-  "premium_subtitle": "افتح الميزات المتقدمة والدعم المميز",
-  "premium_feature_1": "تحليلات المزاج المدعومة بالذكاء الاصطناعي",
-  "premium_feature_2": "رؤى وتوصيات غير محدودة",
-  "premium_feature_3": "دعم ذو أولوية",
-  "premium_feature_4": "تصدير البيانات المتقدم",
-  "premium_cta": "الترقية إلى Premium",
-  "error_network": "خطأ في الشبكة. يرجى التحقق من اتصالك.",
-  "error_server": "خطأ في الخادم. يرجى المحاولة مرة أخرى لاحقاً.",
-  "error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-  "success_generic": "العملية ناجحة!",
-  "loading": "جارٍ التحميل...",
-  "retry": "إعادة المحاولة",
-  "cancel": "إلغاء"
+  "challenges_achievements": "الإنجازات",
+  "challenges_progress": "التقدم نحو المستوى التالي",
+  "challenges_weekly": "التحديات الأسبوعية",
+  "challenges_monthly": "التحديات الشهرية",
+  "challenges_progress_label": "التقدم",
+  "challenges_continue": "متابعة",
+  "challenges_no_data": "لا توجد تحديات متاحة بعد",
+  "achievements_no_data": "أكمل التحديات لفتح الإنجازات!",
+  
+  "color_psych_title": "تحليل علم نفس الألوان",
+  "color_psych_subtitle": "اكتشف التأثيرات النفسية للألوان",
+  "color_psych_attributes": "السمات",
+  "color_psych_effects": "التأثيرات النفسية",
+  "color_psych_moods": "المزاج المرتبط",
+  "color_psych_cultural": "المنظورات الثقافية",
+  "color_psych_use_when": "استخدم عندما",
+  "color_psych_avoid_when": "تجنب عندما",
+  "color_psych_track": "تتبع هذا اللون",
+  "color_psych_tracked": "تم حفظ تفضيل اللون!",
+  
+  "social_feed_title": "موجز اجتماعي",
+  "social_feed_subtitle": "شارك رحلة مزاجك مع المجتمع",
+  "social_feed_post_placeholder": "كيف تشعر؟ شارك مزاجك...",
+  "social_feed_select_emotion": "اختر عاطفتك",
+  "social_feed_post": "نشر",
+  "social_feed_all": "كل المنشورات",
+  "social_feed_friends": "الأصدقاء",
+  "social_feed_empty_title": "لا توجد منشورات بعد",
+  "social_feed_empty_text": "كن أول من يشارك مزاجه مع المجتمع!",
+  "social_feed_post_success": "تمت مشاركة المنشور بنجاح!",
+  "social_feed_post_error": "فشل في النشر. يرجى المحاولة مرة أخرى.",
+  "social_feed_comments_coming_soon": "ميزة التعليقات قادمة قريباً!",
+  "social_feed_share_coming_soon": "ميزة المشاركة قادمة قريباً!",
+  
+  "privacy_public": "🌍 عام",
+  "privacy_friends": "👥 الأصدقاء",
+  "privacy_private": "🔒 خاص",
+  "loading_feed": "جاري تحميل الموجز...",
+  "loading": "جاري التحميل...",
+  "no_results": "لم يتم العثور على نتائج",
+  "search": "بحث",
+  "filter": "تصفية",
+  "sort": "ترتيب",
+  "premium": "مميز",
+  "free": "مجاني",
+  "popular": "شائع",
+  "new": "جديد",
+  "featured": "مميز",
+  "all": "الكل"
 }
