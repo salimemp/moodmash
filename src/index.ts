@@ -40,6 +40,10 @@ import analyticsRoutes from './routes/api/analytics';
 import complianceRoutes from './routes/api/compliance';
 import currencyRoutes from './routes/api/currency';
 
+// Phase 7: SEO and Turnstile Bot Protection
+import seoRoutes from './routes/api/seo';
+import turnstileRoutes from './routes/api/turnstile';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -83,6 +87,11 @@ app.route('/api/analytics', analyticsRoutes);
 app.route('/api/compliance', complianceRoutes);
 app.route('/api/currencies', currencyRoutes);
 app.route('/api/tax', currencyRoutes);
+
+// Mount Phase 7: SEO and Turnstile
+app.route('/', seoRoutes);
+app.route('/api/turnstile', turnstileRoutes);
+app.route('/api/seo', seoRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {

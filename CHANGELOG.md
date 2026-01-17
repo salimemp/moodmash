@@ -2,6 +2,89 @@
 
 All notable changes to MoodMash are documented in this file.
 
+## [1.2.0] - 2026-01-17
+
+### 🔐 Turnstile Bot Protection & 🔍 SEO Optimization
+
+#### Cloudflare Turnstile Implementation ✅
+- **Backend Verification**
+  - Server-side Turnstile token verification on login and registration
+  - Automatic localhost bypass for development
+  - Client IP detection via CF-Connecting-IP header
+  - Graceful fallback when secret key not configured
+
+- **Bot Detection System**
+  - Automatic IP blocking after 5 failed Turnstile attempts
+  - Progressive block duration (1-24 hours)
+  - Bot detection logging with metadata
+  - IP unblocking after cooldown period
+
+- **Turnstile API Endpoints**
+  - `POST /api/turnstile/verify` - Verify Turnstile token
+  - `GET /api/turnstile/stats` - Get verification statistics
+  - `GET /api/turnstile/check-ip` - Check if IP is blocked
+
+- **Database Tables**
+  - `turnstile_logs` - Verification attempt logging
+  - `bot_detections` - Blocked IPs tracking
+
+#### Comprehensive SEO Optimization ✅
+- **Meta Tags (All Pages)**
+  - Primary meta tags (title, description, keywords)
+  - Open Graph tags (og:title, og:description, og:image, etc.)
+  - Twitter Card tags (summary_large_image)
+  - Language alternate tags (hreflang for 8 languages)
+  - Canonical URLs
+  - Robots directives
+
+- **Structured Data (JSON-LD)**
+  - Organization schema
+  - WebApplication schema
+  - FAQPage schema
+  - Product schema (for pricing)
+  - Aggregate rating schema
+
+- **Technical SEO**
+  - Dynamic sitemap.xml generation
+  - robots.txt configuration
+  - Multi-language support (8 languages)
+  - Mobile-friendly viewport
+  - PWA manifest
+
+- **SEO API Endpoints**
+  - `GET /sitemap.xml` - Dynamic XML sitemap
+  - `GET /robots.txt` - Robots configuration
+  - `GET /api/seo/metadata/:page` - Page metadata
+  - `GET /api/seo/schema/organization` - Organization JSON-LD
+  - `GET /api/seo/schema/application` - WebApp JSON-LD
+  - `GET /api/seo/schema/faq` - FAQ JSON-LD
+
+- **Database Tables**
+  - `seo_metadata` - Page-specific SEO metadata
+  - `sitemap_urls` - Sitemap URL management
+
+#### Competitive Analysis Document ✅
+- **Comprehensive 15-section analysis**
+  - Executive summary
+  - Market overview ($4.2B market)
+  - Top 10 competitors detailed analysis
+  - Feature comparison matrix
+  - MoodMash competitive advantages
+  - SWOT analysis
+  - Pricing comparison
+  - Technology stack comparison
+  - Compliance comparison
+  - Growth opportunities
+  - Recommendations
+
+- **Key Findings**
+  - MoodMash is the ONLY app combining AI + Voice + Social + Gamification
+  - Best language support (8 languages including CJK, Arabic)
+  - Enterprise-grade compliance (HIPAA, CCPA, SOC 2)
+  - Most affordable premium tier ($4.99/mo)
+
+---
+
 ## [1.1.0] - 2026-01-17
 
 ### 🔒 Phase 6 Enhancements: Compliance, CJK Localization, Currency & Taxation

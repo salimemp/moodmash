@@ -27,8 +27,31 @@ auth.get('/register', (c) => {
 // API: Register
 auth.post('/api/auth/register', async (c) => {
   try {
-    const body = await c.req.json<AuthInput>();
-    const { email, password, name } = body;
+    const body = await c.req.json<AuthInput & { turnstileToken?: string }>();
+    const { email, password, name, turnstileToken } = body;
+    
+    // Verify Turnstile token (skip for localhost)
+    const clientIp = c.req.header('CF-Connecting-IP') || 
+                     c.req.header('X-Forwarded-For')?.split(',')[0] || 
+                     '127.0.0.1';
+    const isLocalhost = clientIp === '127.0.0.1' || clientIp === '::1';
+    
+    if (!isLocalhost && c.env.TURNSTILE_SECRET_KEY && turnstileToken) {
+      const formData = new URLSearchParams();
+      formData.append('secret', c.env.TURNSTILE_SECRET_KEY);
+      formData.append('response', turnstileToken);
+      formData.append('remoteip', clientIp);
+      
+      const verifyResponse = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        { method: 'POST', body: formData }
+      );
+      
+      const result = await verifyResponse.json() as { success: boolean };
+      if (!result.success) {
+        return c.json({ error: 'Bot verification failed. Please try again.' }, 403);
+      }
+    }
     
     // Validation
     if (!email || !password) {
@@ -91,8 +114,31 @@ auth.post('/api/auth/register', async (c) => {
 // API: Login
 auth.post('/api/auth/login', async (c) => {
   try {
-    const body = await c.req.json<AuthInput>();
-    const { email, password } = body;
+    const body = await c.req.json<AuthInput & { turnstileToken?: string }>();
+    const { email, password, turnstileToken } = body;
+    
+    // Verify Turnstile token (skip for localhost)
+    const clientIp = c.req.header('CF-Connecting-IP') || 
+                     c.req.header('X-Forwarded-For')?.split(',')[0] || 
+                     '127.0.0.1';
+    const isLocalhost = clientIp === '127.0.0.1' || clientIp === '::1';
+    
+    if (!isLocalhost && c.env.TURNSTILE_SECRET_KEY && turnstileToken) {
+      const formData = new URLSearchParams();
+      formData.append('secret', c.env.TURNSTILE_SECRET_KEY);
+      formData.append('response', turnstileToken);
+      formData.append('remoteip', clientIp);
+      
+      const verifyResponse = await fetch(
+        'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+        { method: 'POST', body: formData }
+      );
+      
+      const result = await verifyResponse.json() as { success: boolean };
+      if (!result.success) {
+        return c.json({ error: 'Bot verification failed. Please try again.' }, 403);
+      }
+    }
     
     if (!email || !password) {
       return c.json({ error: 'Email and password are required' }, 400);

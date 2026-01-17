@@ -19,6 +19,8 @@ export interface Env {
   GITHUB_REDIRECT_URI?: string;
   // App URL
   APP_URL?: string;
+  // Cloudflare Turnstile
+  TURNSTILE_SECRET_KEY?: string;
 }
 
 // Database types

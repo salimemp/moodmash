@@ -4,7 +4,7 @@
 
 MoodMash is a comprehensive mood tracking and mental wellness application built with modern web technologies. It features AI-powered insights, voice journaling, social features, gamification, and a supportive AI chatbot companion.
 
-![MoodMash](https://img.shields.io/badge/MoodMash-v1.1.0-purple)
+![MoodMash](https://img.shields.io/badge/MoodMash-v1.2.0-purple)
 ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![HIPAA](https://img.shields.io/badge/HIPAA-Compliant-green)
@@ -61,6 +61,15 @@ MoodMash is a comprehensive mood tracking and mental wellness application built 
 - **15 Currencies** - USD, EUR, GBP, JPY, CNY, KRW, AED, SAR, CAD, AUD, INR, BRL, MXN, CHF, SGD
 - **Automatic Tax Calculation** - VAT, GST, Sales Tax by region
 - **Invoice Generation** - Tax-compliant invoices
+
+### SEO & Bot Protection
+- **Cloudflare Turnstile** - Bot protection on all forms
+- **Dynamic Sitemap** - Auto-generated sitemap.xml
+- **Structured Data** - JSON-LD schemas (Organization, WebApp, FAQ)
+- **Open Graph Tags** - Social media sharing optimization
+- **Twitter Cards** - Rich Twitter previews
+- **Multi-language SEO** - hreflang tags for 8 languages
+- **Robots.txt** - Search engine crawl configuration
 
 ## 🚀 Quick Start
 
