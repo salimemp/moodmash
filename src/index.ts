@@ -44,6 +44,11 @@ import currencyRoutes from './routes/api/currency';
 import seoRoutes from './routes/api/seo';
 import turnstileRoutes from './routes/api/turnstile';
 
+// Phase 8: Wellness Features - Meditation, Yoga, Music
+import meditationRoutes from './routes/api/meditation';
+import yogaRoutes from './routes/api/yoga';
+import musicRoutes from './routes/api/music';
+
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
 // Static files are served by Cloudflare Pages automatically from /public
@@ -92,6 +97,11 @@ app.route('/api/tax', currencyRoutes);
 app.route('/', seoRoutes);
 app.route('/api/turnstile', turnstileRoutes);
 app.route('/api/seo', seoRoutes);
+
+// Mount Phase 8: Wellness Features
+app.route('/api/meditation', meditationRoutes);
+app.route('/api/yoga', yogaRoutes);
+app.route('/api/music', musicRoutes);
 
 // Home page - redirect to dashboard or login
 app.get('/', async (c) => {

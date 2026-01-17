@@ -4,7 +4,7 @@
 
 MoodMash is a comprehensive mood tracking and mental wellness application built with modern web technologies. It features AI-powered insights, voice journaling, social features, gamification, and a supportive AI chatbot companion.
 
-![MoodMash](https://img.shields.io/badge/MoodMash-v1.2.0-purple)
+![MoodMash](https://img.shields.io/badge/MoodMash-v1.3.0-purple)
 ![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![HIPAA](https://img.shields.io/badge/HIPAA-Compliant-green)
@@ -31,6 +31,14 @@ MoodMash is a comprehensive mood tracking and mental wellness application built 
 - **Achievements** - 40+ badges to unlock
 - **Leaderboards** - Compete with friends
 - **Challenges** - Daily and weekly goals
+
+### Wellness Hub 🧘
+- **Guided Meditation** - 55+ sessions across 10 categories
+- **Yoga Practice** - 100+ poses and 25+ guided routines
+- **Music Therapy** - 35+ curated playlists for every mood
+- **Progress Tracking** - Streaks, stats, and achievements
+- **Mood Integration** - Track mood before and after sessions
+- **Personalized Recommendations** - Based on your mood and time of day
 
 ### Security & Health
 - **Two-Factor Auth** - TOTP and email 2FA

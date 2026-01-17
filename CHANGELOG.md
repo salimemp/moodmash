@@ -2,6 +2,133 @@
 
 All notable changes to MoodMash are documented in this file.
 
+## [1.3.0] - 2026-01-17
+
+### 🧘 Wellness Hub: Meditation, Yoga & Music Therapy
+
+#### Guided Meditation System ✅
+- **55+ Meditation Sessions**
+  - 10 Categories: Stress Relief, Sleep, Anxiety, Focus, Mindfulness, Breathing, Body Scan, Loving Kindness, Morning, Evening
+  - 3 Difficulty Levels: Beginner, Intermediate, Advanced
+  - Sessions from 3 minutes to 30+ minutes
+  - Full guided scripts with breathing cues
+  - Background sound options (nature, rain, silence, etc.)
+
+- **Meditation Features**
+  - Progress tracking with streaks
+  - Mood before/after tracking
+  - Favorites and history
+  - Custom timer with sound selection
+  - Meditation journal
+  - Personalized recommendations based on mood
+
+- **API Endpoints**
+  - `GET /api/meditation/sessions` - List sessions with filters
+  - `GET /api/meditation/sessions/:id` - Get session details
+  - `POST /api/meditation/start` - Start session with mood tracking
+  - `POST /api/meditation/complete` - Complete session and log progress
+  - `GET /api/meditation/progress` - Get user streaks and stats
+  - `GET /api/meditation/recommendations` - Mood-based recommendations
+
+#### Yoga Practice System ✅
+- **100+ Yoga Poses (Asanas)**
+  - 9 Categories: Standing, Seated, Balancing, Backbends, Forward Bends, Twists, Inversions, Restorative, Core
+  - Sanskrit names and English translations
+  - Step-by-step instructions
+  - Benefits and precautions
+  - Muscle groups and chakra associations
+
+- **25+ Yoga Routines**
+  - Categories: Morning, Evening, Stress Relief, Flexibility, Strength, Back Pain, Sleep, Anxiety, Beginner, Intermediate, Advanced
+  - Duration from 5 minutes to 45 minutes
+  - Full pose sequences with timing
+  - Side-specific instructions (left/right)
+  - Transition notes between poses
+
+- **Yoga Features**
+  - Guided routine player with pose timer
+  - Progress tracking and streaks
+  - Routine preview and pose library
+  - Custom routine builder
+  - Yoga journal
+  - Goal-based recommendations
+
+- **API Endpoints**
+  - `GET /api/yoga/poses` - List poses with filters
+  - `GET /api/yoga/routines` - List routines with filters
+  - `GET /api/yoga/routines/:id` - Get full routine with expanded poses
+  - `POST /api/yoga/start` - Start routine tracking
+  - `POST /api/yoga/complete` - Complete routine and log progress
+  - `POST /api/yoga/custom-routine` - Create custom routine
+
+#### Music Therapy System ✅
+- **35+ Curated Playlists**
+  - 11 Categories: Calming, Energizing, Focus, Sleep, Anxiety Relief, Depression Support, Meditation, Nature Sounds, Binaural Beats, Classical, Ambient
+  - 350+ Tracks across all playlists
+  - Mood-tagged playlists for recommendations
+  - BPM information for each track
+
+- **Music Features**
+  - Player with playback controls
+  - Volume control and progress tracking
+  - Shuffle and repeat modes
+  - Favorites and listening history
+  - Mood tracking integration
+  - Mood-music correlation analysis
+  - Listening statistics
+
+- **Premium Binaural Beats**
+  - Focus (14-20Hz Beta waves)
+  - Sleep (1-3Hz Delta waves)
+  - Meditation (5-7Hz Theta waves)
+  - Relaxation (8-12Hz Alpha waves)
+
+- **API Endpoints**
+  - `GET /api/music/playlists` - List playlists with filters
+  - `GET /api/music/playlists/:id` - Get playlist with tracks
+  - `GET /api/music/recommendations` - Mood-based recommendations
+  - `POST /api/music/play` - Log listening session
+  - `GET /api/music/history` - Get listening history
+  - `GET /api/music/stats` - Get listening statistics
+  - `GET /api/music/mood-correlation` - Analyze mood-music effects
+
+#### Wellness Achievements ✅
+- **30+ New Achievements**
+  - Meditation milestones (1, 10, 50, 100 sessions)
+  - Meditation streaks (7 days, 30 days)
+  - Yoga milestones (1, 25, 50 sessions)
+  - Yoga streaks (7 days, 30 days)
+  - Music therapy hours (10, 100 hours)
+  - Wellness combos (Mind-Body Balance, Trifecta)
+  - Hidden achievements (Early Bird, Night Owl, etc.)
+
+#### Multi-Language Support ✅
+- **Wellness Translations**
+  - English (en)
+  - Arabic (ar) - RTL support
+  - Spanish (es)
+  - French (fr)
+  - German (de)
+  - Translation keys for all wellness features
+
+#### Database Tables
+- `meditation_sessions` - Session definitions
+- `meditation_progress` - User progress tracking
+- `meditation_streaks` - Streak tracking
+- `meditation_favorites` - User favorites
+- `meditation_journal` - Reflection entries
+- `yoga_poses` - Pose definitions
+- `yoga_routines` - Routine definitions
+- `yoga_progress` - User progress
+- `yoga_streaks` - Streak tracking
+- `yoga_favorites` - User favorites
+- `yoga_journal` - Practice journals
+- `music_playlists` - Playlist definitions
+- `music_favorites` - User favorites
+- `music_listening_history` - Play history
+
+---
+
 ## [1.2.0] - 2026-01-17
 
 ### 🔐 Turnstile Bot Protection & 🔍 SEO Optimization
