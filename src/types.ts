@@ -180,6 +180,109 @@ export interface ExportData {
   exportedAt: string;
 }
 
+// Phase 3 Social Types
+export interface UserProfile {
+  id: number;
+  user_id: number;
+  display_name: string | null;
+  bio: string | null;
+  avatar_url: string | null;
+  location: string | null;
+  profile_visibility: 'public' | 'friends' | 'private';
+  mood_visibility: 'public' | 'friends' | 'private';
+  allow_friend_requests: boolean;
+  show_mood_history: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Friendship {
+  id: number;
+  user_id: number;
+  friend_id: number;
+  status: 'pending' | 'accepted' | 'declined' | 'blocked';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Group {
+  id: number;
+  name: string;
+  description: string | null;
+  privacy: 'public' | 'private';
+  avatar_url: string | null;
+  created_by: number;
+  member_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroupMember {
+  id: number;
+  group_id: number;
+  user_id: number;
+  role: 'admin' | 'moderator' | 'member';
+  joined_at: string;
+}
+
+export interface GroupPost {
+  id: number;
+  group_id: number;
+  user_id: number;
+  content: string;
+  mood_entry_id: number | null;
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SharedMood {
+  id: number;
+  mood_id: number;
+  user_id: number;
+  shared_with: 'public' | 'friends' | 'group';
+  group_id: number | null;
+  caption: string | null;
+  privacy: 'public' | 'friends' | 'private';
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+}
+
+export interface Activity {
+  id: number;
+  user_id: number;
+  type: string;
+  actor_id: number | null;
+  target_type: string | null;
+  target_id: number | null;
+  data: Record<string, unknown>;
+  is_read: boolean;
+  created_at: string;
+}
+
+export interface Reaction {
+  id: number;
+  target_type: 'shared_mood' | 'group_post' | 'comment';
+  target_id: number;
+  user_id: number;
+  type: 'like' | 'love' | 'support' | 'hug' | 'celebrate';
+  created_at: string;
+}
+
+export interface Comment {
+  id: number;
+  target_type: 'shared_mood' | 'group_post';
+  target_id: number;
+  user_id: number;
+  content: string;
+  parent_id: number | null;
+  like_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Context variables
 export interface Variables {
   user: CurrentUser | null;
