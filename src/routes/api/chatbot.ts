@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const chatbot = new Hono<{ Bindings: Bindings }>();
+const chatbot = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 const SYSTEM_PROMPT = `You are Mood, a warm and empathetic AI companion in the MoodMash app. Your role is to:
 - Help users understand and process their emotions

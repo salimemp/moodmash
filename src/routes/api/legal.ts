@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const legal = new Hono<{ Bindings: Bindings }>();
+const legal = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // GET /api/legal/:type - Get legal document
 legal.get('/:type', async (c) => {

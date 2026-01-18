@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const localization = new Hono<{ Bindings: Bindings }>();
+const localization = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Supported languages
 const SUPPORTED_LANGUAGES = [

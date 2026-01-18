@@ -1,12 +1,22 @@
 // Phase 5: Security & 2FA API Routes
 import { Hono } from 'hono';
 import type { Env, Variables } from '../../types';
-import { TOTP, generateSecret } from 'otplib';
+import { TOTP } from 'otplib';
+import * as otplibUri from '@otplib/uri';
 import QRCode from 'qrcode';
 import { hash as bcryptHash, compare as bcryptCompare } from 'bcryptjs';
 
 // Create TOTP instance
 const totp = new TOTP();
+
+// Helper to generate otpauth URI
+function generateOtpauthUri(email: string, issuer: string, secret: string): string {
+  return otplibUri.generateTOTP({
+    label: email,
+    issuer,
+    secret
+  });
+}
 
 const security = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -66,9 +76,9 @@ security.post('/2fa/totp/setup', async (c) => {
     }
 
     // Generate secret
-    const secret = generateSecret();
+    const secret = totp.generateSecret();
     const appName = 'MoodMash';
-    const otpauth = totp.keyuri(user.email, appName, secret);
+    const otpauth = generateOtpauthUri(user.email, appName, secret);
 
     // Generate QR code as data URL
     const qrCodeDataUrl = await QRCode.toDataURL(otpauth);
@@ -112,9 +122,9 @@ security.post('/2fa/totp/verify', async (c) => {
       return c.json({ error: 'TOTP not setup' }, 400);
     }
 
-    const isValid = totp.verify({ token: code, secret: settings.secret as string });
+    const verifyResult = await totp.verify(code, { secret: settings.secret as string });
 
-    if (isValid) {
+    if (verifyResult.valid) {
       await db.prepare(
         `UPDATE two_factor_settings SET verified = 1 WHERE user_id = ? AND type = 'totp'`
       ).bind(user.id).run();
@@ -193,7 +203,8 @@ security.post('/2fa/totp/disable', async (c) => {
     let verified = false;
 
     if (code) {
-      verified = totp.verify({ token: code, secret: settings.secret as string });
+      const verifyResult = await totp.verify(code, { secret: settings.secret as string });
+      verified = verifyResult.valid;
     } else if (password) {
       const userRecord = await db.prepare(
         `SELECT password_hash FROM users WHERE id = ?`
@@ -295,7 +306,8 @@ security.post('/2fa/backup-codes/regenerate', async (c) => {
       return c.json({ error: '2FA not enabled' }, 400);
     }
 
-    if (!totp.verify({ token: code, secret: settings.secret as string })) {
+    const verifyResult = await totp.verify(code, { secret: settings.secret as string });
+    if (!verifyResult.valid) {
       return c.json({ error: 'Invalid verification code' }, 400);
     }
 
@@ -629,8 +641,10 @@ security.get('/dashboard', async (c) => {
     let securityScore = 50;
     const twoFactorEnabled = (twoFactorStatus.results || []).some((r: any) => r.enabled);
     if (twoFactorEnabled) securityScore += 30;
-    if ((backupCodes?.count || 0) > 0) securityScore += 10;
-    if ((sessionsCount?.count || 0) <= 3) securityScore += 10;
+    const backupCodesCount = (backupCodes as { count: number } | null)?.count ?? 0;
+    const activeSessionsCount = (sessionsCount as { count: number } | null)?.count ?? 0;
+    if (backupCodesCount > 0) securityScore += 10;
+    if (activeSessionsCount <= 3) securityScore += 10;
 
     return c.json({
       securityScore,
@@ -639,10 +653,10 @@ security.get('/dashboard', async (c) => {
         methods: (twoFactorStatus.results || []).filter((r: any) => r.enabled).map((r: any) => r.type)
       },
       sessions: {
-        active: sessionsCount?.count || 0
+        active: activeSessionsCount
       },
       backupCodes: {
-        remaining: backupCodes?.count || 0
+        remaining: backupCodesCount
       },
       recentLogins: recentLogins.results || [],
       recentEvents: recentEvents.results || []

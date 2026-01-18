@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const subscription = new Hono<{ Bindings: Bindings }>();
+const subscription = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Tier definitions with limits
 const TIER_LIMITS = {

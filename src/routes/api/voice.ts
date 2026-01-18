@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const voice = new Hono<{ Bindings: Bindings }>();
+const voice = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Supported languages with voice codes
 const VOICE_LANGUAGES: Record<string, { name: string; code: string; rtl: boolean }> = {
@@ -70,8 +70,8 @@ voice.post('/speech-to-text', async (c) => {
 voice.get('/languages', (c) => {
   return c.json({
     success: true,
-    languages: Object.entries(VOICE_LANGUAGES).map(([code, info]) => ({
-      code,
+    languages: Object.entries(VOICE_LANGUAGES).map(([key, info]) => ({
+      id: key,
       ...info
     }))
   });

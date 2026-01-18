@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
-import type { Bindings } from '../../types';
+import type { Bindings, Variables } from '../../types';
 
-const analytics = new Hono<{ Bindings: Bindings }>();
+const analytics = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // POST /api/analytics/event - Track analytics event
 analytics.post('/event', async (c) => {

@@ -288,4 +288,8 @@ export interface Comment {
 // Context variables
 export interface Variables {
   user: CurrentUser | null;
+  userId: string;
 }
+
+// Bindings is an alias for Env (for API routes)
+export type Bindings = Env;
