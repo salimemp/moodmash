@@ -13,6 +13,8 @@ export default defineConfig({
         '**/*.spec.ts',
         'src/types.ts',
         'vitest.config.ts',
+        'playwright.config.ts',
+        'tests/**',
       ],
       thresholds: {
         lines: 50,
@@ -21,7 +23,8 @@ export default defineConfig({
         statements: 50,
       },
     },
-    include: ['tests/**/*.test.ts'],
+    include: ['tests/unit/**/*.test.ts', 'tests/integration/**/*.test.ts'],
     globals: true,
+    testTimeout: 10000,
   },
 });

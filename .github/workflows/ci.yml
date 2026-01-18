@@ -2,9 +2,9 @@ name: MoodMash CI/CD Pipeline - Complete Automation
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, develop, rebuild-clean ]
   pull_request:
-    branches: [ main, develop ]
+    branches: [ main, develop, rebuild-clean ]
   schedule:
     # Daily regression tests at 6:00 AM UTC
     - cron: '0 6 * * *'
