@@ -287,7 +287,7 @@ const HAPTIC_PATTERNS = {
 npm install @capacitor/core @capacitor/cli
 
 # 2. Initialize
-npx cap init MoodMash com.moodmash.app
+npx cap init MoodMash com.moodmash.win
 
 # 3. Add platforms
 npx cap add ios
@@ -509,7 +509,7 @@ TouchGestures.setPreference('haptics', { enabled: true, intensity: 'strong' });
 ### Phase 4: Native App Wrappers
 1. **Install Capacitor** (1 hour)
    - `npm install @capacitor/core @capacitor/cli`
-   - `npx cap init MoodMash com.moodmash.app`
+   - `npx cap init MoodMash com.moodmash.win`
 
 2. **Add Platforms** (2 hours)
    - iOS: `npx cap add ios` (requires macOS + Xcode)

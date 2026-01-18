@@ -405,7 +405,7 @@ The following endpoints are intentionally public (no authentication):
 
 For questions or issues:
 - **GitHub Issues:** https://github.com/yourusername/moodmash
-- **Email:** support@moodmash.com
+- **Email:** support@moodmash.win
 - **Documentation:** https://moodmash.win/monitoring
 
 ---

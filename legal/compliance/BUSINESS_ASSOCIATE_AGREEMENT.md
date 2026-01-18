@@ -241,5 +241,5 @@ Date
 ---
 
 **Contact for BAA inquiries:**  
-Email: hipaa@moodmash.app  
+Email: hipaa@moodmash.win  
 Phone: [Contact Number]

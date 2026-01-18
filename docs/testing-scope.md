@@ -118,7 +118,7 @@ Testing covers the complete MoodMash application including:
 |-----------|--------------|
 | Platform | Cloudflare Workers |
 | Database | D1 staging database |
-| URL | `https://staging.moodmash.com` |
+| URL | `https://staging.moodmash.win` |
 | Data | Anonymized production data |
 
 ### 3.3 Production Environment
@@ -127,7 +127,7 @@ Testing covers the complete MoodMash application including:
 |-----------|--------------|
 | Platform | Cloudflare Workers (global) |
 | Database | D1 production database |
-| URL | `https://moodmash.com` |
+| URL | `https://moodmash.win` |
 | Monitoring | Cloudflare Analytics |
 
 ### 3.4 Required Tools
@@ -814,11 +814,11 @@ Notes: Additional observations
 
 | User Type | Email | Password | Role |
 |-----------|-------|----------|------|
-| Admin | admin@test.moodmash.com | TestAdmin123! | admin |
-| Premium User | premium@test.moodmash.com | TestPremium123! | premium |
-| Free User | free@test.moodmash.com | TestFree123! | free |
-| New User | new@test.moodmash.com | TestNew123! | free |
-| 2FA User | 2fa@test.moodmash.com | Test2FA123! | free |
+| Admin | admin@test.moodmash.win | TestAdmin123! | admin |
+| Premium User | premium@test.moodmash.win | TestPremium123! | premium |
+| Free User | free@test.moodmash.win | TestFree123! | free |
+| New User | new@test.moodmash.win | TestNew123! | free |
+| 2FA User | 2fa@test.moodmash.win | Test2FA123! | free |
 
 ### 12.2 Test Content
 

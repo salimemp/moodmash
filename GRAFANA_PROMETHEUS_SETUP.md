@@ -460,10 +460,10 @@ receivers:
 receivers:
   - name: 'email-notifications'
     email_configs:
-      - to: 'alerts@moodmash.com'
-        from: 'monitoring@moodmash.com'
+      - to: 'alerts@moodmash.win'
+        from: 'monitoring@moodmash.win'
         smarthost: 'smtp.gmail.com:587'
-        auth_username: 'monitoring@moodmash.com'
+        auth_username: 'monitoring@moodmash.win'
         auth_password: 'YOUR_APP_PASSWORD'
 ```
 
@@ -488,7 +488,7 @@ receivers:
    # nginx.conf
    server {
        listen 443 ssl;
-       server_name monitoring.moodmash.com;
+       server_name monitoring.moodmash.win;
        
        ssl_certificate /etc/ssl/certs/monitoring.crt;
        ssl_certificate_key /etc/ssl/private/monitoring.key;

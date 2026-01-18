@@ -2,7 +2,7 @@
 
 -- Create default user for MVP (single user mode)
 INSERT OR IGNORE INTO users (id, email, name) VALUES 
-  (1, 'demo@moodmash.app', 'Demo User');
+  (1, 'demo@moodmash.win', 'Demo User');
 
 -- Seed wellness activities
 INSERT OR IGNORE INTO wellness_activities (title, description, category, duration_minutes, difficulty, target_emotions) VALUES 

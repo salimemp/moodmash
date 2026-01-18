@@ -4,7 +4,7 @@ import type { Env, Variables } from '../../types';
 
 const seo = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-const BASE_URL = 'https://moodmash.app';
+const BASE_URL = 'https://moodmash.win';
 
 // ============================================================================
 // STRUCTURED DATA (JSON-LD)
@@ -26,7 +26,7 @@ const organizationSchema = {
   contactPoint: {
     '@type': 'ContactPoint',
     contactType: 'customer support',
-    email: 'support@moodmash.app',
+    email: 'support@moodmash.win',
     availableLanguage: ['English', 'Spanish', 'French', 'German', 'Japanese', 'Korean', 'Chinese', 'Arabic']
   }
 };
@@ -183,7 +183,7 @@ ${allUrls.map((item: any) => `  <url>
 
 seo.get('/robots.txt', (c) => {
   const robots = `# MoodMash Robots.txt
-# https://moodmash.app
+# https://moodmash.win
 
 User-agent: *
 Allow: /

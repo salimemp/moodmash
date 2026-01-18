@@ -155,7 +155,7 @@ wrangler tail
 
 1. Go to Cloudflare Dashboard > Workers > your-worker
 2. Click "Custom Domains"
-3. Add your domain (e.g., `app.moodmash.com`)
+3. Add your domain (e.g., `app.moodmash.win`)
 4. DNS records are configured automatically
 
 ### SSL/TLS
@@ -245,6 +245,6 @@ wrangler dev --log-level debug
 
 ## Support
 
-- Documentation: https://docs.moodmash.app
+- Documentation: https://docs.moodmash.win
 - Issues: https://github.com/your-org/moodmash/issues
-- Email: support@moodmash.app
+- Email: support@moodmash.win

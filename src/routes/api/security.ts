@@ -380,7 +380,7 @@ security.post('/2fa/email/send', async (c) => {
     const user = getCurrentUser(c);
     const db = c.env.DB;
     const resendApiKey = c.env.RESEND_API_KEY;
-    const fromEmail = c.env.FROM_EMAIL || 'noreply@moodmash.app';
+    const fromEmail = c.env.FROM_EMAIL || 'noreply@moodmash.win';
 
     // Generate 6-digit code
     const code = Math.floor(100000 + Math.random() * 900000).toString();

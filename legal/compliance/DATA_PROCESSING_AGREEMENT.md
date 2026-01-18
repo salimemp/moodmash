@@ -163,10 +163,10 @@ Controller will be notified of material changes 30 days in advance.
 ## 14. Contact
 
 **Data Protection Contact:**  
-Email: dpo@moodmash.app
+Email: dpo@moodmash.win
 
 **Legal Contact:**  
-Email: legal@moodmash.app
+Email: legal@moodmash.win
 
 ---
 

@@ -480,7 +480,7 @@ const HAPTIC_PATTERNS = {
 1. **Install Capacitor** (1 hour)
    ```bash
    npm install @capacitor/core @capacitor/cli
-   npx cap init MoodMash com.moodmash.app
+   npx cap init MoodMash com.moodmash.win
    ```
 
 2. **Add Platforms** (2 hours)

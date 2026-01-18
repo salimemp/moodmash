@@ -30,7 +30,7 @@ However, for **web-only applications like MoodMash**, you only need **ONE Client
 ✅ **Separate Client ID required**
 - Type: **Android Application**
 - Redirect URI: Package name + SHA-1 fingerprint
-- Package name: e.g., `com.moodmash.app`
+- Package name: e.g., `com.moodmash.win`
 - Usage: Native Android app OAuth
 
 ---

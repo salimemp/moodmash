@@ -262,9 +262,9 @@ Evaluate:
 1. **DON'T** attempt to investigate on your own
 2. **DON'T** discuss with unauthorized parties
 3. **DO** document what you observed
-4. **DO** report immediately to security@moodmash.app
+4. **DO** report immediately to security@moodmash.win
 5. **DO** preserve evidence (don't delete/modify)
 
 **Emergency Contacts:**
-- Security Team: security@moodmash.app
+- Security Team: security@moodmash.win
 - On-call: [REDACTED]

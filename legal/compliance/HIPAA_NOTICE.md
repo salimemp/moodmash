@@ -46,7 +46,7 @@ You have the right to inspect and obtain a copy of your PHI.
 
 ### Right to Amend
 You have the right to request amendments to your PHI if you believe it is incorrect.
-- Contact: privacy@moodmash.app
+- Contact: privacy@moodmash.win
 
 ### Right to an Accounting of Disclosures
 You have the right to receive a list of disclosures we have made of your PHI.
@@ -90,11 +90,11 @@ We require all business associates who handle PHI to sign Business Associate Agr
 
 **Privacy Officer:**  
 MoodMash Privacy Team  
-Email: hipaa@moodmash.app
+Email: hipaa@moodmash.win
 
 **To File a Complaint:**  
 If you believe your privacy rights have been violated, you may file a complaint with:
-1. MoodMash at hipaa@moodmash.app
+1. MoodMash at hipaa@moodmash.win
 2. The Secretary of the U.S. Department of Health and Human Services
 
 You will not be retaliated against for filing a complaint.

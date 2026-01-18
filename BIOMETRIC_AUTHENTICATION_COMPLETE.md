@@ -685,7 +685,7 @@ async function handleBiometricLogin() {
 
 ### For Users:
 - **Help Center**: [moodmash.win/help](https://moodmash.win/help)
-- **Email Support**: support@moodmash.com
+- **Email Support**: support@moodmash.win
 - **FAQ**: See "Troubleshooting" section above
 
 ### For Developers:

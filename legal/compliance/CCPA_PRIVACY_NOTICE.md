@@ -57,7 +57,7 @@ Endpoint: `POST /api/compliance/data-deletion`
 ### Do Not Sell My Personal Information
 Endpoint: `POST /api/compliance/do-not-sell`
 
-You may also contact us at: privacy@moodmash.app
+You may also contact us at: privacy@moodmash.win
 
 ## Verification Process
 
@@ -85,7 +85,7 @@ We retain personal information for as long as necessary to fulfill the purposes 
 ## Contact Information
 
 For questions about this notice or to exercise your rights:
-- **Email:** privacy@moodmash.app
+- **Email:** privacy@moodmash.win
 - **Portal:** /data-rights
 - **Mail:** MoodMash Privacy Team, [Address]
 

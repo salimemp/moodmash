@@ -157,7 +157,7 @@ Please report immediately and encourage professional help.
 ### 6.3 Responsible Disclosure
 
 If you discover a security vulnerability:
-- Report to security@moodmash.app
+- Report to security@moodmash.win
 - Do not exploit or disclose publicly
 - We will acknowledge and investigate
 - Responsible disclosure may be rewarded
@@ -192,7 +192,7 @@ Policy violations may result in:
 ### 8.2 Appeals
 
 To appeal an enforcement action:
-- Email: appeals@moodmash.app
+- Email: appeals@moodmash.win
 - Include account details and circumstances
 - We will review within 10 business days
 
@@ -200,7 +200,7 @@ To appeal an enforcement action:
 
 Report violations to:
 - In-app reporting features
-- Email: abuse@moodmash.app
+- Email: abuse@moodmash.win
 - Reports are confidential
 
 ## 9. Changes
@@ -213,13 +213,13 @@ We may update this policy:
 ## 10. Contact
 
 **Questions about this policy:**  
-Email: policy@moodmash.app
+Email: policy@moodmash.win
 
 **Report violations:**  
-Email: abuse@moodmash.app
+Email: abuse@moodmash.win
 
 **Security concerns:**  
-Email: security@moodmash.app
+Email: security@moodmash.win
 
 ---
 

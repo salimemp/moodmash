@@ -174,8 +174,8 @@ We may update this policy. Significant changes will be notified via email or in-
 ## 10. Contact Us
 
 For privacy concerns, contact us at:
-- Email: privacy@moodmash.app
-- Support: support@moodmash.app
+- Email: privacy@moodmash.win
+- Support: support@moodmash.win
 
 ---
 
@@ -282,7 +282,7 @@ These Terms are governed by the laws of the applicable jurisdiction.
 
 ## 14. Contact
 
-Questions? Contact us at support@moodmash.app
+Questions? Contact us at support@moodmash.win
 
 ---
 
@@ -333,7 +333,7 @@ We may use services that set their own cookies:
 
 ## Contact Us
 
-Questions about cookies? Email us at support@moodmash.app
+Questions about cookies? Email us at support@moodmash.win
 
 ---
 
@@ -401,7 +401,7 @@ You may audit our compliance with reasonable notice.
 
 ## 9. Contact
 
-For DPA inquiries: legal@moodmash.app
+For DPA inquiries: legal@moodmash.win
 
 ---
 
