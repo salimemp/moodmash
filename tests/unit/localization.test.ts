@@ -7,14 +7,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 describe('Localization', () => {
   describe('Supported Languages', () => {
     const SUPPORTED_LANGUAGES = [
-      { code: 'en', name: 'English', rtl: false },
-      { code: 'es', name: 'Español', rtl: false },
-      { code: 'fr', name: 'Français', rtl: false },
-      { code: 'de', name: 'Deutsch', rtl: false },
-      { code: 'pt', name: 'Português', rtl: false },
-      { code: 'zh', name: '中文', rtl: false },
-      { code: 'ja', name: '日本語', rtl: false },
-      { code: 'ar', name: 'العربية', rtl: true },
+      { code: 'en', name: 'English', nativeName: 'English', rtl: false },
+      { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true },
+      { code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false },
+      { code: 'fr', name: 'French', nativeName: 'Français', rtl: false },
+      { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false },
+      { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', rtl: false },
+      { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', rtl: false },
+      { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', rtl: false },
+      { code: 'zh', name: 'Chinese (Simplified)', nativeName: '中文', rtl: false },
+      { code: 'ja', name: 'Japanese', nativeName: '日本語', rtl: false },
+      { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false }
     ];
 
     const isLanguageSupported = (code: string): boolean => {
@@ -25,8 +28,8 @@ describe('Localization', () => {
       return SUPPORTED_LANGUAGES.find(lang => lang.code === code) || null;
     };
 
-    it('should support 8 languages', () => {
-      expect(SUPPORTED_LANGUAGES.length).toBe(8);
+    it('should support 11 languages', () => {
+      expect(SUPPORTED_LANGUAGES.length).toBe(11);
     });
 
     it('should validate supported language codes', () => {

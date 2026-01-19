@@ -3,13 +3,19 @@ import type { Bindings, Variables } from '../../types';
 
 const localization = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
-// Supported languages
+// Supported languages (11 total including Indian languages)
 const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English', rtl: false },
   { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true },
   { code: 'es', name: 'Spanish', nativeName: 'Español', rtl: false },
   { code: 'fr', name: 'French', nativeName: 'Français', rtl: false },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false }
+  { code: 'de', name: 'German', nativeName: 'Deutsch', rtl: false },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी', rtl: false },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்', rtl: false },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা', rtl: false },
+  { code: 'zh', name: 'Chinese (Simplified)', nativeName: '中文', rtl: false },
+  { code: 'ja', name: 'Japanese', nativeName: '日本語', rtl: false },
+  { code: 'ko', name: 'Korean', nativeName: '한국어', rtl: false }
 ];
 
 // GET /api/translations/languages - Get supported languages

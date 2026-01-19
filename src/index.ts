@@ -9,6 +9,9 @@ import auth from './routes/auth';
 import moods from './routes/moods';
 import dashboard from './routes/dashboard';
 
+// Magic Link Authentication
+import magicLinkRoutes from './routes/api/magic-link';
+
 // Phase 2 routes
 import voiceJournals from './routes/api/voice-journals';
 import insights from './routes/api/insights';
@@ -60,6 +63,9 @@ app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOStri
 app.route('/', auth);
 app.route('/', moods);
 app.route('/', dashboard);
+
+// Mount Magic Link routes
+app.route('/', magicLinkRoutes);
 
 // Mount Phase 2 routes
 app.route('/', voiceJournals);
