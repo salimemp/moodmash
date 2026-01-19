@@ -2,6 +2,71 @@
 
 All notable changes to MoodMash are documented in this file.
 
+## [1.4.0] - 2026-01-19
+
+### 🔐 Magic Link Authentication
+
+- **Passwordless Login**
+  - Email-based magic link authentication
+  - No password required - just enter your email
+  - 15-minute token expiration for security
+  - Single-use tokens (invalidated after use)
+  - Rate limiting: 3 requests per hour per email
+  - IP address and user agent logging
+
+- **API Endpoints**
+  - `POST /api/auth/magic-link/request` - Request a magic link
+  - `GET /api/auth/magic-link/verify` - Verify and log in
+  - `GET /auth/magic-link/verify` - HTML verification page
+
+- **Security Features**
+  - Secure 64-character hex token generation
+  - Cloudflare Turnstile bot protection
+  - Auto-creates user if email doesn't exist
+  - Secure cookie-based sessions after verification
+
+- **Email Template**
+  - Beautiful branded HTML email
+  - Clear call-to-action button
+  - Expiration and security warnings
+
+### 🇮🇳 Indian Language Support
+
+Added comprehensive translations for 3 Indian languages with 690+ keys each:
+
+- **Hindi (हिंदी)** - `hi.json`
+  - Complete Devanagari script support
+  - Natural Hindi phrasing and terminology
+
+- **Tamil (தமிழ்)** - `ta.json`
+  - Full Tamil script support
+  - Culturally appropriate translations
+
+- **Bengali (বাংলা)** - `bn.json`
+  - Complete Bengali script support
+  - Native language expressions
+
+### Translation Coverage
+- Navigation and dashboard
+- Authentication flows (login, register, magic link)
+- Mood logging and all 9 emotions
+- Wellness features (meditation, yoga, music)
+- Social features and messaging
+- Gamification and achievements
+- Settings and compliance
+- Error messages and validation
+- Onboarding flow
+- Chatbot responses
+- Accessibility features
+
+### 📊 Language Support Update
+- **Total Languages: 11**
+  - English, Arabic (RTL), Spanish, French, German
+  - Hindi, Tamil, Bengali (new Indian languages)
+  - Chinese (Simplified), Japanese, Korean
+
+---
+
 ## [1.3.0] - 2026-01-17
 
 ### 🧘 Wellness Hub: Meditation, Yoga & Music Therapy
