@@ -139,6 +139,56 @@ export async function sendPasswordResetEmail(
   });
 }
 
+export async function sendMagicLinkEmail(
+  apiKey: string,
+  fromEmail: string,
+  to: string,
+  magicLinkUrl: string
+): Promise<boolean> {
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; background: #16213e; border-radius: 12px; padding: 32px; }
+    h1 { color: #4f46e5; margin-bottom: 16px; }
+    p { color: #e0e0e0; line-height: 1.6; }
+    .button { display: inline-block; background: #4f46e5; color: #fff; padding: 16px 32px; border-radius: 8px; text-decoration: none; margin: 24px 0; font-weight: 600; font-size: 16px; }
+    .warning { color: #fbbf24; font-size: 14px; margin-top: 16px; padding: 12px; background: rgba(251, 191, 36, 0.1); border-radius: 8px; }
+    .security { color: #888; font-size: 12px; margin-top: 16px; }
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #333; color: #888; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔮 Your Magic Link</h1>
+    <p>Click the button below to sign in to MoodMash instantly - no password needed!</p>
+    <a href="${magicLinkUrl}" class="button">✨ Sign In to MoodMash</a>
+    <div class="warning">
+      ⏰ This link expires in 15 minutes and can only be used once.
+    </div>
+    <div class="security">
+      🔒 If you didn't request this link, you can safely ignore this email. Your account is secure.
+    </div>
+    <div class="footer">
+      <p>Questions? Reply to this email or contact support@moodmash.win</p>
+      <p>© MoodMash - Your Mental Wellness Companion</p>
+      <p><a href="https://moodmash.win" style="color: #4f46e5;">moodmash.win</a></p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  return sendEmail(apiKey, fromEmail, {
+    to,
+    subject: '🔮 Your Magic Link to Sign In - MoodMash',
+    html,
+    text: `Sign in to MoodMash with this magic link (expires in 15 minutes): ${magicLinkUrl}`
+  });
+}
+
 export async function sendWeeklySummaryEmail(
   apiKey: string,
   fromEmail: string,
