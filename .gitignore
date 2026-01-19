@@ -45,3 +45,16 @@ playwright/.cache/
 *.pdf
 
 # CI trigger - Wed Jan 14 19:42:11 UTC 2026
+
+
+
+# Temporary/report documentation (prevent future accumulation)
+*COMPLETION*.md
+*SUMMARY*.md
+*STATUS*.md
+*ANALYSIS*.md
+*REPORT*.md
+*_FIX*.md
+*PHASE*.md
+build-fix-*.md
+test-report-*.md
