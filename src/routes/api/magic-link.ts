@@ -85,7 +85,7 @@ magicLink.post('/api/auth/magic-link/request', async (c) => {
     if (!user) {
       // Create user without password (magic link only)
       const randomPassword = generateToken(); // Will never be used
-      user = await createUser(c.env.DB, email, randomPassword, null);
+      user = await createUser(c.env.DB, email, randomPassword, undefined);
       if (!user) {
         return c.json({ error: 'Failed to create account' }, 500);
       }
