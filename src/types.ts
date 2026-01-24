@@ -3,24 +3,38 @@ import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
 
 // Environment bindings for Cloudflare Workers
 export interface Env {
+  // Database
   DB: D1Database;
-  R2_BUCKET?: R2Bucket;
+  
+  // R2 Storage Buckets
+  R2_BUCKET?: R2Bucket;       // Legacy single bucket (deprecated)
+  ASSETS?: R2Bucket;          // Static assets, meditation audio, yoga videos
+  USER_UPLOADS?: R2Bucket;    // User profile pictures, voice recordings
+  BACKUPS?: R2Bucket;         // Database backups, export files
+  
   // API Keys
   GEMINI_API_KEY?: string;
   RESEND_API_KEY?: string;
   FROM_EMAIL?: string;
+  
   // OAuth - Google
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
   GOOGLE_REDIRECT_URI?: string;
+  
   // OAuth - GitHub
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
   GITHUB_REDIRECT_URI?: string;
+  
   // App URL
   APP_URL?: string;
+  
   // Cloudflare Turnstile
   TURNSTILE_SECRET_KEY?: string;
+  
+  // Error Tracking
+  SENTRY_DSN?: string;
 }
 
 // Database types

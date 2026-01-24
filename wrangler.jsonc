@@ -6,17 +6,32 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  // Environment Variables (configured via CLI or Cloudflare Dashboard)
-  // GEMINI_API_KEY - Gemini AI for wellness tips and mood analysis
-  // RESEND_API_KEY - Resend email service for authentication emails
-  // SENTRY_DSN - Sentry.io error tracking (format: https://KEY@ORG.ingest.sentry.io/PROJECT_ID)
-  // To set production secrets: 
-  //   npx wrangler secret put RESEND_API_KEY --project-name moodmash
-  //   npx wrangler secret put SENTRY_DSN --project-name moodmash
-  // For local dev: Use .dev.vars file (see SENTRY_SETUP_GUIDE.md)
-  // D1 Database for mood tracking
+
+  // ==============================================================
+  // ENVIRONMENT VARIABLES (configured via CLI or Cloudflare Dashboard)
+  // ==============================================================
+  // Required Secrets (set via: npx wrangler secret put <NAME> --project-name moodmash):
+  // - GEMINI_API_KEY:        Gemini AI for wellness tips and mood analysis
+  // - RESEND_API_KEY:        Resend email service for authentication emails
+  // - FROM_EMAIL:            Email sender address (e.g., noreply@moodmash.win)
+  // - TURNSTILE_SECRET_KEY:  Cloudflare Turnstile bot protection
+  // - GOOGLE_CLIENT_ID:      Google OAuth Client ID
+  // - GOOGLE_CLIENT_SECRET:  Google OAuth Client Secret
+  // - GOOGLE_REDIRECT_URI:   Google OAuth Redirect URI
+  // - GITHUB_CLIENT_ID:      GitHub OAuth Client ID
+  // - GITHUB_CLIENT_SECRET:  GitHub OAuth Client Secret
+  // - GITHUB_REDIRECT_URI:   GitHub OAuth Redirect URI
+  // - APP_URL:               Application URL (https://moodmash.win)
+  // - SENTRY_DSN:            Sentry.io error tracking (optional)
+  //
+  // For local development: Use .dev.vars file
+  // ==============================================================
+
+  // ==============================================================
+  // D1 DATABASE CONFIGURATION
+  // ==============================================================
+  // Production database
   // To create: npx wrangler d1 create moodmash-production
-  // Then add the database_id here
   "d1_databases": [
     {
       "binding": "DB",
@@ -24,11 +39,65 @@
       "database_id": "0483fe1c-facc-4e05-8123-48205b4561f4"
     }
   ],
-  // R2 Storage for file uploads
+
+  // ==============================================================
+  // R2 STORAGE CONFIGURATION
+  // ==============================================================
+  // R2 buckets for file storage
+  // To create buckets:
+  //   npx wrangler r2 bucket create moodmash-assets
+  //   npx wrangler r2 bucket create moodmash-user-uploads
+  //   npx wrangler r2 bucket create moodmash-backups
   "r2_buckets": [
     {
-      "binding": "R2",
-      "bucket_name": "moodmash-storage"
+      // Static assets: meditation audio, yoga videos, app images
+      "binding": "ASSETS",
+      "bucket_name": "moodmash-assets"
+    },
+    {
+      // User uploads: profile pictures, voice recordings
+      "binding": "USER_UPLOADS",
+      "bucket_name": "moodmash-user-uploads"
+    },
+    {
+      // Backups: database exports, user data exports
+      "binding": "BACKUPS",
+      "bucket_name": "moodmash-backups"
     }
-  ]
+  ],
+
+  // ==============================================================
+  // ENVIRONMENT-SPECIFIC OVERRIDES
+  // ==============================================================
+  "env": {
+    // Staging environment
+    "staging": {
+      "name": "moodmash-staging",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "moodmash-staging",
+          "database_id": "STAGING_DATABASE_ID_PLACEHOLDER"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "ASSETS",
+          "bucket_name": "moodmash-assets-staging"
+        },
+        {
+          "binding": "USER_UPLOADS",
+          "bucket_name": "moodmash-user-uploads-staging"
+        },
+        {
+          "binding": "BACKUPS",
+          "bucket_name": "moodmash-backups-staging"
+        }
+      ]
+    },
+    // Production environment (inherits from root config by default)
+    "production": {
+      "name": "moodmash"
+    }
+  }
 }
